@@ -1,0 +1,27 @@
+[
+  {
+    "bookId": "f0000001-0000-4000-8000-000000000001",
+    "pdf": "recherche-operationnelle.pdf",
+    "epub": "recherche-operationnelle.epub"
+  },
+  {
+    "bookId": "f0000002-0000-4000-8000-000000000002",
+    "pdf": "python-datascience.pdf",
+    "epub": "python-data-cm.epub"
+  },
+  {
+    "bookId": "f0000003-0000-4000-8000-000000000003",
+    "pdf": "cameroun-societe-civile.pdf",
+    "epub": "cameroun-societe-civile.epub"
+  },
+  {
+    "bookId": "f0000004-0000-4000-8000-000000000004",
+    "pdf": "economie-numerique.pdf",
+    "epub": "economie-numerique-afrique.epub"
+  },
+  {
+    "bookId": "f0000005-0000-4000-8000-000000000005",
+    "pdf": "contes-grassfield.pdf",
+    "epub": "contes-grassfield.epub"
+  }
+]

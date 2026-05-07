@@ -1,0 +1,92 @@
+<div
+  class="dash-shell dash-layout-fixed flex min-h-0 w-full min-w-0 flex-1 flex-col md:min-h-0 md:flex-row admin-accent"
+>
+  <aside
+    class="dash-sidebar-panel w-full md:w-72 shrink-0 border-r border-slate-200 dark:border-slate-600/40 px-4 pt-6 pb-4 flex flex-col md:h-full md:min-h-0"
+  >
+    <div class="flex items-center gap-3 mb-4 px-2 shrink-0">
+      <img src="assets/branding/bookvaulticon.png" alt="BookVault" class="h-11 w-11 object-contain rounded-lg" />
+      <div>
+        <p class="text-[10px] uppercase tracking-widest text-emerald-700 dark:text-emerald-300/90">Administration</p>
+        <p class="font-semibold text-slate-900 dark:text-white text-lg">BookVault</p>
+      </div>
+    </div>
+
+    <nav class="dash-scroll-thin flex-1 min-h-0 overflow-y-auto space-y-1 text-sm pr-1">
+      <a
+        routerLink="home"
+        routerLinkActive="dash-sidebar-active"
+        [routerLinkActiveOptions]="{ exact: true }"
+        class="dash-sidebar-link"
+        ><i class="fas fa-chart-pie w-5 text-emerald-600 dark:text-emerald-400"></i> Vue d'ensemble</a
+      >
+
+      <p class="dash-nav-section-title">Compte</p>
+      <a routerLink="profile" routerLinkActive="dash-sidebar-active" class="dash-sidebar-link"
+        ><i class="fas fa-user w-5 text-emerald-600 dark:text-emerald-400"></i> Profil</a
+      >
+
+      <p class="dash-nav-section-title">Gestion</p>
+      <a routerLink="users" routerLinkActive="dash-sidebar-active" class="dash-sidebar-link"
+        ><i class="fas fa-users w-5 text-emerald-600 dark:text-emerald-400"></i> Utilisateurs</a
+      >
+      <a routerLink="authors" routerLinkActive="dash-sidebar-active" class="dash-sidebar-link"
+        ><i class="fas fa-pen-fancy w-5 text-emerald-600 dark:text-emerald-400"></i> Auteurs</a
+      >
+      <a routerLink="books" routerLinkActive="dash-sidebar-active" class="dash-sidebar-link"
+        ><i class="fas fa-book w-5 text-emerald-600 dark:text-emerald-400"></i> Livres</a
+      >
+      <a routerLink="categories" routerLinkActive="dash-sidebar-active" class="dash-sidebar-link"
+        ><i class="fas fa-tags w-5 text-emerald-600 dark:text-emerald-400"></i> Catégories</a
+      >
+      <a routerLink="reports" routerLinkActive="dash-sidebar-active" class="dash-sidebar-link"
+        ><i class="fas fa-flag w-5 text-emerald-600 dark:text-emerald-400"></i> Signalements</a
+      >
+
+      <p class="dash-nav-section-title">Modération</p>
+      <a routerLink="validations" routerLinkActive="dash-sidebar-active" class="dash-sidebar-link">
+        <i class="fas fa-check-double w-5 text-emerald-600 dark:text-emerald-400"></i> Validations
+      </a>
+      <a routerLink="comments-mod" routerLinkActive="dash-sidebar-active" class="dash-sidebar-link"
+        ><i class="fas fa-comments w-5 text-emerald-600 dark:text-emerald-400"></i> Commentaires</a
+      >
+      <a routerLink="flagged" routerLinkActive="dash-sidebar-active" class="dash-sidebar-link"
+        ><i class="fas fa-exclamation-triangle w-5 text-emerald-600 dark:text-emerald-400"></i> Contenus signalés</a
+      >
+
+      <p class="dash-nav-section-title">Analytiques</p>
+      <a routerLink="analytics" routerLinkActive="dash-sidebar-active" class="dash-sidebar-link"
+        ><i class="fas fa-chart-bar w-5 text-emerald-600 dark:text-emerald-400"></i> Statistiques</a
+      >
+      <a routerLink="reports-export" routerLinkActive="dash-sidebar-active" class="dash-sidebar-link"
+        ><i class="fas fa-file-alt w-5 text-emerald-600 dark:text-emerald-400"></i> Rapports</a
+      >
+      <a routerLink="performance" routerLinkActive="dash-sidebar-active" class="dash-sidebar-link"
+        ><i class="fas fa-tachometer-alt w-5 text-emerald-600 dark:text-emerald-400"></i> Performances</a
+      >
+
+      <p class="dash-nav-section-title">Système</p>
+      <a routerLink="settings" routerLinkActive="dash-sidebar-active" class="dash-sidebar-link"
+        ><i class="fas fa-sliders-h w-5 text-emerald-600 dark:text-emerald-400"></i> Paramètres</a
+      >
+      <a routerLink="logs" routerLinkActive="dash-sidebar-active" class="dash-sidebar-link"
+        ><i class="fas fa-stream w-5 text-emerald-600 dark:text-emerald-400"></i> Logs d'activité</a
+      >
+      <a routerLink="notifications-sys" routerLinkActive="dash-sidebar-active" class="dash-sidebar-link"
+        ><i class="fas fa-bell w-5 text-emerald-600 dark:text-emerald-400"></i> Notifications</a
+      >
+    </nav>
+
+    <button
+      type="button"
+      (click)="logout()"
+      class="shrink-0 mt-auto pt-4 dash-sidebar-link border border-slate-200 dark:border-white/10 justify-center text-emerald-800 dark:text-emerald-200 hover:bg-slate-200/70 dark:hover:bg-white/5"
+    >
+      <i class="fas fa-sign-out-alt"></i> Déconnexion
+    </button>
+  </aside>
+
+  <main class="dash-scroll-thin flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-5 md:p-8">
+    <router-outlet />
+  </main>
+</div>

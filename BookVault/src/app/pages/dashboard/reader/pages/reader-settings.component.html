@@ -1,0 +1,258 @@
+<app-dashboard-internal-header
+  title="Paramètres"
+  eyebrow="Sécurité & compte"
+  subtitle="Gérez vos sessions, votre mot de passe et les actions sensibles. Vos préférences de lecture (thème, notifications, densité, etc.) se trouvent dans votre profil."
+  [badges]="[
+    { label: 'Sécurité', icon: 'fas fa-shield-alt' },
+    { label: 'Confidentialité', icon: 'fas fa-user-lock' },
+    { label: 'Compte', icon: 'fas fa-user-cog' }
+  ]"
+>
+  <a
+    actions
+    routerLink="/dashboard/reader/profile"
+    class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium border border-slate-200 dark:border-white/15 bg-white/90 dark:bg-white/5 text-slate-800 dark:text-zinc-100 hover:bg-slate-50 dark:hover:bg-white/10 transition"
+  >
+    <i class="fas fa-user text-xs opacity-80"></i>
+    Aller au profil
+  </a>
+</app-dashboard-internal-header>
+
+<div class="max-w-4xl space-y-6 dash-animate-in">
+  <div
+    *ngIf="banner"
+    class="rounded-2xl border p-4 flex items-start gap-3"
+    [ngClass]="
+      banner.kind === 'success'
+        ? 'border-emerald-200/90 bg-emerald-50/80 text-emerald-900 dark:border-emerald-400/20 dark:bg-emerald-400/10 dark:text-emerald-100'
+        : banner.kind === 'danger'
+          ? 'border-red-200/90 bg-red-50/80 text-red-900 dark:border-red-400/20 dark:bg-red-400/10 dark:text-red-100'
+          : 'border-slate-200/90 bg-white/70 text-slate-800 dark:border-white/10 dark:bg-white/5 dark:text-zinc-200'
+    "
+  >
+    <i
+      class="fas mt-0.5"
+      [ngClass]="
+        banner.kind === 'success'
+          ? 'fa-check-circle text-emerald-600 dark:text-emerald-300'
+          : banner.kind === 'danger'
+            ? 'fa-exclamation-triangle text-red-600 dark:text-red-300'
+            : 'fa-info-circle text-slate-500 dark:text-slate-300'
+      "
+    ></i>
+    <div class="flex-1 min-w-0">
+      <p class="text-sm leading-relaxed">{{ banner.text }}</p>
+    </div>
+    <button
+      type="button"
+      (click)="clearBanner()"
+      class="shrink-0 text-sm px-2 py-1 rounded-lg hover:bg-black/5 dark:hover:bg-white/10"
+    >
+      <i class="fas fa-times opacity-70"></i>
+    </button>
+  </div>
+
+  <!-- Mot de passe -->
+  <section class="dash-glass rounded-2xl border border-slate-200/80 dark:border-white/10 p-6">
+    <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
+      <div>
+        <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Mot de passe</h2>
+        <p class="text-sm text-slate-600 dark:text-zinc-400 mt-1">
+          Changez votre mot de passe. Pour votre sécurité, vos sessions seront déconnectées.
+        </p>
+      </div>
+      <div class="text-xs text-slate-500 dark:text-zinc-400 flex items-center gap-2">
+        <i class="fas fa-lock"></i>
+        Recommandé régulièrement
+      </div>
+    </div>
+
+    <form [formGroup]="passwordForm" (ngSubmit)="changePassword()" class="space-y-4">
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div>
+          <label class="block text-xs font-medium text-zinc-600 dark:text-zinc-400 mb-1">Mot de passe actuel</label>
+          <input
+            type="password"
+            formControlName="currentPassword"
+            class="w-full rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-zinc-950 px-3 py-2 text-sm text-slate-900 dark:text-slate-100"
+          />
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-zinc-600 dark:text-zinc-400 mb-1">Nouveau mot de passe</label>
+          <input
+            type="password"
+            formControlName="newPassword"
+            class="w-full rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-zinc-950 px-3 py-2 text-sm text-slate-900 dark:text-slate-100"
+          />
+          <p class="mt-1 text-[11px] text-slate-500 dark:text-zinc-400">8 caractères minimum.</p>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-zinc-600 dark:text-zinc-400 mb-1">Confirmation</label>
+          <input
+            type="password"
+            formControlName="confirmPassword"
+            class="w-full rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-zinc-950 px-3 py-2 text-sm text-slate-900 dark:text-slate-100"
+          />
+          <p *ngIf="passwordMismatch" class="mt-1 text-[11px] text-red-600 dark:text-red-400">
+            Les mots de passe ne correspondent pas.
+          </p>
+        </div>
+      </div>
+
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-2">
+        <p class="text-xs text-slate-500 dark:text-zinc-400">
+          Astuce : utilisez une phrase facile à retenir et unique pour BookVault.
+        </p>
+        <button
+          type="submit"
+          [disabled]="busyPassword || passwordForm.invalid || passwordMismatch"
+          class="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-sky-600 hover:bg-sky-500 text-white shadow-md shadow-sky-900/20 transition disabled:opacity-60"
+        >
+          <i *ngIf="busyPassword" class="fas fa-spinner fa-spin text-xs"></i>
+          Mettre à jour
+        </button>
+      </div>
+    </form>
+  </section>
+
+  <!-- Sessions -->
+  <section class="dash-glass rounded-2xl border border-slate-200/80 dark:border-white/10 p-6">
+    <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-5">
+      <div>
+        <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Sessions actives</h2>
+        <p class="text-sm text-slate-600 dark:text-zinc-400 mt-1">
+          Si vous avez utilisé BookVault sur un ordinateur public, déconnectez tout.
+        </p>
+      </div>
+      <div class="flex items-center gap-2 text-xs text-slate-500 dark:text-zinc-400">
+        <i class="fas fa-laptop"></i> Tous vos appareils
+      </div>
+    </div>
+
+    <div class="rounded-xl border border-slate-200/80 dark:border-white/10 bg-white/60 dark:bg-white/5 p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div class="flex items-start gap-3">
+        <span class="h-10 w-10 rounded-xl bg-sky-500/12 dark:bg-sky-400/15 text-sky-700 dark:text-sky-300 flex items-center justify-center">
+          <i class="fas fa-sign-out-alt"></i>
+        </span>
+        <div>
+          <p class="font-semibold text-slate-900 dark:text-white">Déconnecter toutes les sessions</p>
+          <p class="text-sm text-slate-600 dark:text-zinc-400">
+            Vous serez invité à vous reconnecter.
+          </p>
+        </div>
+      </div>
+      <div class="flex items-center gap-3">
+        <label class="flex items-center gap-2 text-xs text-slate-600 dark:text-zinc-300 select-none">
+          <input type="checkbox" [(ngModel)]="confirmLogoutAll" class="h-4 w-4 accent-sky-600" />
+          Je confirme
+        </label>
+        <button
+          type="button"
+          (click)="logoutAllDevices()"
+          [disabled]="busyLogoutAll || !confirmLogoutAll"
+          class="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold border border-slate-200 dark:border-white/15 bg-white/90 dark:bg-white/5 text-slate-800 dark:text-zinc-100 hover:bg-slate-50 dark:hover:bg-white/10 transition disabled:opacity-60"
+        >
+          <i *ngIf="busyLogoutAll" class="fas fa-spinner fa-spin text-xs"></i>
+          Déconnecter
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Notifications “avancées” (gestion compte) -->
+  <section class="dash-glass rounded-2xl border border-slate-200/80 dark:border-white/10 p-6">
+    <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-5">
+      <div>
+        <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Notifications</h2>
+        <p class="text-sm text-slate-600 dark:text-zinc-400 mt-1">
+          Actions rapides sur votre centre de notifications.
+        </p>
+      </div>
+      <button
+        type="button"
+        (click)="markAllNotificationsRead()"
+        class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-white/90 dark:bg-white/5 border border-slate-200 dark:border-white/15 text-slate-800 dark:text-zinc-100 hover:bg-slate-50 dark:hover:bg-white/10 transition"
+      >
+        <i class="fas fa-check-double text-xs opacity-80"></i>
+        Tout marquer comme lu
+      </button>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div class="rounded-xl border border-slate-200/80 dark:border-white/10 bg-white/60 dark:bg-white/5 p-4">
+        <p class="text-sm font-semibold text-slate-900 dark:text-white">Préférences</p>
+        <p class="text-sm text-slate-600 dark:text-zinc-400 mt-1">
+          Vos préférences de notifications (commandes, promos, social) se configurent dans votre profil.
+        </p>
+        <a
+          routerLink="/dashboard/reader/profile"
+          class="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-sky-700 dark:text-sky-300 hover:underline"
+        >
+          Ouvrir le profil <i class="fas fa-arrow-right text-xs"></i>
+        </a>
+      </div>
+      <div class="rounded-xl border border-slate-200/80 dark:border-white/10 bg-white/60 dark:bg-white/5 p-4">
+        <p class="text-sm font-semibold text-slate-900 dark:text-white">Conseil</p>
+        <p class="text-sm text-slate-600 dark:text-zinc-400 mt-1">
+          Pensez à déconnecter toutes les sessions si vous changez de téléphone ou d’ordinateur.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Zone dangereuse -->
+  <section class="rounded-2xl border border-red-200/90 dark:border-red-400/20 bg-red-50/50 dark:bg-red-400/10 p-6">
+    <div class="flex items-start justify-between gap-4 mb-5">
+      <div>
+        <h2 class="text-lg font-semibold text-red-900 dark:text-red-100">Zone sensible</h2>
+        <p class="text-sm text-red-800/80 dark:text-red-100/80 mt-1">
+          Ces actions peuvent entraîner la perte de l’accès et des données associées au profil.
+        </p>
+      </div>
+      <span class="text-xs font-semibold px-3 py-1 rounded-full bg-red-600/10 text-red-700 dark:text-red-200">
+        À manipuler avec soin
+      </span>
+    </div>
+
+    <div class="rounded-xl border border-red-200/80 dark:border-red-400/20 bg-white/70 dark:bg-white/5 p-4 space-y-4">
+      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div class="flex items-start gap-3">
+          <span class="h-10 w-10 rounded-xl bg-red-600/12 dark:bg-red-400/15 text-red-700 dark:text-red-200 flex items-center justify-center">
+            <i class="fas fa-user-slash"></i>
+          </span>
+          <div>
+            <p class="font-semibold text-slate-900 dark:text-white">Désactiver le compte</p>
+            <p class="text-sm text-slate-700 dark:text-zinc-300">
+              Pour confirmer, cochez la case puis tapez <span class="font-semibold">SUPPRIMER</span>.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+        <label class="md:col-span-2">
+          <span class="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1">Tapez SUPPRIMER</span>
+          <input
+            [(ngModel)]="confirmDeactivate"
+            class="w-full rounded-xl border border-red-200 dark:border-red-400/30 bg-white dark:bg-zinc-950 px-3 py-2 text-sm text-slate-900 dark:text-slate-100"
+            placeholder="SUPPRIMER"
+          />
+        </label>
+        <button
+          type="button"
+          (click)="deactivateAccount()"
+          [disabled]="busyDeactivate"
+          class="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-red-600 hover:bg-red-500 text-white shadow-md shadow-red-900/15 transition disabled:opacity-60"
+        >
+          <i *ngIf="busyDeactivate" class="fas fa-spinner fa-spin text-xs"></i>
+          Désactiver
+        </button>
+      </div>
+
+      <label class="flex items-center gap-2 text-xs text-slate-700 dark:text-zinc-300 select-none">
+        <input type="checkbox" [(ngModel)]="confirmDeactivateChecked" class="h-4 w-4 accent-red-600" />
+        Je comprends que cette action est sensible.
+      </label>
+    </div>
+  </section>
+</div>
+

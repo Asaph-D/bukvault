@@ -1,0 +1,99 @@
+/* Expérience lecture / audio — suit le thème global (clair par défaut, .dark sur html) */
+:host {
+  display: block;
+  --bv-bg: #f4f4f6;
+  --bv-panel: #ffffff;
+  --bv-accent: #4f46e5;
+  --bv-accent-soft: rgba(79, 70, 229, 0.2);
+}
+
+:host-context(html.dark) {
+  --bv-bg: #0f0f12;
+  --bv-panel: #16161d;
+  --bv-accent: #6366f1;
+  --bv-accent-soft: rgba(99, 102, 241, 0.25);
+}
+
+.reader-shell {
+  background: var(--bv-bg);
+  color: #27272a;
+  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
+}
+
+:host-context(html.dark) .reader-shell {
+  color: #e4e4e7;
+}
+
+.reader-serif {
+  font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
+}
+
+.theme-aube {
+  background: #fafafa;
+  color: #18181b;
+}
+.theme-nuit {
+  background: #121218;
+  color: #e4e4e7;
+}
+.theme-sepia {
+  background: #ede4d3;
+  color: #422006;
+}
+.theme-foret {
+  background: #0f1f17;
+  color: #d9f5e3;
+}
+
+.player-bar {
+  background: linear-gradient(180deg, #e4e4e7 0%, #d4d4d8 100%);
+  border-top: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+:host-context(html.dark) .player-bar {
+  background: linear-gradient(180deg, #1a1a22 0%, #12121a 100%);
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.vol-slider {
+  writing-mode: vertical-lr;
+  direction: rtl;
+  accent-color: var(--bv-accent);
+}
+
+.note-badge {
+  background: rgba(99, 102, 241, 0.9);
+}
+
+.reader-flip-host.reader-flip-active {
+  animation: readerFlip 0.65s ease-in-out;
+}
+
+.excerpt-body-spread {
+  column-count: 2;
+  column-gap: 2rem;
+}
+
+@media (max-width: 767px) {
+  .excerpt-body-spread {
+    column-count: 1;
+    column-gap: 0;
+  }
+}
+
+@keyframes readerFlip {
+  0% {
+    transform: perspective(900px) rotateY(0deg);
+    opacity: 1;
+  }
+  50% {
+    transform: perspective(900px) rotateY(88deg);
+    opacity: 0.35;
+  }
+  100% {
+    transform: perspective(900px) rotateY(0deg);
+    opacity: 1;
+  }
+}

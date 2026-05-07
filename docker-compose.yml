@@ -1,0 +1,326 @@
+# BookVault — stack complète (PostgreSQL + microservices + Angular/nginx)
+# Usage :
+#   docker compose build
+#   docker compose up -d
+# Variables : copier .env.example vers .env ou exporter POSTGRES_PASSWORD / JWT_SECRET
+#
+# Initialisation des données : le service db-seed attend les tables Hibernate puis exécute sql/seed/.
+# Pour tout réinitialiser (DB + seed) : docker compose down -v
+# Pour forcer un nouveau seed sans tout détruire : docker volume rm bookvault_seed_state
+
+name: bookvault
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    # Par défaut ~100 connexions : dépassé avec plusieurs services Spring (Hikari ~10 chacun).
+    command:
+      - postgres
+      - -c
+      - max_connections=300
+      - -c
+      - shared_buffers=256MB
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-1234}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/init-databases.sql:/docker-entrypoint-initdb.d/01-databases.sql
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  # Attend les schémas JPA puis applique sql/seed (marqueur dans le volume seed_state).
+  db-seed:
+    image: postgres:16-alpine
+    restart: "no"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      auth-service:
+        condition: service_started
+      user-service:
+        condition: service_started
+      catalog-service:
+        condition: service_started
+      order-service:
+        condition: service_started
+      file-service:
+        condition: service_started
+      review-service:
+        condition: service_started
+      wishlist-service:
+        condition: service_started
+      notification-service:
+        condition: service_started
+      author-service:
+        condition: service_started
+      reading-service:
+        condition: service_started
+    environment:
+      PGHOST: postgres
+      PGUSER: postgres
+      PGPASSWORD: ${POSTGRES_PASSWORD:-1234}
+    volumes:
+      - ./sql/seed:/seed:ro
+      - ./docker/postgres/run-seeds.sh:/run-seeds.sh:ro
+      - seed_state:/state
+    entrypoint: ["/bin/sh", "/run-seeds.sh"]
+
+  auth-service:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.service
+      args:
+        SERVICE_DIR: auth-service
+    environment:
+      AUTH_DATASOURCE_URL: jdbc:postgresql://postgres:5432/bookvault_auth
+      AUTH_DATASOURCE_USERNAME: postgres
+      AUTH_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-1234}
+      JWT_SECRET: ${JWT_SECRET:-0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef}
+      AUTH_SERVICE_PORT: "8081"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8081:8081"
+
+  user-service:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.service
+      args:
+        SERVICE_DIR: user-service
+    environment:
+      USER_DATASOURCE_URL: jdbc:postgresql://postgres:5432/bookvault_users
+      USER_DATASOURCE_USERNAME: postgres
+      USER_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-1234}
+      JWT_SECRET: ${JWT_SECRET:-0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef}
+      USER_SERVICE_PORT: "8082"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8082:8082"
+
+  catalog-service:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.service
+      args:
+        SERVICE_DIR: catalog-service
+    environment:
+      CATALOG_DATASOURCE_URL: jdbc:postgresql://postgres:5432/bookvault_catalog
+      CATALOG_DATASOURCE_USERNAME: postgres
+      CATALOG_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-1234}
+      JWT_SECRET: ${JWT_SECRET:-0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef}
+      CATALOG_SERVICE_PORT: "8083"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8083:8083"
+
+  order-service:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.service
+      args:
+        SERVICE_DIR: order-service
+    environment:
+      ORDER_DATASOURCE_URL: jdbc:postgresql://postgres:5432/bookvault_order
+      ORDER_DATASOURCE_USERNAME: postgres
+      ORDER_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-1234}
+      JWT_SECRET: ${JWT_SECRET:-0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef}
+      CATALOG_SERVICE_URL: http://catalog-service:8083
+      ORDER_SERVICE_PORT: "8084"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8084:8084"
+
+  file-service:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.service
+      args:
+        SERVICE_DIR: file-service
+    environment:
+      FILE_DATASOURCE_URL: jdbc:postgresql://postgres:5432/bookvault_files
+      FILE_DATASOURCE_USERNAME: postgres
+      FILE_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-1234}
+      JWT_SECRET: ${JWT_SECRET:-0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef}
+      FILE_STORAGE_ROOT: /data/files
+      ORDER_SERVICE_URL: http://order-service:8084
+      FILE_ENTITLEMENT_STUB: "true"
+      FILE_ENTITLEMENT_FAIL_OPEN: "true"
+      FILE_SERVICE_PORT: "8085"
+    volumes:
+      - file_storage:/data/files
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8085:8085"
+
+  review-service:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.service
+      args:
+        SERVICE_DIR: review-service
+    environment:
+      REVIEW_DATASOURCE_URL: jdbc:postgresql://postgres:5432/bookvault_reviews
+      REVIEW_DATASOURCE_USERNAME: postgres
+      REVIEW_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-1234}
+      JWT_SECRET: ${JWT_SECRET:-0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef}
+      ORDER_SERVICE_URL: http://order-service:8084
+      REVIEW_SERVICE_PORT: "8086"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8086:8086"
+
+  wishlist-service:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.service
+      args:
+        SERVICE_DIR: wishlist-service
+    environment:
+      WISHLIST_DATASOURCE_URL: jdbc:postgresql://postgres:5432/bookvault_wishlist
+      WISHLIST_DATASOURCE_USERNAME: postgres
+      WISHLIST_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-1234}
+      JWT_SECRET: ${JWT_SECRET:-0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef}
+      ORDER_SERVICE_URL: http://order-service:8084
+      WISHLIST_SERVICE_PORT: "8087"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8087:8087"
+
+  notification-service:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.service
+      args:
+        SERVICE_DIR: notification-service
+    environment:
+      NOTIFICATION_DATASOURCE_URL: jdbc:postgresql://postgres:5432/bookvault_notifications
+      NOTIFICATION_DATASOURCE_USERNAME: postgres
+      NOTIFICATION_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-1234}
+      JWT_SECRET: ${JWT_SECRET:-0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef}
+      NOTIFICATION_SERVICE_PORT: "8088"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8088:8088"
+
+  author-service:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.service
+      args:
+        SERVICE_DIR: author-service
+    environment:
+      AUTHOR_DATASOURCE_URL: jdbc:postgresql://postgres:5432/bookvault_authors
+      AUTHOR_DATASOURCE_USERNAME: postgres
+      AUTHOR_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-1234}
+      JWT_SECRET: ${JWT_SECRET:-0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef}
+      CATALOG_SERVICE_URL: http://catalog-service:8083
+      AUTHOR_SERVICE_PORT: "8091"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8091:8091"
+
+  reading-service:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.service
+      args:
+        SERVICE_DIR: reading-service
+    environment:
+      READING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/bookvault_reading
+      READING_DATASOURCE_USERNAME: postgres
+      READING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-1234}
+      JWT_SECRET: ${JWT_SECRET:-0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef}
+      ORDER_SERVICE_URL: http://order-service:8084
+      READING_SERVICE_PORT: "8095"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8095:8095"
+
+  admin-service:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.service
+      args:
+        SERVICE_DIR: admin-service
+    environment:
+      JWT_SECRET: ${JWT_SECRET:-0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef}
+      CATALOG_SERVICE_URL: http://catalog-service:8083
+      ADMIN_SERVICE_PORT: "8090"
+    depends_on:
+      - catalog-service
+    ports:
+      - "8090:8090"
+
+  api-gateway:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.service
+      args:
+        SERVICE_DIR: api-gateway
+    environment:
+      GATEWAY_PORT: "8080"
+      AUTH_SERVICE_URI: http://auth-service:8081
+      USER_SERVICE_URI: http://user-service:8082
+      CATALOG_SERVICE_URI: http://catalog-service:8083
+      ORDER_SERVICE_URI: http://order-service:8084
+      FILE_SERVICE_URI: http://file-service:8085
+      REVIEW_SERVICE_URI: http://review-service:8086
+      WISHLIST_SERVICE_URI: http://wishlist-service:8087
+      NOTIFICATION_SERVICE_URI: http://notification-service:8088
+      AUTHOR_SERVICE_URI: http://author-service:8091
+      ADMIN_SERVICE_URI: http://admin-service:8090
+      READING_SERVICE_URI: http://reading-service:8095
+    depends_on:
+      - auth-service
+      - user-service
+      - catalog-service
+      - order-service
+      - file-service
+      - review-service
+      - wishlist-service
+      - notification-service
+      - author-service
+      - reading-service
+      - admin-service
+    ports:
+      - "8080:8080"
+
+  bookvault-web:
+    build:
+      context: ./BookVault
+      dockerfile: Dockerfile
+    depends_on:
+      - api-gateway
+    ports:
+      - "4200:80"
+
+volumes:
+  postgres_data:
+  file_storage:
+  seed_state:

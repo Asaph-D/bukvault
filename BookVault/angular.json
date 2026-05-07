@@ -1,0 +1,74 @@
+{
+  "$schema": "./node_modules/@angular/cli/lib/config/schema.json",
+  "cli": {
+    "analytics": "1e1de97b-a744-405a-8b5a-0397bb3d01ce"
+  },
+  "newProjectRoot": "projects",
+  "projects": {
+    "bookvault": {
+      "architect": {
+        "build": {
+          "builder": "@angular/build:application",
+          "configurations": {
+            "development": {
+              "extractLicenses": false,
+              "namedChunks": true,
+              "optimization": false,
+              "sourceMap": true
+            },
+            "production": {
+              "aot": true,
+              "extractLicenses": true,
+              "namedChunks": false,
+              "optimization": true,
+              "outputHashing": "all",
+              "sourceMap": false
+            }
+          },
+          "options": {
+            "assets": [
+              {
+                "glob": "**/*",
+                "input": "src/assets",
+                "output": "assets"
+              },
+              {
+                "glob": "**/*",
+                "input": "icons",
+                "output": "assets/branding"
+              }
+            ],
+            "index": "src/index.html",
+            "browser": "src/main.ts",
+            "outputPath": "dist/bookvault",
+            "polyfills": ["zone.js"],
+            "scripts": [],
+            "styles": ["src/global_styles.css"],
+            "tsConfig": "tsconfig.app.json"
+          }
+        },
+        "serve": {
+          "builder": "@angular/build:dev-server",
+          "options": {
+            "proxyConfig": "proxy.conf.json"
+          },
+          "configurations": {
+            "development": {
+              "buildTarget": "bookvault:build:development"
+            },
+            "production": {
+              "buildTarget": "bookvault:build:production"
+            }
+          },
+          "defaultConfiguration": "development"
+        }
+      },
+      "prefix": "app",
+      "projectType": "application",
+      "root": "",
+      "schematics": {},
+      "sourceRoot": "src"
+    }
+  },
+  "version": 1
+}

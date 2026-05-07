@@ -1,0 +1,15 @@
+package com.intergiciel.auth_service.web.dto;
+
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+
+public record RegisterRequest(
+		@NotBlank @Email @Size(max = 320) String email,
+		@NotBlank @Size(min = 8, max = 128) String password,
+		@NotBlank @Size(max = 120) String firstName,
+		@NotBlank @Size(max = 120) String lastName,
+		/** Objectif sur la plateforme : USER (lecture) ou AUTHOR (publication). ADMIN interdit ici. */
+		@NotBlank @Size(max = 16) String objective
+) {
+}

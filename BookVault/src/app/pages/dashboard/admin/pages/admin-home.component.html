@@ -1,0 +1,90 @@
+<app-dashboard-internal-header
+  title="Vue plateforme"
+  eyebrow="Administration BookVault"
+  subtitle="Pilotage, conformité et analytiques consolidées. Les graphiques PrimeNG utilisent des données mock jusqu’au branchement sur le service admin."
+  [badges]="[
+    { label: 'RGPD', icon: 'fas fa-shield-alt' },
+    { label: 'API & sauvegardes', icon: 'fas fa-database' },
+    { label: 'Temps réel (mock)', icon: 'fas fa-bolt' },
+  ]"
+>
+  <div actions class="flex flex-wrap gap-2">
+    <p-button label="Export rapide" icon="pi pi-download" [outlined]="true" severity="secondary" styleClass="!rounded-xl" />
+    <a
+      pButton
+      type="button"
+      routerLink="/dashboard/admin/validations"
+      label="Validations"
+      icon="pi pi-check-square"
+      class="!rounded-xl"
+    ></a>
+  </div>
+</app-dashboard-internal-header>
+
+<!-- KPI PrimeNG -->
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+  <p-card *ngFor="let k of platformKpis" [header]="k.label" styleClass="admin-prime-surface !rounded-2xl !shadow-none overflow-hidden">
+    <div class="flex items-baseline justify-between gap-2">
+      <span class="text-2xl font-bold text-slate-900 dark:text-white">{{ k.value }}</span>
+      <p-tag [value]="k.delta" [severity]="k.up ? 'success' : 'danger'" styleClass="!text-[10px]" />
+    </div>
+  </p-card>
+</div>
+
+<div class="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-8">
+  <p-card
+    header="Lectures par jour"
+    subheader="Courbe lissée · agrégat plateforme"
+    styleClass="admin-prime-surface xl:col-span-2 !rounded-2xl"
+  >
+    <div class="h-[280px] admin-chart-wrap">
+      <p-chart type="line" [data]="lineData" [options]="lineOptions" class="h-full w-full" />
+    </div>
+  </p-card>
+
+  <p-card header="Répartition" subheader="Genres · % des lectures" styleClass="admin-prime-surface !rounded-2xl">
+    <p class="text-center text-2xl font-bold text-slate-900 dark:text-white mb-2">
+      {{ totalReadsK }}
+      <span class="text-sm font-normal text-slate-500 dark:text-zinc-400">lectures</span>
+    </p>
+    <div class="h-[220px] admin-chart-wrap">
+      <p-chart type="doughnut" [data]="doughnutData" [options]="doughnutOptions" class="h-full w-full" />
+    </div>
+  </p-card>
+</div>
+
+<p-divider align="left" type="solid">
+  <span class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-zinc-500">Engagement</span>
+</p-divider>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8 mt-6">
+  <p-card header="Top auteurs" subheader="Volume de lectures estimé" styleClass="admin-prime-surface !rounded-2xl">
+    <ul class="space-y-4">
+      <li *ngFor="let a of topAuthors; let i = index" class="flex items-center gap-3">
+        <span class="text-emerald-600 dark:text-emerald-400 font-bold w-6 tabular-nums">{{ i + 1 }}</span>
+        <div class="flex-1 min-w-0">
+          <p class="text-slate-900 dark:text-white text-sm font-medium truncate">{{ a.name }}</p>
+          <p class="text-xs text-slate-500 dark:text-zinc-500">{{ a.reads }} lectures</p>
+          <p-progressBar [value]="a.load" [showValue]="false" styleClass="!h-1.5 !mt-2 !rounded-full admin-progress-emerald" />
+        </div>
+      </li>
+    </ul>
+  </p-card>
+
+  <p-card header="Activité utilisateurs" subheader="Sessions · semaine glissante" styleClass="admin-prime-surface !rounded-2xl">
+    <div class="h-[220px] admin-chart-wrap">
+      <p-chart type="bar" [data]="barData" [options]="barOptions" class="h-full w-full" />
+    </div>
+    <p class="text-xs text-slate-500 dark:text-zinc-500 mt-3 text-center">Indicateur directionnel — données fictives</p>
+  </p-card>
+</div>
+
+<p-card styleClass="admin-prime-surface !rounded-2xl border border-emerald-500/20">
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div>
+      <p class="text-sm font-semibold text-slate-900 dark:text-white">File de validations</p>
+      <p class="text-xs text-slate-500 dark:text-zinc-400 mt-1">Titres en attente de publication et modération.</p>
+    </div>
+    <p-button label="Ouvrir la file" icon="pi pi-arrow-right" iconPos="right" [link]="true" routerLink="/dashboard/admin/validations" />
+  </div>
+</p-card>

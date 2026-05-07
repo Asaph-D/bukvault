@@ -1,0 +1,79 @@
+# Ports par défaut des backends (tous sur localhost si non surchargés) :
+# 8081 auth | 8082 user | 8083 catalog | 8084 order | 8085 file | 8086 review
+# 8087 wishlist | 8088 notification | 8091 author | 8090 admin | 8095 reading | 8092 community
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      server:
+        webmvc:
+          routes:
+            # Ordre : chemins les plus spécifiques en premier
+            - id: reading-service
+              uri: ${READING_SERVICE_URI:http://localhost:8095}
+              predicates:
+                - Path=/api/v1/reading/**
+            - id: admin-service
+              uri: ${ADMIN_SERVICE_URI:http://localhost:8090}
+              predicates:
+                - Path=/api/v1/admin/**
+            - id: author-service
+              uri: ${AUTHOR_SERVICE_URI:http://localhost:8091}
+              predicates:
+                - Path=/api/v1/authors/**
+            - id: community-service
+              uri: ${COMMUNITY_SERVICE_URI:http://localhost:8092}
+              predicates:
+                - Path=/api/v1/community/**
+            - id: messaging-service
+              uri: ${COMMUNITY_SERVICE_URI:http://localhost:8092}
+              predicates:
+                - Path=/api/v1/messaging/**
+            - id: notification-service
+              uri: ${NOTIFICATION_SERVICE_URI:http://localhost:8088}
+              predicates:
+                - Path=/api/v1/notifications/**
+            - id: wishlist-service
+              uri: ${WISHLIST_SERVICE_URI:http://localhost:8087}
+              predicates:
+                - Path=/api/v1/wishlist/**
+            - id: file-service
+              uri: ${FILE_SERVICE_URI:http://localhost:8085}
+              predicates:
+                - Path=/api/v1/files/**
+            - id: order-service-cart
+              uri: ${ORDER_SERVICE_URI:http://localhost:8084}
+              predicates:
+                - Path=/api/v1/cart/**
+            - id: order-service
+              uri: ${ORDER_SERVICE_URI:http://localhost:8084}
+              predicates:
+                - Path=/api/v1/orders/**
+            - id: review-service-books
+              uri: ${REVIEW_SERVICE_URI:http://localhost:8086}
+              predicates:
+                - Path=/api/v1/books/*/reviews/**
+            - id: review-service
+              uri: ${REVIEW_SERVICE_URI:http://localhost:8086}
+              predicates:
+                - Path=/api/v1/reviews/**
+            - id: catalog-categories
+              uri: ${CATALOG_SERVICE_URI:http://localhost:8083}
+              predicates:
+                - Path=/api/v1/categories/**
+            - id: catalog-books
+              uri: ${CATALOG_SERVICE_URI:http://localhost:8083}
+              predicates:
+                - Path=/api/v1/books/**
+            - id: user-service
+              uri: ${USER_SERVICE_URI:http://localhost:8082}
+              predicates:
+                - Path=/api/v1/users/**
+            - id: auth-service
+              uri: ${AUTH_SERVICE_URI:http://localhost:8081}
+              predicates:
+                - Path=/api/v1/auth/**
+
+server:
+  port: ${GATEWAY_PORT:8080}

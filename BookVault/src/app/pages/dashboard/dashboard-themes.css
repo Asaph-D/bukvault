@@ -1,0 +1,254 @@
+/* Mode clair par défaut ; la classe .dark sur <html> active le thème sombre (ThemeService) */
+.dash-shell {
+  min-height: calc(100vh - var(--app-header-height));
+  background: linear-gradient(160deg, #f8fafc 0%, #e2e8f0 40%, #f1f5f9 100%);
+  color: #0f172a;
+}
+
+/**
+ * ≥ md : le parent (page dashboard) impose h-screen avec pt-app-header ; le shell remplit
+ * l’espace restant (flex) pour que seuls nav + main scrollent, pas le document.
+ */
+@media (min-width: 768px) {
+  .dash-shell.dash-layout-fixed {
+    flex: 1 1 0%;
+    min-height: 0;
+    min-width: 0;
+    width: 100%;
+    overflow: hidden;
+  }
+}
+
+html.dark .dash-shell {
+  background: linear-gradient(160deg, #020617 0%, #0f172a 42%, #020617 100%);
+  color: #e2e8f0;
+}
+
+.dash-glass {
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 1rem;
+  box-shadow: 0 4px 24px rgba(15, 23, 42, 0.06);
+}
+
+html.dark .dash-glass {
+  background: rgba(15, 23, 42, 0.82);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+}
+
+/** Bandeau latéral : lisible en sombre (comme la barre lecture) */
+.dash-sidebar-panel {
+  background: rgba(248, 250, 252, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+html.dark .dash-sidebar-panel {
+  background: rgba(15, 23, 42, 0.72);
+  border-color: rgba(148, 163, 184, 0.12);
+}
+
+/** Bandeau titre interne aux pages dashboard */
+.dash-int-header {
+  position: relative;
+}
+
+.dash-int-header::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 4rem;
+  height: 3px;
+  border-radius: 9999px;
+  background: linear-gradient(90deg, rgb(99 102 241), rgb(56 189 248));
+  opacity: 0.85;
+}
+
+html.dark .dash-int-header::before {
+  background: linear-gradient(90deg, rgb(129 140 248), rgb(34 211 238));
+}
+
+.dash-sidebar-active {
+  background: rgba(99, 102, 241, 0.12);
+  color: #0f172a;
+}
+
+html.dark .dash-sidebar-active {
+  background: rgba(129, 140, 248, 0.14);
+  color: #f8fafc;
+}
+
+.dash-sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.65rem 0.85rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  color: rgba(15, 23, 42, 0.88);
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+html.dark .dash-sidebar-link {
+  color: rgba(226, 232, 240, 0.85);
+}
+
+.dash-sidebar-link:hover {
+  background: rgba(15, 23, 42, 0.06);
+  color: #0f172a;
+}
+
+html.dark .dash-sidebar-link:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+}
+
+.dash-nav-section-title {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: rgba(71, 85, 105, 0.95);
+  margin: 1.25rem 0 0.5rem 0.25rem;
+}
+
+html.dark .dash-nav-section-title {
+  color: rgba(148, 163, 184, 0.85);
+}
+
+.dash-stat-card {
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.dash-stat-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px rgba(15, 23, 42, 0.12);
+}
+
+html.dark .dash-stat-card:hover {
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+}
+
+@keyframes dashFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dash-animate-in {
+  animation: dashFadeIn 0.45s ease forwards;
+}
+
+@keyframes dashFlip {
+  0% {
+    transform: rotateY(0deg);
+  }
+  50% {
+    transform: rotateY(90deg);
+  }
+  100% {
+    transform: rotateY(0deg);
+  }
+}
+
+.reader-preview-flip {
+  animation: dashFlip 0.7s ease-in-out;
+}
+
+.reader-preview-slide {
+  animation: dashFadeIn 0.5s ease;
+}
+
+.reader-theme-light {
+  background: #fafafa;
+  color: #1e293b;
+}
+
+.reader-theme-dark {
+  background: #0f172a;
+  color: #e2e8f0;
+}
+
+.reader-theme-sepia {
+  background: #f4ecd8;
+  color: #422006;
+}
+
+/**
+ * Scrollbars fines pour sidebar (nav) et zone principale — indépendantes du scroll du document (voir md:h sur .dash-shell).
+ */
+.dash-scroll-thin {
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.55) transparent;
+}
+
+html.dark .dash-scroll-thin {
+  scrollbar-color: rgba(71, 85, 105, 0.65) transparent;
+}
+
+.dash-scroll-thin::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+.dash-scroll-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.dash-scroll-thin::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.45);
+  border-radius: 9999px;
+}
+
+.dash-scroll-thin::-webkit-scrollbar-thumb:hover {
+  background: rgba(100, 116, 139, 0.7);
+}
+
+html.dark .dash-scroll-thin::-webkit-scrollbar-thumb {
+  background: rgba(71, 85, 105, 0.5);
+}
+
+html.dark .dash-scroll-thin::-webkit-scrollbar-thumb:hover {
+  background: rgba(100, 116, 139, 0.75);
+}
+
+/** Cartes PrimeNG admin — harmonisation avec le verre dashboard */
+.admin-prime-surface.p-card {
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  box-shadow: 0 4px 24px rgba(15, 23, 42, 0.06);
+}
+
+html.dark .admin-prime-surface.p-card {
+  background: rgba(15, 23, 42, 0.82);
+  border-color: rgba(148, 163, 184, 0.14);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+}
+
+.admin-chart-wrap {
+  position: relative;
+  width: 100%;
+}
+
+.admin-progress-emerald .p-progressbar-value {
+  background: linear-gradient(90deg, rgb(16 185 129), rgb(52 211 153));
+}
+
+/** Étapes assistant auteur */
+.author-steps.p-steps .p-steps-item.p-highlight .p-steps-number {
+  background: linear-gradient(135deg, rgb(99 102 241), rgb(56 189 248));
+  color: #fff;
+  border: none;
+}

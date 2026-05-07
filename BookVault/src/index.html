@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <title>BookVault | Votre Marketplace Littéraire</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <base href="/">
+    <link rel="icon" type="image/png" href="assets/branding/bookvaulticon.png">
+    <script>
+      (function () {
+        try {
+          var k = 'bookvault-theme';
+          var s = localStorage.getItem(k);
+          var dark =
+            s === 'dark' ||
+            (s !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+          document.documentElement.classList.toggle('dark', dark);
+        } catch (e) {}
+      })();
+    </script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/turn.js/4.1.0/turn.min.js"></script>
+  </head>
+  <body>
+    <app-root>Chargement...</app-root>
+  </body>
+</html>

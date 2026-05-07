@@ -1,0 +1,11 @@
+.reader-accent {
+  --dash-accent: 56 189 248;
+}
+
+.reader-accent .dash-glass {
+  box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.12);
+}
+
+html.dark .reader-accent .dash-glass {
+  box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.22);
+}

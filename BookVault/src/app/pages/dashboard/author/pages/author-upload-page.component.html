@@ -1,0 +1,340 @@
+<app-dashboard-internal-header
+  title="Publier un nouveau livre"
+  eyebrow="Assistant de mise en ligne"
+  subtitle="Flux sécurisé : création du livre (catalogue) → upload manuscrit → upload couverture → mise à jour coverUrl → publication. En cas d’échec, vous pouvez relancer sans recréer."
+  [badges]="[
+    { label: 'Brouillon local', icon: 'fas fa-save' },
+    { label: 'PrimeNG', icon: 'fas fa-magic' },
+  ]"
+>
+  <div actions class="flex flex-wrap gap-2">
+    <a
+      routerLink="/dashboard/author/home"
+      class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium border border-slate-200 dark:border-white/15 bg-white/90 dark:bg-white/5 text-slate-800 dark:text-zinc-100 hover:bg-slate-50 dark:hover:bg-white/10 transition"
+    >
+      <i class="fas fa-arrow-left text-xs opacity-70"></i>
+      Vue d’ensemble
+    </a>
+    <button
+      *ngIf="createdBookId"
+      type="button"
+      (click)="deleteDraft()"
+      class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold border border-rose-200 dark:border-rose-500/25 bg-rose-50 dark:bg-rose-500/10 text-rose-700 dark:text-rose-200 hover:bg-rose-100 dark:hover:bg-rose-500/15 transition"
+      [disabled]="publishing"
+    >
+      <i class="fas fa-trash text-xs"></i>
+      Nettoyer le brouillon
+    </button>
+  </div>
+</app-dashboard-internal-header>
+
+<p-message severity="info" styleClass="!mb-6 !rounded-xl">
+  <span class="text-sm">
+    API prévue :
+    <code class="px-1.5 py-0.5 rounded bg-black/5 dark:bg-white/10 text-xs">POST /api/v1/books</code>
+    avec rôle AUTHOR ou ADMIN — cette UI prépare le corps de la requête.
+  </span>
+</p-message>
+
+<p-message *ngIf="publishError" severity="error" styleClass="!mb-6 !rounded-xl">
+  <span class="text-sm">{{ publishError }}</span>
+</p-message>
+<p-message *ngIf="publishSuccessBookId" severity="success" styleClass="!mb-6 !rounded-xl">
+  <span class="text-sm"
+    >Publication OK.
+    <a class="underline" [routerLink]="['/books', publishSuccessBookId]">Ouvrir la fiche</a>.</span
+  >
+</p-message>
+<p-message *ngIf="fileSelectionNotice" severity="warn" styleClass="!mb-6 !rounded-xl">
+  <span class="text-sm">{{ fileSelectionNotice }}</span>
+</p-message>
+
+<p-steps
+  [(activeIndex)]="activeStep"
+  [model]="wizardSteps"
+  [readonly]="false"
+  styleClass="author-steps mb-8"
+/>
+
+<div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
+  <div class="lg:col-span-3 space-y-6">
+    @switch (activeStep) {
+      @case (0) {
+        <p-card header="Fiche livre" subheader="Titre, genre et accroche — comme dans le catalogue." styleClass="!rounded-2xl border border-slate-200/80 dark:border-white/10">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <label class="flex flex-col gap-2 text-sm">
+              <span class="text-slate-600 dark:text-zinc-400">Titre</span>
+              <input pInputText [(ngModel)]="draft.title" placeholder="Ex. Les Chroniques d’Éther" class="w-full" />
+            </label>
+            <label class="flex flex-col gap-2 text-sm">
+              <span class="text-slate-600 dark:text-zinc-400">Sous-titre</span>
+              <input pInputText [(ngModel)]="draft.subtitle" placeholder="Optionnel" class="w-full" />
+            </label>
+            <label class="flex flex-col gap-2 text-sm md:col-span-2">
+              <span class="text-slate-600 dark:text-zinc-400">Genre</span>
+              <p-select
+                [(ngModel)]="draft.genre"
+                [options]="genreOptions"
+                optionLabel="label"
+                optionValue="value"
+                placeholder="Choisir un genre"
+                [fluid]="true"
+                appendTo="body"
+              />
+            </label>
+            <label class="flex flex-col gap-2 text-sm md:col-span-2">
+              <span class="text-slate-600 dark:text-zinc-400">Catégorie (catalogue)</span>
+              <p-select
+                [(ngModel)]="draft.categoryId"
+                [options]="categories"
+                optionLabel="name"
+                optionValue="id"
+                placeholder="Choisir une catégorie"
+                [fluid]="true"
+                appendTo="body"
+                [loading]="categoriesLoading"
+              />
+              <span *ngIf="categoriesError" class="text-xs text-rose-600 dark:text-rose-400">{{ categoriesError }}</span>
+            </label>
+            <label class="flex flex-col gap-2 text-sm">
+              <span class="text-slate-600 dark:text-zinc-400">Langue</span>
+              <p-select
+                [(ngModel)]="draft.language"
+                [options]="langOptions"
+                optionLabel="label"
+                optionValue="value"
+                [fluid]="true"
+                appendTo="body"
+              />
+            </label>
+            <label class="flex flex-col gap-2 text-sm">
+              <span class="text-slate-600 dark:text-zinc-400">Série (optionnel)</span>
+              <input pInputText [(ngModel)]="draft.seriesName" placeholder="Nom de série ou laisser vide" class="w-full" />
+            </label>
+            <label class="flex flex-col gap-2 text-sm md:col-span-2">
+              <span class="text-slate-600 dark:text-zinc-400">ISBN / identifiant</span>
+              <input pInputText [(ngModel)]="draft.isbn" placeholder="Si vous en disposez déjà" class="w-full" />
+            </label>
+            <label class="flex flex-col gap-2 text-sm md:col-span-2">
+              <span class="text-slate-600 dark:text-zinc-400">Synopsis</span>
+              <textarea
+                pTextarea
+                [(ngModel)]="draft.synopsis"
+                rows="5"
+                placeholder="Quelques lignes pour séduire le lecteur sur la fiche livre…"
+                class="w-full"
+              ></textarea>
+            </label>
+          </div>
+        </p-card>
+      }
+      @case (1) {
+        <p-card header="Manuscrit" subheader="PDF / EPUB / MOBI — upload vers file-service." styleClass="!rounded-2xl border border-slate-200/80 dark:border-white/10">
+          <div
+            class="rounded-2xl border-2 border-dashed px-6 py-10 text-center mb-4 transition"
+            [ngClass]="dragEbook ? 'border-indigo-500 bg-indigo-500/10 dark:bg-indigo-400/15' : 'border-indigo-400/40 bg-indigo-500/5 dark:bg-indigo-400/10'"
+            (dragover)="onDragOverEbook($event)"
+            (dragleave)="onDragLeaveEbook()"
+            (drop)="onDropEbook($event)"
+          >
+            <i class="fas fa-cloud-upload-alt text-3xl text-indigo-500 dark:text-indigo-300 mb-3"></i>
+            <p class="text-slate-900 dark:text-white font-medium">Glissez-déposez votre PDF/EPUB/MOBI</p>
+            <p class="text-xs text-slate-500 dark:text-zinc-500 mt-2 max-w-md mx-auto">
+              Dépôt multipart sécurisé. En cas d’erreur réseau, vous pouvez relancer : le livre reste en brouillon.
+            </p>
+            <p-button
+              label="Choisir le manuscrit"
+              icon="pi pi-file"
+              (onClick)="chooseEbook()"
+              styleClass="!mt-5 !rounded-xl"
+              [disabled]="publishing"
+            />
+            <input
+              #ebookInput
+              type="file"
+              class="hidden"
+              accept=".pdf,.epub,.mobi,application/pdf,application/epub+zip,application/x-mobipocket-ebook"
+              (change)="onEbookSelected($event)"
+            />
+          </div>
+          @if (draft.manuscriptFileName) {
+            <div class="flex items-center justify-between gap-3 px-4 py-3 rounded-xl bg-slate-100 dark:bg-white/10">
+              <span class="text-sm truncate"><i class="fas fa-file-alt mr-2 text-indigo-500"></i>{{ draft.manuscriptFileName }}</span>
+              <button type="button" class="text-xs text-rose-600 dark:text-rose-400 font-medium" (click)="clearManuscript()">Retirer</button>
+            </div>
+          }
+
+          @if (ebookFile) {
+            <div class="mt-4 text-xs text-slate-500 dark:text-zinc-500">
+              Type : {{ ebookFile.type || 'inconnu' }} · Taille : {{ (ebookFile.size / 1024 / 1024) | number:'1.1-1' }} MB
+            </div>
+          }
+
+          @if (ebookPreviewUrl) {
+            <div class="mt-4 rounded-xl overflow-hidden border border-slate-200/80 dark:border-white/10">
+              <div class="px-4 py-2 text-xs text-slate-600 dark:text-zinc-400 bg-slate-50 dark:bg-white/5 border-b border-slate-200/80 dark:border-white/10">
+                Aperçu PDF (1re page)
+              </div>
+              <iframe [src]="ebookPreviewUrl" class="w-full h-[420px] bg-white"></iframe>
+            </div>
+          } @else {
+            <p class="mt-4 text-xs text-slate-500 dark:text-zinc-500">
+              Aperçu disponible uniquement pour les PDF (les EPUB/MOBI seront prévisualisés plus tard).
+            </p>
+          }
+        </p-card>
+      }
+      @case (2) {
+        <p-card header="Couverture" subheader="JPEG ou PNG — ratio portrait conseillé." styleClass="!rounded-2xl border border-slate-200/80 dark:border-white/10">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+            <div
+              class="rounded-2xl border-2 border-dashed px-6 py-8 text-center transition"
+              [ngClass]="dragCover ? 'border-violet-500 bg-violet-500/10' : 'border-violet-400/40 bg-violet-500/5'"
+              (dragover)="onDragOverCover($event)"
+              (dragleave)="onDragLeaveCover()"
+              (drop)="onDropCover($event)"
+            >
+              <p class="text-sm text-slate-700 dark:text-zinc-300 mb-4">Aperçu recadré côté storefront</p>
+              <div class="aspect-[2/3] max-h-64 mx-auto rounded-lg bg-slate-200 dark:bg-slate-800 overflow-hidden border border-white/10 flex items-center justify-center text-slate-400 text-xs">
+                @if (coverPreviewUrl) {
+                  <img [src]="coverPreviewUrl" alt="" class="h-full w-full object-cover" />
+                } @else if (draft.coverFileName) {
+                  <span class="px-2 text-center text-slate-600 dark:text-zinc-400">{{ draft.coverFileName }}</span>
+                } @else {
+                  Pas encore d’image
+                }
+              </div>
+              <p-button
+                label="Choisir une jaquette"
+                icon="pi pi-image"
+                (onClick)="chooseCover()"
+                styleClass="!mt-4 !rounded-xl"
+                [outlined]="true"
+                [disabled]="publishing"
+              />
+              <input
+                #coverInput
+                type="file"
+                class="hidden"
+                accept="image/jpeg,image/png,image/webp"
+                (change)="onCoverSelected($event)"
+              />
+            </div>
+            <div class="text-sm text-slate-600 dark:text-zinc-400 space-y-3">
+              <p><i class="fas fa-check text-emerald-500 mr-2"></i>Min. 1400px sur le petit côté pour une qualité nette.</p>
+              <p><i class="fas fa-check text-emerald-500 mr-2"></i>Fichier sans DRM ni texte parasite sur les bords.</p>
+              <p><i class="fas fa-check text-emerald-500 mr-2"></i>Vous pourrez recadrer avant publication.</p>
+              @if (draft.coverFileName) {
+                <button type="button" class="text-rose-600 dark:text-rose-400 text-xs font-semibold" (click)="clearCover()">Retirer la jaquette</button>
+              }
+            </div>
+          </div>
+        </p-card>
+      }
+      @case (3) {
+        <p-card header="Offre & droits" subheader="Tarification indicative BookVault — à valider avec les contrats." styleClass="!rounded-2xl border border-slate-200/80 dark:border-white/10">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <label class="flex flex-col gap-2 text-sm md:col-span-2">
+              <span class="text-slate-600 dark:text-zinc-400">Palier de prix</span>
+              <p-select
+                [(ngModel)]="draft.priceTier"
+                [options]="priceTierOptions"
+                optionLabel="label"
+                optionValue="value"
+                [fluid]="true"
+                appendTo="body"
+              />
+            </label>
+            <div class="flex items-center justify-between gap-4 p-4 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200/80 dark:border-white/10 md:col-span-2">
+              <div>
+                <p class="text-sm font-medium text-slate-900 dark:text-white">Exclusivité BookVault</p>
+                <p class="text-xs text-slate-500 dark:text-zinc-500 mt-1">Prime sur les recommandations et mise en avant.</p>
+              </div>
+              <p-toggleswitch [(ngModel)]="draft.exclusive" inputId="exclusive" />
+            </div>
+            <label class="flex flex-col gap-2 text-sm md:col-span-2">
+              <span class="text-slate-600 dark:text-zinc-400">Chapitres offerts en extrait</span>
+              <p-inputnumber [(ngModel)]="draft.chapterSampleCount" [min]="1" [max]="40" [showButtons]="true" inputId="sampleCh" />
+            </label>
+          </div>
+        </p-card>
+      }
+      @case (4) {
+        <p-card header="Récapitulatif" subheader="Vérifiez avant envoi — création + upload + publication." styleClass="!rounded-2xl border border-slate-200/80 dark:border-white/10">
+          <dl class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+            <div>
+              <dt class="text-xs uppercase tracking-wide text-slate-500 dark:text-zinc-500">Titre</dt>
+              <dd class="text-slate-900 dark:text-white font-medium">{{ draft.title || '—' }}</dd>
+            </div>
+            <div>
+              <dt class="text-xs uppercase tracking-wide text-slate-500 dark:text-zinc-500">Genre</dt>
+              <dd class="text-slate-900 dark:text-white">{{ draft.genre || '—' }}</dd>
+            </div>
+            <div class="sm:col-span-2">
+              <dt class="text-xs uppercase tracking-wide text-slate-500 dark:text-zinc-500">Synopsis</dt>
+              <dd class="text-slate-700 dark:text-zinc-300 whitespace-pre-wrap">{{ draft.synopsis || '—' }}</dd>
+            </div>
+            <div>
+              <dt class="text-xs uppercase tracking-wide text-slate-500 dark:text-zinc-500">Manuscrit</dt>
+              <dd class="text-slate-900 dark:text-white">{{ draft.manuscriptFileName || 'Non sélectionné' }}</dd>
+            </div>
+            <div>
+              <dt class="text-xs uppercase tracking-wide text-slate-500 dark:text-zinc-500">Couverture</dt>
+              <dd class="text-slate-900 dark:text-white">{{ draft.coverFileName || 'Non sélectionnée' }}</dd>
+            </div>
+            <div>
+              <dt class="text-xs uppercase tracking-wide text-slate-500 dark:text-zinc-500">Tarif</dt>
+              <dd class="text-slate-900 dark:text-white">{{ draft.priceTier }}</dd>
+            </div>
+            <div>
+              <dt class="text-xs uppercase tracking-wide text-slate-500 dark:text-zinc-500">Exclusivité</dt>
+              <dd class="text-slate-900 dark:text-white">{{ draft.exclusive ? 'Oui' : 'Non' }}</dd>
+            </div>
+          </dl>
+          <p-button
+            label="Publier"
+            icon="pi pi-send"
+            (onClick)="publish()"
+            [loading]="publishing"
+            [disabled]="publishing"
+            styleClass="!mt-6 !rounded-xl w-full sm:w-auto"
+            severity="success"
+          />
+          <p class="text-xs text-slate-500 dark:text-zinc-500 mt-3">
+            En cas d’échec, relancez : la création est reprise (sans doublons) grâce au brouillon conservé côté client.
+          </p>
+        </p-card>
+      }
+    }
+  </div>
+
+  <aside class="lg:col-span-1 space-y-4">
+    <div class="dash-glass p-5 rounded-2xl border border-slate-200/80 dark:border-white/10 sticky top-4">
+      <p class="text-xs font-semibold uppercase tracking-wider text-indigo-600 dark:text-indigo-400 mb-3">Progression</p>
+      <ul class="space-y-2 text-sm">
+        @for (s of wizardSteps; track $index) {
+          <li>
+            <button
+              type="button"
+              (click)="goTo($index)"
+              class="w-full text-left px-3 py-2 rounded-lg transition flex items-center gap-2"
+              [ngClass]="
+                activeStep === $index
+                  ? 'bg-indigo-500/15 text-indigo-800 dark:text-indigo-200'
+                  : 'text-slate-600 dark:text-zinc-400'
+              "
+            >
+              <span class="text-xs font-bold w-5 tabular-nums">{{ $index + 1 }}</span>
+              {{ s.label }}
+            </button>
+          </li>
+        }
+      </ul>
+      <p-divider />
+      <div class="flex flex-col gap-2">
+        <p-button label="Étape précédente" icon="pi pi-arrow-left" [text]="true" (onClick)="prev()" [disabled]="activeStep === 0" styleClass="w-full !justify-start" />
+        <p-button label="Étape suivante" icon="pi pi-arrow-right" iconPos="right" (onClick)="next()" [disabled]="activeStep === wizardSteps.length - 1" styleClass="w-full !rounded-xl" />
+      </div>
+    </div>
+  </aside>
+</div>

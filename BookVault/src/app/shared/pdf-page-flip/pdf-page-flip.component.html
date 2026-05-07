@@ -1,0 +1,63 @@
+<div class="bv-flip-shell">
+  <div class="bv-flip-top" *ngIf="loading || error">
+    <div class="bv-progress-line" *ngIf="loading">
+      <div class="bv-progress-line__bar" [style.width.%]="progressPct"></div>
+    </div>
+    <div *ngIf="loading" class="text-xs text-zinc-500">
+      <i class="fas fa-circle-notch fa-spin mr-2"></i>Préparation du feuilletage…
+      <span class="ml-2 text-[11px] text-zinc-400">{{ progressPct }}% {{ progressLabel }}</span>
+    </div>
+    <div *ngIf="error" class="text-xs text-rose-600">
+      <i class="fas fa-triangle-exclamation mr-2"></i>{{ error }}
+    </div>
+  </div>
+
+  <div
+    class="bv-book"
+    (click)="onBookClick($event)"
+    [class.theme-aube]="readerTheme === 'aube'"
+    [class.theme-nuit]="readerTheme === 'nuit'"
+    [class.theme-sepia]="readerTheme === 'sepia'"
+    [class.theme-foret]="readerTheme === 'foret'"
+  >
+    <div class="bv-book__sheet">
+      <div class="bv-book__page bv-book__page--left">
+        <canvas #leftCanvas></canvas>
+      </div>
+      <div class="bv-book__page bv-book__page--right">
+        <canvas #rightCanvas></canvas>
+      </div>
+
+      <div class="bv-book__flip" [class.is-flipping]="flipping" [class.flip-back]="flipDirection === 'prev'">
+        <div class="bv-book__flip-solid">
+          <div class="bv-book__flip-face bv-book__flip-face--front">
+            <canvas #flipCanvasFront></canvas>
+          </div>
+          <div class="bv-book__flip-face bv-book__flip-face--back">
+            <canvas #flipCanvasBack></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="bv-book__hud">
+      <button type="button" class="bv-book__btn" (click)="prevPair(); $event.stopPropagation()" [disabled]="busy || currentPairStart <= 1">
+        <i class="fas fa-chevron-left"></i>
+      </button>
+      <button type="button" class="bv-book__btn" (click)="zoomOut(); $event.stopPropagation()" [disabled]="busy || zoom <= 0.7" title="Zoom -">
+        <i class="fas fa-minus"></i>
+      </button>
+      <div class="bv-book__meta">
+        <span class="text-xs text-zinc-200">p. {{ currentPairStart }}–{{ currentPairStart + 1 }}</span>
+        <span class="text-[10px] text-zinc-400 ml-2">{{ (zoom * 100) | number:'1.0-0' }}%</span>
+      </div>
+      <button type="button" class="bv-book__btn" (click)="zoomIn(); $event.stopPropagation()" [disabled]="busy || zoom >= 2.0" title="Zoom +">
+        <i class="fas fa-plus"></i>
+      </button>
+      <button type="button" class="bv-book__btn" (click)="nextPair(); $event.stopPropagation()" [disabled]="busy || currentPairStart + 2 > totalPagesInDoc">
+        <i class="fas fa-chevron-right"></i>
+      </button>
+    </div>
+  </div>
+</div>
+

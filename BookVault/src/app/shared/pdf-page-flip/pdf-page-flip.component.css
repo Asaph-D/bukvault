@@ -1,0 +1,367 @@
+.bv-flip-shell {
+  width: 100%;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.bv-flip-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.35rem;
+}
+
+.bv-progress-line {
+  width: 100%;
+  height: 2px;
+  border-radius: 9999px;
+  background: rgba(100, 116, 139, 0.18);
+  overflow: hidden;
+}
+
+.bv-progress-line__bar {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #6366f1, #22d3ee);
+  transition: width 180ms ease;
+}
+
+.bv-flip-host {
+  width: 100%;
+  display: block;
+  position: relative;
+  min-height: 60vh;
+  height: 78vh;
+  overflow: hidden;
+}
+
+.bv-book {
+  width: 100%;
+  height: 78vh;
+  display: grid;
+  place-items: center;
+  user-select: none;
+  position: relative;
+}
+
+.bv-book.theme-aube {
+  background: #f6f7fb;
+}
+.bv-book.theme-nuit {
+  background: #0b0b10;
+}
+.bv-book.theme-sepia {
+  background: #e9ddc9;
+}
+.bv-book.theme-foret {
+  background: #07150f;
+}
+
+.bv-preload-overlay {
+  position: absolute;
+  display: none;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 30;
+  font-size: 11px;
+  color: rgba(228, 228, 231, 0.9);
+  background: rgba(18, 18, 26, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 9999px;
+  padding: 6px 10px;
+  backdrop-filter: blur(10px);
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.bv-book__sheet {
+  width: min(1100px, 100%);
+  height: 100%;
+  position: relative;
+  perspective: 2000px;
+  display: grid;
+  place-items: center;
+  transform-style: preserve-3d;
+}
+
+.bv-book__sheet::before {
+  content: '';
+  position: absolute;
+  inset: 8px 10px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow:
+    0 34px 90px rgba(0, 0, 0, 0.50),
+    0 10px 26px rgba(0, 0, 0, 0.34);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Tranche (spine) + gouttière centrale pour “livre physique” */
+.bv-book__sheet::after {
+  content: '';
+  position: absolute;
+  top: 14px;
+  bottom: 14px;
+  left: 50%;
+  width: 18px;
+  transform: translateX(-50%);
+  border-radius: 9999px;
+  background: linear-gradient(
+    90deg,
+    rgba(0, 0, 0, 0.22),
+    rgba(255, 255, 255, 0.10),
+    rgba(0, 0, 0, 0.18)
+  );
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.06),
+    0 10px 24px rgba(0, 0, 0, 0.28);
+  opacity: 0.85;
+  pointer-events: none;
+  z-index: 3;
+}
+
+.bv-book__page {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 50%;
+  background: #fff;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid rgba(15, 23, 42, 0.10);
+  box-shadow:
+    0 18px 50px rgba(0, 0, 0, 0.35),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.20);
+  z-index: 2;
+}
+
+.bv-book.theme-nuit .bv-book__page {
+  background: #14141c;
+  border-color: rgba(255, 255, 255, 0.10);
+}
+.bv-book.theme-sepia .bv-book__page {
+  background: #f4ead7;
+  border-color: rgba(80, 60, 30, 0.14);
+}
+.bv-book.theme-foret .bv-book__page {
+  background: #0f1f17;
+  border-color: rgba(220, 255, 245, 0.10);
+}
+
+.bv-book__page::before {
+  /* relief / ombre interne + bord de feuille */
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.bv-book__page::after {
+  /* grain papier très subtil */
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.08;
+  background:
+    repeating-linear-gradient(0deg, rgba(0,0,0,0.06), rgba(0,0,0,0.06) 1px, rgba(0,0,0,0.00) 3px, rgba(0,0,0,0.00) 6px);
+  mix-blend-mode: multiply;
+  z-index: 2;
+}
+
+.bv-book.theme-nuit .bv-book__page::after {
+  opacity: 0.12;
+  background:
+    repeating-linear-gradient(0deg, rgba(255,255,255,0.06), rgba(255,255,255,0.06) 1px, rgba(255,255,255,0.00) 3px, rgba(255,255,255,0.00) 6px);
+  mix-blend-mode: screen;
+}
+
+.bv-book__page--left {
+  left: 0;
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.bv-book__page--right {
+  right: 0;
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+.bv-book__page--left::before {
+  background:
+    radial-gradient(120% 80% at 100% 50%, rgba(0,0,0,0.18), rgba(0,0,0,0.00) 58%),
+    linear-gradient(90deg, rgba(0,0,0,0.04), rgba(0,0,0,0.00) 18%, rgba(0,0,0,0.00) 82%, rgba(0,0,0,0.12));
+}
+
+.bv-book__page--right::before {
+  background:
+    radial-gradient(120% 80% at 0% 50%, rgba(0,0,0,0.18), rgba(0,0,0,0.00) 58%),
+    linear-gradient(90deg, rgba(0,0,0,0.12), rgba(0,0,0,0.00) 18%, rgba(0,0,0,0.00) 82%, rgba(0,0,0,0.04));
+}
+
+.bv-book__page canvas,
+.bv-book__flip-face canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+  position: relative;
+  z-index: 1;
+}
+
+.bv-book.theme-sepia .bv-book__page canvas,
+.bv-book.theme-sepia .bv-book__flip-face canvas {
+  filter: sepia(0.55) contrast(1.1) saturate(1.05);
+}
+.bv-book.theme-nuit .bv-book__page canvas,
+.bv-book.theme-nuit .bv-book__flip-face canvas {
+  filter: contrast(1.15) brightness(0.92);
+}
+.bv-book.theme-foret .bv-book__page canvas,
+.bv-book.theme-foret .bv-book__flip-face canvas {
+  filter: contrast(1.12) brightness(0.92) saturate(1.05) hue-rotate(-8deg);
+}
+
+.bv-book__flip {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  width: 50%;
+  transform-style: preserve-3d;
+  transform-origin: left center;
+  transform: rotateY(0deg);
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  border-top-right-radius: 14px;
+  border-bottom-right-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.25);
+  opacity: 0;
+  pointer-events: none;
+  border: 1px solid rgba(15, 23, 42, 0.10);
+  z-index: 4;
+}
+
+.bv-book__flip-solid {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+}
+
+.bv-book__flip-face {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  background: #fff;
+  overflow: hidden;
+  border-top-left-radius: inherit;
+  border-bottom-left-radius: inherit;
+  border-top-right-radius: inherit;
+  border-bottom-right-radius: inherit;
+}
+
+.bv-book.theme-nuit .bv-book__flip-face {
+  background: #14141c;
+}
+.bv-book.theme-sepia .bv-book__flip-face {
+  background: #f4ead7;
+}
+.bv-book.theme-foret .bv-book__flip-face {
+  background: #0f1f17;
+}
+
+.bv-book__flip-face--front {
+  transform: rotateY(0deg);
+}
+
+.bv-book__flip-face--back {
+  transform: rotateY(180deg);
+}
+
+.bv-book__flip::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(0,0,0,0.08), rgba(0,0,0,0.0) 45%, rgba(0,0,0,0.18));
+  mix-blend-mode: multiply;
+  pointer-events: none;
+  z-index: 3;
+}
+
+.bv-book__flip.flip-back::after {
+  transform: scaleX(-1);
+}
+
+.bv-book__flip.is-flipping {
+  overflow: visible;
+  opacity: 1;
+  animation: bvFlipNext 520ms ease-in-out;
+}
+
+.bv-book__flip.is-flipping.flip-back {
+  left: 0;
+  right: auto;
+  transform-origin: right center;
+  animation: bvFlipPrev 520ms ease-in-out;
+}
+
+@keyframes bvFlipNext {
+  0% { transform: rotateY(0deg); }
+  100% { transform: rotateY(-180deg); }
+}
+
+@keyframes bvFlipPrev {
+  0% { transform: rotateY(0deg); }
+  100% { transform: rotateY(180deg); }
+}
+
+.bv-book__hud {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(18, 18, 26, 0.55);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255,255,255,0.10);
+  border-radius: 9999px;
+  padding: 4px 10px;
+}
+
+.bv-book__btn {
+  width: 30px;
+  height: 30px;
+  border-radius: 9999px;
+  background: rgba(255,255,255,0.08);
+  color: #fff;
+  display: grid;
+  place-items: center;
+}
+
+.bv-book__btn:disabled {
+  opacity: 0.4;
+}
+
+.bv-book__meta {
+  min-width: 110px;
+  text-align: center;
+  color: rgba(255,255,255,0.85);
+}
+
+@media (max-width: 900px) {
+  .bv-book__page, .bv-book__flip { width: 100%; }
+  .bv-book__page--left { display: none; }
+  .bv-book__page--right { left: 0; right: 0; border-radius: 14px; }
+  .bv-book__flip { width: 100%; left: 0; right: 0; transform-origin: left center; border-radius: 14px; }
+}
+

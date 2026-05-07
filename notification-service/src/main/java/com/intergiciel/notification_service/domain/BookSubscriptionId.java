@@ -1,0 +1,50 @@
+package com.intergiciel.notification_service.domain;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Embeddable;
+
+import java.io.Serializable;
+import java.util.Objects;
+import java.util.UUID;
+
+@Embeddable
+public class BookSubscriptionId implements Serializable {
+
+	@Column(name = "user_id", nullable = false)
+	private UUID userId;
+
+	@Column(name = "book_id", nullable = false)
+	private UUID bookId;
+
+	protected BookSubscriptionId() {
+	}
+
+	public BookSubscriptionId(UUID userId, UUID bookId) {
+		this.userId = userId;
+		this.bookId = bookId;
+	}
+
+	public UUID getUserId() {
+		return userId;
+	}
+
+	public UUID getBookId() {
+		return bookId;
+	}
+
+	@Override
+	public boolean equals(Object o) {
+		if (this == o)
+			return true;
+		if (o == null || getClass() != o.getClass())
+			return false;
+		BookSubscriptionId that = (BookSubscriptionId) o;
+		return Objects.equals(userId, that.userId) && Objects.equals(bookId, that.bookId);
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(userId, bookId);
+	}
+}
+

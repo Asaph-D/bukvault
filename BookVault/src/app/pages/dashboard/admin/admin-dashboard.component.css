@@ -1,0 +1,11 @@
+.admin-accent {
+  --dash-accent: 52 211 153;
+}
+
+.admin-accent .dash-glass {
+  box-shadow: 0 0 0 1px rgba(16, 185, 129, 0.12);
+}
+
+html.dark .admin-accent .dash-glass {
+  box-shadow: 0 0 0 1px rgba(16, 185, 129, 0.22);
+}

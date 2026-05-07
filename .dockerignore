@@ -1,0 +1,11 @@
+**/.git
+**/.idea
+**/*.iml
+**/target
+**/node_modules
+**/dist
+books/**/*.pdf
+.gitignore
+.cursor
+**/terminals
+sql/seed/*.sql

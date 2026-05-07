@@ -1,0 +1,62 @@
+[
+  {
+    "bookId": "f0000001-0000-4000-8000-000000000001",
+    "pdf": "recherche-operationnelle.pdf",
+    "epub": "recherche-operationnelle.epub"
+  },
+  {
+    "bookId": "f0000002-0000-4000-8000-000000000002",
+    "pdf": "la-programmation-fonctionnelle-avec-haskell.pdf",
+    "epub": "la-programmation-fonctionnelle-avec-haskell.epub"
+  },
+  {
+    "bookId": "f0000003-0000-4000-8000-000000000003",
+    "pdf": "tanenbaum-bos-5e.pdf",
+    "epub": "tanenbaum-bos-5e.epub"
+  },
+  {
+    "bookId": "f0000004-0000-4000-8000-000000000004",
+    "pdf": "machine-learning-systems.pdf",
+    "epub": "machine-learning-systems.epub"
+  },
+  {
+    "bookId": "f0000005-0000-4000-8000-000000000005",
+    "pdf": "livre-apc-informatique-4eme.pdf",
+    "epub": "livre-apc-informatique-4eme.epub"
+  },
+  {
+    "bookId": "f0000006-0000-4000-8000-000000000006",
+    "pdf": "livre-apc-1ere-a.pdf",
+    "epub": "livre-apc-1ere-a.epub"
+  },
+  {
+    "bookId": "f0000007-0000-4000-8000-000000000007",
+    "pdf": "livre-apc-1ere-cd.pdf",
+    "epub": "livre-apc-1ere-cd.epub"
+  },
+  {
+    "bookId": "f0000008-0000-4000-8000-000000000008",
+    "pdf": "livre-apc-2nde-a.pdf",
+    "epub": "livre-apc-2nde-a.epub"
+  },
+  {
+    "bookId": "f0000009-0000-4000-8000-000000000009",
+    "pdf": "livre-apc-2nde-c-1.pdf",
+    "epub": "livre-apc-2nde-c-1.epub"
+  },
+  {
+    "bookId": "f000000a-0000-4000-8000-00000000000a",
+    "pdf": "livre-apc-3eme.pdf",
+    "epub": "livre-apc-3eme.epub"
+  },
+  {
+    "bookId": "f000000b-0000-4000-8000-00000000000b",
+    "pdf": "livre-apc-tle-a.pdf",
+    "epub": "livre-apc-tle-a.epub"
+  },
+  {
+    "bookId": "f000000c-0000-4000-8000-00000000000c",
+    "pdf": "livre-apc-tle-cd.pdf",
+    "epub": "livre-apc-tle-cd.epub"
+  }
+]

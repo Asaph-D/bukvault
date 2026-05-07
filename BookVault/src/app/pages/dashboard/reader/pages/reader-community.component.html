@@ -1,0 +1,311 @@
+<app-dashboard-internal-header
+  title="Hub communauté"
+  eyebrow="Rencontres · clubs · auteurs"
+  subtitle="Un salon vivant autour des livres : salons thématiques, messages directs avec les auteurs, AMA et événements. Les flux ci‑dessous sont illustratifs jusqu’au branchement temps réel."
+  [badges]="[
+    { label: 'Salons temps réel', icon: 'fas fa-comments' },
+    { label: 'Mise en relation', icon: 'fas fa-handshake' },
+    { label: 'Événements live', icon: 'fas fa-broadcast-tower' },
+  ]"
+>
+  <div actions class="flex flex-wrap gap-2">
+    <a
+      routerLink="/dashboard/reader/messages"
+      class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-sky-600 hover:bg-sky-500 text-white shadow-lg shadow-sky-900/25 transition"
+    >
+      <i class="fas fa-envelope text-xs"></i>
+      Messages
+    </a>
+    <a
+      routerLink="/dashboard/reader/events"
+      class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium border border-slate-200 dark:border-white/15 bg-white/90 dark:bg-white/5 text-slate-800 dark:text-zinc-100 hover:bg-slate-50 dark:hover:bg-white/10 transition"
+    >
+      <i class="fas fa-calendar-alt text-xs"></i>
+      Événements
+    </a>
+  </div>
+</app-dashboard-internal-header>
+
+<p *ngIf="loadError" class="text-amber-700 dark:text-amber-300 text-sm mb-4">{{ loadError }}</p>
+
+<!-- Bandeau ambiance -->
+<div
+  class="relative overflow-hidden rounded-2xl mb-8 p-6 md:p-8 border border-sky-500/20 bg-gradient-to-br from-sky-500/15 via-indigo-500/10 to-violet-600/15 dark:from-sky-900/40 dark:via-indigo-950/50 dark:to-violet-950/40"
+>
+  <div class="absolute -right-16 -top-16 h-48 w-48 rounded-full bg-sky-400/20 blur-3xl pointer-events-none"></div>
+  <div class="absolute -left-10 bottom-0 h-40 w-40 rounded-full bg-violet-500/15 blur-3xl pointer-events-none"></div>
+  <div class="relative flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+    <div>
+      <p class="text-xs font-semibold uppercase tracking-[0.2em] text-sky-700 dark:text-sky-300 mb-2">En direct</p>
+      <h2 class="text-xl md:text-2xl font-bold text-slate-900 dark:text-white font-[family-name:var(--font-display)]">
+        {{ hub?.activeReaders ?? '—' }} lecteurs actifs · {{ hub?.openSalons ?? '—' }} salons ouverts
+      </h2>
+      <p class="text-sm text-slate-600 dark:text-zinc-400 mt-2 max-w-xl">
+        {{ hub?.tagline || 'Chargement du hub…' }}
+      </p>
+    </div>
+    <div class="flex flex-wrap gap-2">
+      <span class="px-3 py-1.5 rounded-full text-xs font-medium bg-white/80 dark:bg-white/10 border border-white/40 dark:border-white/10 text-slate-800 dark:text-zinc-100">
+        <i class="fas fa-headphones mr-1 text-sky-600 dark:text-sky-400"></i> Audio clubs
+      </span>
+      <span class="px-3 py-1.5 rounded-full text-xs font-medium bg-white/80 dark:bg-white/10 border border-white/40 dark:border-white/10 text-slate-800 dark:text-zinc-100">
+        <i class="fas fa-feather-alt mr-1 text-indigo-600 dark:text-indigo-400"></i> Rencontre auteur
+      </span>
+      <span class="px-3 py-1.5 rounded-full text-xs font-medium bg-white/80 dark:bg-white/10 border border-white/40 dark:border-white/10 text-slate-800 dark:text-zinc-100">
+        <i class="fas fa-magic mr-1 text-violet-600 dark:text-violet-400"></i> Défis communauté
+      </span>
+    </div>
+  </div>
+</div>
+
+<div class="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-8">
+  <!-- Salons -->
+  <section class="xl:col-span-2 dash-glass p-6 rounded-2xl border border-slate-200/80 dark:border-white/10">
+    <div class="flex flex-wrap items-center justify-between gap-3 mb-5">
+      <h3 class="text-lg font-bold text-slate-900 dark:text-white font-[family-name:var(--font-display)]">
+        <i class="fas fa-fire text-amber-500 mr-2"></i>
+        Salons & discussions
+      </h3>
+      <button
+        type="button"
+        class="text-xs font-medium px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-zinc-200 hover:bg-slate-200 dark:hover:bg-white/15 transition"
+      >
+        Voir tout
+      </button>
+    </div>
+    <ul class="space-y-3">
+      <li *ngIf="!communityThreads.length" class="text-sm text-zinc-500 py-2">Aucun salon pour le moment.</li>
+      <li
+        *ngFor="let t of communityThreads"
+        class="group flex flex-col sm:flex-row sm:items-center gap-3 p-4 rounded-xl border border-slate-200/80 dark:border-white/10 bg-white/50 dark:bg-slate-900/30 hover:border-sky-400/40 hover:bg-sky-50/50 dark:hover:bg-sky-950/20 transition cursor-pointer"
+      >
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center gap-2 mb-1">
+            <span
+              *ngIf="t.hot"
+              class="text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded bg-rose-500/15 text-rose-700 dark:text-rose-300"
+              >Hot</span
+            >
+            <span class="text-[11px] text-sky-600 dark:text-sky-400 font-medium">{{ t.channel }}</span>
+          </div>
+          <p class="text-slate-900 dark:text-white font-medium truncate group-hover:text-sky-700 dark:group-hover:text-sky-300 transition">
+            {{ t.title }}
+          </p>
+          <p class="text-xs text-slate-500 dark:text-zinc-500 mt-1">{{ t.users }} présents · {{ t.last }}</p>
+        </div>
+        <i class="fas fa-chevron-right text-slate-300 dark:text-slate-600 group-hover:text-sky-500 transition shrink-0"></i>
+      </li>
+    </ul>
+  </section>
+
+  <!-- Compositeur rapide -->
+  <aside class="dash-glass p-6 rounded-2xl border border-slate-200/80 dark:border-white/10 flex flex-col">
+    <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-1 font-[family-name:var(--font-display)]">
+      Message flash
+    </h3>
+    <p class="text-xs text-slate-500 dark:text-zinc-500 mb-4">Vers un auteur suivi ou un club (mock UI).</p>
+    <label class="sr-only" for="comm-composer">Votre message</label>
+    <textarea
+      id="comm-composer"
+      [(ngModel)]="composerDraft"
+      rows="4"
+      placeholder="Un mot sur votre lecture, une question à un auteur…"
+      class="w-full rounded-xl border border-slate-200 dark:border-white/15 bg-white/90 dark:bg-slate-950/50 text-slate-900 dark:text-zinc-100 text-sm p-3 mb-3 focus:ring-2 focus:ring-sky-500/40 focus:border-sky-500 outline-none resize-none"
+    ></textarea>
+    <div class="flex flex-wrap gap-2 mb-4">
+      <button type="button" class="text-xs px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-zinc-300">
+        <i class="fas fa-image mr-1"></i> Média
+      </button>
+      <button type="button" class="text-xs px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-zinc-300">
+        <i class="fas fa-at mr-1"></i> Mention
+      </button>
+      <button type="button" class="text-xs px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-zinc-300">
+        <i class="fas fa-poll mr-1"></i> Sondage
+      </button>
+    </div>
+    <button
+      type="button"
+      class="mt-auto w-full py-2.5 rounded-xl text-sm font-semibold bg-gradient-to-r from-sky-600 to-indigo-600 text-white shadow-lg shadow-sky-900/30 opacity-90 hover:opacity-100 transition"
+    >
+      Envoyer (désactivé)
+    </button>
+  </aside>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+  <!-- Auteurs -->
+  <section class="dash-glass p-6 rounded-2xl border border-slate-200/80 dark:border-white/10">
+    <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-4 font-[family-name:var(--font-display)]">
+      <i class="fas fa-star text-amber-400 mr-2"></i>
+      Auteurs à suivre
+    </h3>
+    <ul class="space-y-4">
+      <li *ngFor="let a of authorsSpotlight" class="flex items-center gap-4">
+        <img
+          [src]="a.avatar"
+          (error)="onCoverErr($event)"
+          alt=""
+          class="h-14 w-14 rounded-2xl object-cover ring-2 ring-sky-500/30 shadow-md"
+        />
+        <div class="flex-1 min-w-0">
+          <p class="font-semibold text-slate-900 dark:text-white truncate">{{ a.name }}</p>
+          <p class="text-xs text-sky-600 dark:text-sky-400">{{ a.role }}</p>
+          <p class="text-xs text-slate-500 dark:text-zinc-500 truncate">{{ a.status }}</p>
+        </div>
+        <a
+          [routerLink]="['/books', a.bookId]"
+          class="shrink-0 text-xs font-semibold px-3 py-1.5 rounded-lg bg-sky-600/15 text-sky-800 dark:text-sky-200 hover:bg-sky-600/25 transition inline-flex items-center"
+        >
+          Livre
+        </a>
+        <button
+          type="button"
+          (click)="likeBook(a.bookId)"
+          class="shrink-0 h-9 w-9 rounded-xl border border-slate-200 dark:border-white/15 bg-white/80 dark:bg-white/10 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition flex items-center justify-center"
+          title="Aimer ce livre"
+        >
+          <i class="fas fa-heart text-rose-500"></i>
+        </button>
+      </li>
+    </ul>
+  </section>
+
+  <!-- Événements -->
+  <section class="dash-glass p-6 rounded-2xl border border-slate-200/80 dark:border-white/10">
+    <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-4 font-[family-name:var(--font-display)]">
+      <i class="fas fa-calendar-check text-emerald-500 mr-2"></i>
+      À venir
+    </h3>
+    <ul class="space-y-3">
+      <li *ngIf="!communityEvents.length" class="text-sm text-zinc-500 py-2">Aucun événement planifié.</li>
+      <li
+        *ngFor="let e of communityEvents"
+        class="flex items-start justify-between gap-3 p-3 rounded-xl bg-slate-50/80 dark:bg-white/5 border border-slate-200/60 dark:border-white/10"
+      >
+        <div>
+          <p class="text-sm font-medium text-slate-900 dark:text-white">{{ e.title }}</p>
+          <p class="text-xs text-slate-500 dark:text-zinc-500 mt-1">{{ e.when }}</p>
+        </div>
+        <span class="text-[10px] font-bold uppercase tracking-wide px-2 py-1 rounded bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 shrink-0">{{
+          e.tag
+        }}</span>
+      </li>
+    </ul>
+    <a routerLink="/dashboard/reader/events" class="inline-flex items-center gap-2 mt-4 text-sm font-medium text-sky-600 dark:text-sky-400 hover:underline">
+      Calendrier complet <i class="fas fa-arrow-right text-xs"></i>
+    </a>
+  </section>
+</div>
+
+<!-- Lecteurs affinitaires -->
+<section class="dash-glass p-6 rounded-2xl border border-slate-200/80 dark:border-white/10 mb-4">
+  <div class="flex flex-wrap items-end justify-between gap-4 mb-5">
+    <div>
+      <h3 class="text-lg font-bold text-slate-900 dark:text-white font-[family-name:var(--font-display)]">
+        <i class="fas fa-user-friends text-indigo-500 mr-2"></i>
+        Lecteurs comme vous
+      </h3>
+      <p class="text-sm text-slate-600 dark:text-zinc-400 mt-1">
+        Suggestions issues du community-service (profil lecteur).
+      </p>
+    </div>
+    <span class="text-xs font-medium px-3 py-1 rounded-full bg-indigo-500/15 text-indigo-800 dark:text-indigo-200">
+      Matching lecture
+    </span>
+  </div>
+  <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+    <p *ngIf="!communityBuddies.length" class="text-sm text-zinc-500 col-span-full">Pas de suggestions pour ce compte.</p>
+    <div
+      *ngFor="let b of communityBuddies"
+      class="p-4 rounded-xl border border-slate-200/80 dark:border-white/10 bg-gradient-to-br from-white/90 to-slate-50/90 dark:from-slate-900/60 dark:to-slate-950/80"
+    >
+      <div class="flex items-center justify-between mb-2">
+        <p class="font-semibold text-slate-900 dark:text-white">{{ b.name }}</p>
+        <span class="text-xs font-bold text-emerald-600 dark:text-emerald-400">{{ b.match }}%</span>
+      </div>
+      <p class="text-xs text-slate-600 dark:text-zinc-400">{{ b.reading }}</p>
+      <button type="button" class="mt-3 text-xs font-semibold text-sky-600 dark:text-sky-400 hover:underline">
+        Dire bonjour
+      </button>
+    </div>
+  </div>
+</section>
+
+<!-- Recherche membres + recommandations -->
+<section class="dash-glass p-6 rounded-2xl border border-slate-200/80 dark:border-white/10">
+  <div class="flex flex-wrap items-end justify-between gap-4 mb-5">
+    <div>
+      <h3 class="text-lg font-bold text-slate-900 dark:text-white font-[family-name:var(--font-display)]">
+        <i class="fas fa-search text-sky-500 mr-2"></i>
+        Trouver un membre
+      </h3>
+      <p class="text-sm text-slate-600 dark:text-zinc-400 mt-1">
+        Recherchez par email ou nom, puis démarrez une discussion.
+      </p>
+    </div>
+  </div>
+
+  <div class="flex flex-col sm:flex-row gap-3 mb-4">
+    <input
+      [(ngModel)]="memberQuery"
+      (ngModelChange)="searchMembers()"
+      type="text"
+      placeholder="ex: marie.essama@users.cm, Kouokam…"
+      class="flex-1 rounded-xl border border-slate-200 dark:border-white/15 bg-white/90 dark:bg-slate-950/50 text-sm px-4 py-2.5 outline-none focus:ring-2 focus:ring-sky-500/40"
+    />
+    <button
+      type="button"
+      (click)="searchMembers()"
+      class="px-4 py-2.5 rounded-xl text-sm font-semibold bg-sky-600 text-white hover:bg-sky-500 transition"
+    >
+      Rechercher
+    </button>
+  </div>
+
+  <p *ngIf="memberSearchLoading" class="text-sm text-zinc-500 mb-3">Recherche…</p>
+  <div *ngIf="!memberSearchLoading && memberResults.length" class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6">
+    <div
+      *ngFor="let m of memberResults"
+      class="p-4 rounded-xl border border-slate-200/80 dark:border-white/10 bg-white/60 dark:bg-slate-950/20 flex items-start justify-between gap-3"
+    >
+      <div class="min-w-0">
+        <p class="font-semibold text-slate-900 dark:text-white truncate">{{ m.displayName }}</p>
+        <p class="text-xs text-slate-500 dark:text-zinc-500 truncate">{{ m.email }} · {{ m.role }}</p>
+        <p *ngIf="m.bio" class="text-xs text-slate-600 dark:text-zinc-400 mt-1 line-clamp-2">{{ m.bio }}</p>
+      </div>
+      <button
+        type="button"
+        (click)="startConversation(m.id)"
+        class="shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold bg-sky-600/15 text-sky-800 dark:text-sky-200 hover:bg-sky-600/25 transition"
+      >
+        Message
+      </button>
+    </div>
+  </div>
+
+  <div class="flex items-center justify-between gap-3 mb-3">
+    <h4 class="text-sm font-semibold text-slate-900 dark:text-white">
+      Passionnés comme vous
+    </h4>
+    <span class="text-[11px] text-slate-500 dark:text-zinc-500">Basé sur vos « j’aime »</span>
+  </div>
+  <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+    <p *ngIf="!buddyRecommendations.length" class="text-sm text-zinc-500 col-span-full">
+      Aucune reco pour le moment — aimez un livre (icône cœur) pour démarrer.
+    </p>
+    <div
+      *ngFor="let r of buddyRecommendations"
+      class="p-4 rounded-xl border border-slate-200/80 dark:border-white/10 bg-gradient-to-br from-white/90 to-slate-50/90 dark:from-slate-900/60 dark:to-slate-950/80"
+    >
+      <p class="font-semibold text-slate-900 dark:text-white truncate">{{ r.displayName }}</p>
+      <p class="text-xs text-slate-500 dark:text-zinc-500 truncate">{{ r.email }}</p>
+      <button
+        type="button"
+        (click)="startConversation(r.id)"
+        class="mt-3 text-xs font-semibold text-sky-600 dark:text-sky-400 hover:underline"
+      >
+        Discuter
+      </button>
+    </div>
+  </div>
+</section>

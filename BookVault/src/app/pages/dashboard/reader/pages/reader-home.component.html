@@ -1,0 +1,264 @@
+<app-dashboard-internal-header
+  [title]="'Bienvenue, ' + displayName + ' 👋'"
+  eyebrow="Espace lecteur"
+  subtitle="Reprenez votre lecture, explorez la communauté et réglez votre confort de lecture comme dans l’app finale."
+  [badges]="[
+    { label: 'Bibliothèque synchronisée', icon: 'fas fa-cloud' },
+    { label: 'Hub communauté', icon: 'fas fa-comments' },
+  ]"
+>
+  <div actions class="flex flex-wrap gap-2">
+    <a
+      routerLink="/dashboard/reader/community"
+      class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-sky-600 hover:bg-sky-500 text-white shadow-md shadow-sky-900/20 transition"
+    >
+      <i class="fas fa-globe text-xs"></i>
+      Hub communauté
+    </a>
+    <a
+      routerLink="/dashboard/reader/discover"
+      class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium border border-slate-200 dark:border-white/15 bg-white/90 dark:bg-white/5 text-slate-800 dark:text-zinc-100 hover:bg-slate-50 dark:hover:bg-white/10 transition"
+    >
+      <i class="fas fa-compass text-xs"></i>
+      Découvrir
+    </a>
+  </div>
+</app-dashboard-internal-header>
+
+<!-- Fil communauté (aperçu) -->
+<div class="dash-glass p-5 mb-6 rounded-2xl border border-sky-500/20 bg-gradient-to-r from-sky-500/10 via-transparent to-indigo-500/10 dark:from-sky-900/30 dark:to-indigo-950/30 dash-animate-in">
+  <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+    <div>
+      <p class="text-xs font-semibold uppercase tracking-wider text-sky-700 dark:text-sky-300 mb-1">Communauté</p>
+      <p class="text-slate-900 dark:text-white font-semibold">Salons, auteurs, événements — tout au même endroit</p>
+      <p class="text-sm text-slate-600 dark:text-zinc-400 mt-1">
+        Discutez en direct, suivez des auteurs et rejoignez des clubs de lecture.
+      </p>
+    </div>
+    <div class="flex flex-wrap gap-2">
+      <a
+        routerLink="/dashboard/reader/messages"
+        class="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium bg-white/90 dark:bg-white/10 text-slate-800 dark:text-zinc-100 border border-slate-200/80 dark:border-white/10 hover:bg-white dark:hover:bg-white/15 transition"
+      >
+        <i class="fas fa-envelope text-sky-600 dark:text-sky-400"></i> Messages
+      </a>
+      <a
+        routerLink="/dashboard/reader/events"
+        class="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium bg-white/90 dark:bg-white/10 text-slate-800 dark:text-zinc-100 border border-slate-200/80 dark:border-white/10 hover:bg-white dark:hover:bg-white/15 transition"
+      >
+        <i class="fas fa-calendar text-sky-600 dark:text-sky-400"></i> Événements
+      </a>
+    </div>
+  </div>
+</div>
+
+<p *ngIf="dataLoading" class="text-slate-500 dark:text-zinc-400 text-sm mb-4">Chargement du catalogue et de votre progression…</p>
+<p *ngIf="loadError" class="text-red-600 dark:text-red-400 text-sm mb-4">{{ loadError }}</p>
+
+<!-- Reprendre -->
+<div *ngIf="resumeBook" class="dash-glass p-6 mb-6 flex flex-col md:flex-row gap-6 items-stretch">
+  <div class="w-full md:w-40 h-52 rounded-lg overflow-hidden shrink-0 bg-slate-200 dark:bg-slate-800">
+    <img
+      [src]="resumeBook.cover"
+      (error)="onCoverErr($event)"
+      class="w-full h-full object-cover"
+      alt=""
+    />
+  </div>
+  <div class="flex-1 flex flex-col justify-center">
+    <p class="text-xs font-semibold text-sky-600 dark:text-sky-400 uppercase tracking-wider">Reprendre la lecture</p>
+    <h2 class="text-xl font-bold text-slate-900 dark:text-white mt-1 font-[family-name:var(--font-display)]">{{ resumeBook.title }}</h2>
+    <p class="text-slate-600 dark:text-slate-400 text-sm">{{ resumeBook.author }}</p>
+    <div class="mt-4 max-w-md">
+      <div class="flex justify-between text-xs text-slate-500 dark:text-slate-400 mb-1">
+        <span>Progression</span><span>{{ resumeBook.progress }}%</span>
+      </div>
+      <div class="h-2 rounded-full bg-slate-200 dark:bg-slate-800">
+        <div
+          class="h-full rounded-full bg-gradient-to-r from-sky-600 to-cyan-400"
+          [style.width.%]="resumeBook.progress"
+        ></div>
+      </div>
+    </div>
+    <div class="mt-5 flex flex-wrap gap-3">
+      <a
+        [routerLink]="['/books', resumeBook.id]"
+        class="inline-flex items-center gap-2 text-white bg-sky-600 hover:bg-sky-500 text-sm font-medium px-4 py-2 rounded-lg"
+      >
+        <i class="fas fa-book-open"></i> Ouvrir le livre
+      </a>
+      <a
+        routerLink="/dashboard/reader/library"
+        class="inline-flex items-center gap-2 text-sky-700 dark:text-sky-300 hover:text-sky-900 dark:hover:text-white text-sm font-medium"
+      >
+        <i class="fas fa-layer-group"></i> Bibliothèque
+      </a>
+    </div>
+  </div>
+</div>
+<p *ngIf="!dataLoading && !resumeBook && !loadError" class="text-sm text-slate-500 dark:text-zinc-400 mb-6">
+  Aucune progression enregistrée — explorez le catalogue pour commencer une lecture.
+</p>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+  <div class="lg:col-span-1 dash-glass p-6" *ngIf="reco">
+    <h3 class="text-slate-900 dark:text-white font-bold mb-3 font-[family-name:var(--font-display)]">Recommandé pour vous</h3>
+    <div class="rounded-lg overflow-hidden border border-slate-200 dark:border-white/10">
+      <img [src]="reco.cover" (error)="onCoverErr($event)" class="w-full h-36 object-cover" alt="" />
+      <div class="p-4">
+        <p class="text-slate-900 dark:text-white font-semibold">{{ reco.title }}</p>
+        <p class="text-xs text-slate-600 dark:text-slate-400 mb-3">{{ reco.reason }}</p>
+        <a
+          [routerLink]="['/books', reco.id]"
+          class="inline-flex items-center gap-2 text-sky-600 dark:text-sky-400 text-sm hover:underline"
+          title="Ouvrir"
+        >
+          <i class="fas fa-book-open"></i>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <div
+    class="dash-glass p-6"
+    [ngClass]="reco ? 'lg:col-span-2' : 'lg:col-span-3'"
+  >
+    <div class="flex flex-wrap gap-2 mb-4">
+      <button
+        type="button"
+        *ngFor="let tab of libTabs"
+        (click)="activeLibTab = tab.id"
+        class="px-3 py-1.5 rounded-full text-xs font-medium transition"
+        [ngClass]="
+          activeLibTab === tab.id
+            ? 'bg-sky-600 text-white shadow-sm dark:shadow-sky-900/40'
+            : 'bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300'
+        "
+      >
+        {{ tab.label }}
+      </button>
+    </div>
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div *ngFor="let b of filteredLibrary" class="rounded-lg overflow-hidden border border-slate-200 dark:border-white/10 group">
+        <div class="relative h-28 bg-slate-200 dark:bg-slate-800">
+          <img
+            [src]="b.cover"
+            (error)="onCoverErr($event)"
+            class="w-full h-full object-cover group-hover:scale-105 transition duration-500"
+            alt=""
+          />
+          <div class="absolute bottom-0 inset-x-0 h-1 bg-slate-300/90 dark:bg-slate-900/80">
+            <div class="h-full bg-sky-500" [style.width.%]="b.progress"></div>
+          </div>
+        </div>
+        <p class="text-xs text-slate-700 dark:text-slate-300 p-2 truncate">{{ b.title }}</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="dash-glass p-6 mb-4">
+  <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-4">
+    <h3 class="text-lg font-bold text-slate-900 dark:text-white font-[family-name:var(--font-display)]">
+      <i class="fas fa-book-reader text-sky-600 dark:text-sky-400 mr-2"></i> Zone de lecture (aperçu Pro)
+    </h3>
+    <div class="flex flex-wrap gap-2 items-center">
+      <span class="text-xs text-slate-500 dark:text-zinc-400 mr-2">Thème</span>
+      <button
+        type="button"
+        *ngFor="let th of themes"
+        (click)="theme = th.id"
+        class="px-3 py-1 rounded-lg text-xs border transition"
+        [ngClass]="
+          theme === th.id
+            ? 'border-sky-500 bg-sky-600/25 dark:bg-sky-950/50 text-slate-900 dark:text-white ring-1 ring-sky-500/30'
+            : 'border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300'
+        "
+      >
+        {{ th.label }}
+      </button>
+    </div>
+  </div>
+
+  <div class="flex flex-wrap gap-3 mb-4 items-center text-sm">
+    <label class="text-slate-600 dark:text-slate-400 flex items-center gap-2">
+      Police
+      <select
+        [(ngModel)]="fontFamily"
+        class="bg-white dark:bg-slate-900/80 border border-slate-300 dark:border-white/15 rounded-lg px-2 py-1 text-slate-900 dark:text-white text-xs"
+      >
+        <option *ngFor="let f of fontFamilies" [value]="f">{{ f }}</option>
+      </select>
+    </label>
+    <div class="flex items-center gap-1">
+      <button type="button" (click)="adjustFont(-1)" class="px-2 py-1 rounded bg-slate-200 dark:bg-white/10 hover:bg-slate-300 dark:hover:bg-white/20 text-slate-800 dark:text-white">A−</button>
+      <span class="text-slate-600 dark:text-slate-400 w-8 text-center text-xs">{{ fontSize }}px</span>
+      <button type="button" (click)="adjustFont(1)" class="px-2 py-1 rounded bg-slate-200 dark:bg-white/10 hover:bg-slate-300 dark:hover:bg-white/20 text-slate-800 dark:text-white">A+</button>
+    </div>
+    <label class="text-slate-600 dark:text-slate-400 flex items-center gap-2">
+      Interligne
+      <select [(ngModel)]="lineHeight" class="bg-white dark:bg-slate-900/80 border border-slate-300 dark:border-white/15 rounded-lg px-2 py-1 text-slate-900 dark:text-white text-xs">
+        <option [ngValue]="1.5">Serré</option>
+        <option [ngValue]="1.65">Confort</option>
+        <option [ngValue]="1.85">Large</option>
+      </select>
+    </label>
+    <label class="text-slate-600 dark:text-slate-400 flex items-center gap-2">
+      Transition
+      <select
+        [(ngModel)]="effect"
+        (ngModelChange)="onEffectChange()"
+        class="bg-white dark:bg-slate-900/80 border border-slate-300 dark:border-white/15 rounded-lg px-2 py-1 text-slate-900 dark:text-white text-xs"
+      >
+        <option value="fade">Fondu</option>
+        <option value="slide">Glissement</option>
+        <option value="flip">Flip 3D</option>
+      </select>
+    </label>
+  </div>
+
+  <div
+    class="rounded-xl overflow-hidden border border-slate-200 dark:border-white/10 min-h-[220px]"
+    [ngClass]="{
+      'reader-theme-light': theme === 'light',
+      'reader-theme-dark': theme === 'dark',
+      'reader-theme-sepia': theme === 'sepia'
+    }"
+  >
+    <div class="px-4 py-2 border-b border-black/10 flex justify-between text-xs opacity-80">
+      <span>Chapitre {{ previewChapter }} / {{ previewTotal }}</span>
+      <span>{{ theme | titlecase }} · {{ fontFamily }}</span>
+    </div>
+    <div
+      class="p-6 md:p-8 transition-all duration-300"
+      [ngClass]="animClass"
+      [style.fontSize.px]="fontSize"
+      [style.fontFamily]="fontFamily + ', Georgia, serif'"
+      [style.lineHeight]="lineHeight"
+    >
+      <p class="font-semibold mb-4 opacity-90">Chapitre {{ previewChapter }} : L'éveil</p>
+      <p class="opacity-95">
+        {{ previewParagraph }}
+      </p>
+    </div>
+    <div class="px-6 pb-4 flex justify-between items-center">
+      <button
+        type="button"
+        (click)="prevChapter()"
+        class="text-sm px-4 py-2 rounded-lg bg-black/10 hover:bg-black/20 text-slate-900 dark:text-inherit"
+      >
+        <i class="fas fa-chevron-left mr-1"></i> Précédent
+      </button>
+      <div class="h-1 flex-1 mx-4 rounded-full bg-black/10 overflow-hidden max-w-xs">
+        <div class="h-full bg-sky-600 rounded-full transition-all" [style.width.%]="(previewChapter / previewTotal) * 100"></div>
+      </div>
+      <button
+        type="button"
+        (click)="nextChapter()"
+        class="text-sm px-4 py-2 rounded-lg bg-black/10 hover:bg-black/20 text-slate-900 dark:text-inherit"
+      >
+        Suivant <i class="fas fa-chevron-right ml-1"></i>
+      </button>
+    </div>
+  </div>
+</div>

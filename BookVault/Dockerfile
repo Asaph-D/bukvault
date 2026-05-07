@@ -1,0 +1,11 @@
+# Build context: répertoire BookVault
+FROM node:20-alpine AS build
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm install
+COPY . .
+RUN npx ng build demo --configuration production
+
+FROM nginx:1.27-alpine
+COPY nginx/default.conf /etc/nginx/conf.d/default.conf
+COPY --from=build /app/dist/demo/browser /usr/share/nginx/html

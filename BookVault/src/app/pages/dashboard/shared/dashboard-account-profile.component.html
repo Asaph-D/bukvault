@@ -1,0 +1,209 @@
+<app-dashboard-internal-header
+  [eyebrow]="headerEyebrow"
+  [title]="headerTitle"
+  [subtitle]="headerSubtitle"
+/>
+
+<div *ngIf="loading" class="flex items-center gap-3 text-slate-600 dark:text-zinc-400 text-sm">
+  <i class="fas fa-spinner fa-spin"></i> Chargement…
+</div>
+
+<p *ngIf="loadError" class="text-sm text-red-600 dark:text-red-400 mb-6">{{ loadError }}</p>
+
+<div *ngIf="!loading && !loadError" class="space-y-10 max-w-4xl">
+  <section class="rounded-2xl border border-slate-200/90 dark:border-white/10 bg-white/90 dark:bg-slate-900/40 p-6 shadow-sm">
+    <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
+      <div>
+        <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Profil</h2>
+        <p class="text-sm text-slate-600 dark:text-zinc-400 mt-1">{{ profileSectionHint }}</p>
+      </div>
+      <p *ngIf="profileSnapshot?.email" class="text-sm text-zinc-500 dark:text-zinc-400 shrink-0">
+        <span class="font-medium text-slate-700 dark:text-zinc-300">E-mail</span><br />
+        {{ profileSnapshot!.email }}
+      </p>
+    </div>
+
+    <form [formGroup]="profileForm" class="space-y-4" (ngSubmit)="saveProfile()">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs font-medium text-zinc-600 dark:text-zinc-400 mb-1">Prénom</label>
+          <input
+            formControlName="firstName"
+            class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-zinc-950 px-3 py-2 text-sm text-slate-900 dark:text-slate-100"
+          />
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-zinc-600 dark:text-zinc-400 mb-1">Nom</label>
+          <input
+            formControlName="lastName"
+            class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-zinc-950 px-3 py-2 text-sm text-slate-900 dark:text-slate-100"
+          />
+        </div>
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-zinc-600 dark:text-zinc-400 mb-1">Bio</label>
+        <textarea
+          formControlName="bio"
+          rows="3"
+          placeholder="Quelques lignes vous présentent aux autres membres…"
+          class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-zinc-950 px-3 py-2 text-sm text-slate-900 dark:text-slate-100"
+        ></textarea>
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-zinc-600 dark:text-zinc-400 mb-1">Photo de profil (lien)</label>
+        <input
+          formControlName="avatarUrl"
+          placeholder="Adresse d’une image sur le web"
+          class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-zinc-950 px-3 py-2 text-sm text-slate-900 dark:text-slate-100"
+        />
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 items-center">
+        <div>
+          <label class="block text-xs font-medium text-zinc-600 dark:text-zinc-400 mb-1">Langue préférée</label>
+          <select
+            formControlName="preferredLanguage"
+            class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-zinc-950 px-3 py-2 text-sm text-slate-900 dark:text-slate-100"
+          >
+            <option value="fr">Français</option>
+            <option value="en">English</option>
+          </select>
+        </div>
+        <label class="inline-flex items-center gap-2 mt-6 sm:mt-8 text-sm text-slate-800 dark:text-zinc-200 cursor-pointer">
+          <input type="checkbox" formControlName="newsletter" class="accent-indigo-600 rounded" />
+          Recevoir la newsletter BookVault (nouveautés et offres)
+        </label>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-3 pt-2">
+        <button
+          type="submit"
+          [disabled]="profileForm.invalid || saveProfileBusy"
+          class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-medium hover:brightness-110 disabled:opacity-50"
+        >
+          <i *ngIf="saveProfileBusy" class="fas fa-spinner fa-spin"></i>
+          Enregistrer
+        </button>
+        <span *ngIf="saveProfileMsg" class="text-sm text-emerald-700 dark:text-emerald-400">{{ saveProfileMsg }}</span>
+      </div>
+    </form>
+  </section>
+
+  <section class="rounded-2xl border border-slate-200/90 dark:border-white/10 bg-white/90 dark:bg-slate-900/40 p-6 shadow-sm">
+    <h2 class="text-lg font-semibold text-slate-900 dark:text-white mb-1">Affichage & confort</h2>
+    <p class="text-sm text-slate-600 dark:text-zinc-400 mb-6">
+      Ces choix sont enregistrés sur votre compte et retrouvés à la prochaine connexion.
+    </p>
+
+    <form [formGroup]="settingsForm" class="space-y-6" (ngSubmit)="saveSettings()">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <label class="block text-xs font-medium text-zinc-600 dark:text-zinc-400 mb-1">Thème</label>
+          <select formControlName="theme" class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-zinc-950 px-3 py-2 text-sm">
+            <option value="LIGHT">Clair</option>
+            <option value="DARK">Sombre</option>
+            <option value="SYSTEM">Comme sur l’appareil</option>
+          </select>
+          <p class="text-[11px] text-zinc-500 mt-1">S’applique aussi au bandeau principal du site lorsque vous êtes connecté.</p>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-zinc-600 dark:text-zinc-400 mb-1">Espacement des listes</label>
+          <select formControlName="uiDensity" class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-zinc-950 px-3 py-2 text-sm">
+            <option value="COMFORTABLE">Aéré</option>
+            <option value="COMPACT">Compact</option>
+          </select>
+          <p class="text-[11px] text-zinc-500 mt-1">Menus et listes du tableau de bord.</p>
+        </div>
+        <div [class.md:col-span-2]="variant !== 'reader'">
+          <label class="block text-xs font-medium text-zinc-600 dark:text-zinc-400 mb-1">Langue d’interface (facultatif)</label>
+          <input
+            formControlName="localeOverride"
+            placeholder="Laisser vide pour suivre la langue du profil ou du navigateur"
+            class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-zinc-950 px-3 py-2 text-sm"
+          />
+        </div>
+        <div *ngIf="variant === 'reader'">
+          <label class="block text-xs font-medium text-zinc-600 dark:text-zinc-400 mb-1">Première section sur la vue d’ensemble</label>
+          <select formControlName="readerHomeDefault" class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-zinc-950 px-3 py-2 text-sm">
+            <option value="OVERVIEW">Vue d’ensemble</option>
+            <option value="CONTINUE">Reprendre la lecture</option>
+            <option value="DISCOVER">Découvrir</option>
+          </select>
+          <p class="text-[11px] text-zinc-500 mt-1">Ce que vous voyez en premier sur la page d’accueil lecteur.</p>
+        </div>
+      </div>
+
+      <div class="border-t border-slate-200 dark:border-white/10 pt-6">
+        <h3 class="text-sm font-semibold text-slate-900 dark:text-white mb-3">Notifications</h3>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <label class="flex items-center gap-2 text-sm text-slate-800 dark:text-zinc-200 cursor-pointer">
+            <input type="checkbox" formControlName="notifyOrders" class="accent-indigo-600 rounded" />
+            Commandes & livraisons
+          </label>
+          <label class="flex items-center gap-2 text-sm text-slate-800 dark:text-zinc-200 cursor-pointer">
+            <input type="checkbox" formControlName="notifyPromotions" class="accent-indigo-600 rounded" />
+            Promotions & bons plans
+          </label>
+          <label class="flex items-center gap-2 text-sm text-slate-800 dark:text-zinc-200 cursor-pointer">
+            <input type="checkbox" formControlName="notifySocial" class="accent-indigo-600 rounded" />
+            Communauté & commentaires
+          </label>
+        </div>
+        <p class="text-[11px] text-zinc-500 mt-2">Indiquez les types d’alertes qui vous intéressent.</p>
+      </div>
+
+      <div class="border-t border-slate-200 dark:border-white/10 pt-6">
+        <h3 class="text-sm font-semibold text-slate-900 dark:text-white mb-3">Communauté & messages</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-medium text-zinc-600 dark:text-zinc-400 mb-1">Visibilité du profil</label>
+            <select formControlName="communityVisibility" class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-zinc-950 px-3 py-2 text-sm">
+              <option value="PUBLIC">Tout le monde</option>
+              <option value="MEMBERS_ONLY">Membres BookVault</option>
+              <option value="PRIVATE">Profil discret</option>
+            </select>
+          </div>
+          <label class="flex items-center gap-2 mt-6 md:mt-8 text-sm text-slate-800 dark:text-zinc-200 cursor-pointer">
+            <input type="checkbox" formControlName="allowDirectMessages" class="accent-indigo-600 rounded" />
+            Accepter les messages privés
+          </label>
+        </div>
+      </div>
+
+      <div class="border-t border-slate-200 dark:border-white/10 pt-6">
+        <h3 class="text-sm font-semibold text-slate-900 dark:text-white mb-3">Lecture & accessibilité</h3>
+        <div class="flex flex-col sm:flex-row gap-4 sm:items-center">
+          <label class="inline-flex items-center gap-2 text-sm text-slate-800 dark:text-zinc-200 cursor-pointer">
+            <input type="checkbox" formControlName="libraryShowProgress" class="accent-indigo-600 rounded" />
+            Afficher la progression dans ma bibliothèque
+          </label>
+          <label class="inline-flex items-center gap-2 text-sm text-slate-800 dark:text-zinc-200 cursor-pointer">
+            <input type="checkbox" formControlName="reduceMotion" class="accent-indigo-600 rounded" />
+            Réduire les animations
+          </label>
+        </div>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-3 pt-2">
+        <button
+          type="submit"
+          [disabled]="settingsForm.invalid || saveSettingsBusy"
+          class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-sky-700 text-white text-sm font-medium hover:brightness-110 disabled:opacity-50"
+        >
+          <i *ngIf="saveSettingsBusy" class="fas fa-spinner fa-spin"></i>
+          Enregistrer les préférences
+        </button>
+        <span *ngIf="saveSettingsMsg" class="text-sm text-emerald-700 dark:text-emerald-400">{{ saveSettingsMsg }}</span>
+      </div>
+    </form>
+  </section>
+
+  <section class="rounded-2xl border border-dashed border-slate-300 dark:border-white/15 bg-slate-50/80 dark:bg-white/[0.03] p-6">
+    <h2 class="text-sm font-semibold text-slate-800 dark:text-zinc-200 mb-3">Aller plus loin</h2>
+    <ul class="text-sm space-y-3">
+      <li *ngFor="let item of moreLinks">
+        <a [routerLink]="item.link" class="text-indigo-700 dark:text-indigo-400 font-medium hover:underline">{{ item.label }}</a>
+        <span class="text-zinc-600 dark:text-zinc-400"> — {{ item.hint }}</span>
+      </li>
+    </ul>
+  </section>
+</div>
