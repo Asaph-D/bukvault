@@ -1,29 +1,29 @@
 <!-- Vue immersive lecture + audio (données livre via API) -->
-<div class="reader-shell flex flex-col lg:flex-row min-h-screen" *ngIf="!loading && book">
+<div class="flex flex-col min-h-screen reader-shell lg:flex-row" *ngIf="book">
   <!-- Colonne 1 : navigation icônes -->
   <nav
     class="flex lg:flex-col items-center justify-around lg:justify-start gap-1 lg:gap-3 px-2 py-3 lg:py-6 border-b lg:border-b-0 lg:border-r border-slate-200 dark:border-white/10 bg-zinc-100 dark:bg-[#12121a] lg:w-16 shrink-0 z-30"
   >
     <a routerLink="/" class="p-2.5 rounded-xl hover:bg-slate-200 dark:hover:bg-white/10 text-zinc-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white transition" title="Accueil">
-      <img src="assets/branding/bookvaulticon.png" alt="" class="h-8 w-8 rounded-lg object-contain" />
+      <img src="assets/branding/bookvaulticon.png" alt="" class="object-contain w-8 h-8 rounded-lg" />
     </a>
     <a routerLink="/dashboard" class="p-2.5 rounded-xl hover:bg-slate-200 dark:hover:bg-white/10 text-zinc-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white" title="Mon espace">
-      <i class="fas fa-home text-lg"></i>
+      <i class="text-lg fas fa-home"></i>
     </a>
     <a routerLink="/books" class="p-2.5 rounded-xl bg-indigo-500/20 text-indigo-600 dark:text-indigo-400" title="Bibliothèque">
-      <i class="fas fa-book text-lg"></i>
+      <i class="text-lg fas fa-book"></i>
     </a>
     <a routerLink="/categories" class="p-2.5 rounded-xl hover:bg-slate-200 dark:hover:bg-white/10 text-zinc-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white" title="Découvrir">
-      <i class="fas fa-compass text-lg"></i>
+      <i class="text-lg fas fa-compass"></i>
     </a>
     <button type="button" class="p-2.5 rounded-xl hover:bg-slate-200 dark:hover:bg-white/10 text-zinc-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white hidden lg:block" title="Citations">
-      <i class="fas fa-quote-right text-lg"></i>
+      <i class="text-lg fas fa-quote-right"></i>
     </button>
     <button type="button" class="p-2.5 rounded-xl hover:bg-slate-200 dark:hover:bg-white/10 text-zinc-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white hidden lg:block" title="Notes">
-      <i class="fas fa-sticky-note text-lg"></i>
+      <i class="text-lg fas fa-sticky-note"></i>
     </button>
     <a routerLink="/cart" class="p-2.5 rounded-xl hover:bg-slate-200 dark:hover:bg-white/10 text-zinc-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white lg:mt-auto" title="Panier">
-      <i class="fas fa-shopping-cart text-lg"></i>
+      <i class="text-lg fas fa-shopping-cart"></i>
     </a>
   </nav>
 
@@ -34,37 +34,37 @@
     <div class="p-4 border-b border-slate-200 dark:border-white/10">
       <div class="flex items-center justify-between mb-3">
         <h2 class="text-sm font-semibold text-slate-900 dark:text-white">Bibliothèque</h2>
-        <span class="text-xs text-zinc-500"><i class="fas fa-search mr-2"></i></span>
+        <span class="text-xs text-zinc-500"><i class="mr-2 fas fa-search"></i></span>
       </div>
       <div class="flex flex-wrap gap-2 text-[11px]">
-        <span class="px-2 py-1 rounded-full bg-indigo-500/20 text-indigo-400">En cours · {{ readingCount }}</span>
+        <span class="px-2 py-1 text-indigo-400 rounded-full bg-indigo-500/20">En cours · {{ readingCount }}</span>
         <span class="px-2 py-1 rounded-full bg-slate-100 dark:bg-white/5 text-zinc-600 dark:text-zinc-400">Favoris</span>
       </div>
     </div>
-    <div class="p-4 flex-1 min-h-0 flex flex-col">
+    <div class="flex flex-col flex-1 min-h-0 p-4">
       <p class="text-[10px] uppercase tracking-wider text-zinc-500 mb-2">Sélection catalogue</p>
-      <div class="flex-1 min-h-0 overflow-y-auto pr-1">
+      <div class="flex-1 min-h-0 pr-1 overflow-y-auto">
         <ul class="space-y-2">
-          <li *ngFor="let b of libraryBooks">
+          <li *ngFor="let b of libraryBooks; trackBy: trackByBook">
             <a
               [routerLink]="['/books', b.id]"
-              class="flex gap-2 p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-white/5 transition items-center"
-              [ngClass]="b.id === book.id ? 'bg-slate-200 hover:bg-slate-200 dark:hover:bg-white/3' : ''"
+              class="flex items-center gap-2 p-2 transition rounded-lg hover:bg-slate-100 dark:hover:bg-white/5"
+              [ngClass]="b.id === book.id ? 'bg-slate-200 hover:bg-slate-200 dark:hover:bg-white/3 dark:bg-white/5' : ''"
             >
-              <img [src]="b.coverImage" class="w-10 h-14 object-cover rounded shrink-0" alt="" />
-              <div class="min-w-0 flex-1">
-                <p class="text-xs font-medium text-slate-900 dark:text-white truncate">{{ b.title }}</p>
+              <img [src]="b.coverImage" class="object-cover w-10 rounded h-14 shrink-0" alt="" />
+              <div class="flex-1 min-w-0">
+                <p class="text-xs font-medium truncate text-slate-900 dark:text-white">{{ b.title }}</p>
                 <p class="text-[10px] text-zinc-500 truncate">{{ b.author }}</p>
               </div>
             </a>
           </li>
         </ul>
       </div>
-      <div class="mt-4 p-4 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 shrink-0">
+      <div class="p-4 mt-4 border rounded-xl bg-slate-50 dark:bg-white/5 border-slate-200 dark:border-white/10 shrink-0">
         <p class="text-[10px] uppercase text-zinc-500 mb-2">Objectif annuel</p>
         <div class="flex items-center gap-3">
           <div class="relative w-14 h-14">
-            <svg class="w-14 h-14 -rotate-90" viewBox="0 0 36 36">
+            <svg class="-rotate-90 w-14 h-14" viewBox="0 0 36 36">
               <circle cx="18" cy="18" r="15.9" fill="none" stroke="#27272a" stroke-width="3"></circle>
               <circle
                 cx="18"
@@ -81,7 +81,7 @@
           </div>
           <div class="text-[11px] text-zinc-400">
             <p>{{ annualGoal }}</p>
-            <p class="text-zinc-500 mt-1">{{ readingHours }}</p>
+            <p class="mt-1 text-zinc-500">{{ readingHours }}</p>
           </div>
         </div>
       </div>
@@ -89,7 +89,7 @@
   </aside>
 
   <!-- Centre : lecteur -->
-  <section class="flex-1 flex flex-col min-w-0 min-h-0">
+  <section class="flex flex-col flex-1 min-w-0 min-h-0">
     <!-- Barre titre -->
     <header
       class="flex items-center justify-between gap-3 px-4 py-3 border-b border-slate-200 dark:border-white/10 bg-white/95 dark:bg-[#12121a]/95 backdrop-blur shrink-0 z-20"
@@ -97,14 +97,14 @@
       <button
         type="button"
         (click)="goBack()"
-        class="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white transition shrink-0"
+        class="flex items-center gap-2 text-sm transition text-zinc-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white shrink-0"
       >
         <i class="fas fa-arrow-left"></i>
         <span class="hidden sm:inline">Retour</span>
       </button>
-      <div class="text-center min-w-0 flex-1 px-2">
-        <h1 class="text-base sm:text-lg font-semibold text-slate-900 dark:text-white truncate reader-serif">{{ book.title }}</h1>
-        <p class="text-xs text-zinc-500 truncate">{{ book.author }} · {{ book.category }}</p>
+      <div class="flex-1 min-w-0 px-2 text-center">
+        <h1 class="text-base font-semibold truncate sm:text-lg text-slate-900 dark:text-white reader-serif">{{ book.title }}</h1>
+        <p class="text-xs truncate text-zinc-500">{{ book.author }} · {{ book.category }}</p>
       </div>
         <div class="flex items-center gap-2 shrink-0">
         <button
@@ -121,7 +121,7 @@
           type="button"
           (click)="addToCart()"
           [disabled]="cartBusy"
-          class="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-white/10 text-indigo-600 dark:text-indigo-400"
+          class="p-2 text-indigo-600 rounded-lg hover:bg-slate-100 dark:hover:bg-white/10 dark:text-indigo-400"
           title="Panier"
         >
           <i *ngIf="cartBusy" class="fas fa-spinner fa-spin"></i>
@@ -156,7 +156,7 @@
     </header>
 
     <!-- Zone centrale scroll -->
-    <div class="flex-1 flex min-h-0">
+    <div class="flex flex-1 min-h-0">
       <!-- Barre outils gauche (texte) -->
       <div
         #leftToolbar
@@ -165,7 +165,7 @@
         <button
           type="button"
           (click)="toggleLeftTool('font')"
-          class="p-2 rounded-lg transition text-zinc-600 dark:text-zinc-400"
+          class="p-2 transition rounded-lg text-zinc-600 dark:text-zinc-400"
           [ngClass]="leftToolPanel === 'font' ? 'bg-indigo-500/25 text-indigo-600 dark:text-indigo-300' : 'hover:bg-slate-200 dark:hover:bg-white/10'"
           title="Taille du texte"
         >
@@ -174,7 +174,7 @@
         <button
           type="button"
           (click)="toggleLeftTool('toc')"
-          class="p-2 rounded-lg transition text-zinc-600 dark:text-zinc-400"
+          class="p-2 transition rounded-lg text-zinc-600 dark:text-zinc-400"
           [ngClass]="leftToolPanel === 'toc' ? 'bg-indigo-500/25 text-indigo-600 dark:text-indigo-300' : 'hover:bg-slate-200 dark:hover:bg-white/10'"
           title="Sommaire"
         >
@@ -183,7 +183,7 @@
         <button
           type="button"
           (click)="toggleLeftTool('search')"
-          class="p-2 rounded-lg transition text-zinc-600 dark:text-zinc-400"
+          class="p-2 transition rounded-lg text-zinc-600 dark:text-zinc-400"
           [ngClass]="leftToolPanel === 'search' ? 'bg-indigo-500/25 text-indigo-600 dark:text-indigo-300' : 'hover:bg-slate-200 dark:hover:bg-white/10'"
           title="Rechercher dans le texte"
         >
@@ -192,7 +192,7 @@
         <button
           type="button"
           (click)="cycleReaderTheme()"
-          class="p-2 rounded-lg hover:bg-slate-200 dark:hover:bg-white/10 text-zinc-600 dark:text-zinc-400 transition"
+          class="p-2 transition rounded-lg hover:bg-slate-200 dark:hover:bg-white/10 text-zinc-600 dark:text-zinc-400"
           title="Thème de lecture"
         >
           <i class="fas" [class.fa-moon]="readerTheme === 'nuit' || readerTheme === 'foret'" [class.fa-sun]="readerTheme === 'aube'" [class.fa-adjust]="readerTheme === 'sepia'"></i>
@@ -200,7 +200,7 @@
         <button
           type="button"
           (click)="toggleSpreadView()"
-          class="p-2 rounded-lg transition text-zinc-600 dark:text-zinc-400"
+          class="p-2 transition rounded-lg text-zinc-600 dark:text-zinc-400"
           [ngClass]="spreadView ? 'bg-amber-500/25 text-amber-600 dark:text-amber-300' : 'hover:bg-slate-200 dark:hover:bg-white/10'"
           title="Vue lecture (colonnes / double page)"
         >
@@ -209,7 +209,7 @@
         <button
           type="button"
           (click)="togglePageFlipMode()"
-          class="p-2 rounded-lg transition text-zinc-600 dark:text-zinc-400"
+          class="p-2 transition rounded-lg text-zinc-600 dark:text-zinc-400"
           [disabled]="!isPdfManuscript || readMode !== 'manuscript'"
           [ngClass]="pageFlipMode ? 'bg-indigo-500/25 text-indigo-600 dark:text-indigo-300' : 'hover:bg-slate-200 dark:hover:bg-white/10'"
           title="Feuilletage (page turning)"
@@ -225,9 +225,9 @@
         >
           <p class="text-[10px] uppercase text-zinc-500 mb-2">Taille</p>
           <div class="flex items-center gap-2">
-            <button type="button" (click)="zoomFlip(-1)" class="px-2 py-1 rounded-lg bg-slate-200 dark:bg-white/10 text-xs">A−</button>
-            <span class="text-xs text-center flex-1 text-slate-800 dark:text-white">{{ fontSize }} px</span>
-            <button type="button" (click)="zoomFlip(1)" class="px-2 py-1 rounded-lg bg-slate-200 dark:bg-white/10 text-xs">A+</button>
+            <button type="button" (click)="zoomFlip(-1)" class="px-2 py-1 text-xs rounded-lg bg-slate-200 dark:bg-white/10">A−</button>
+            <span class="flex-1 text-xs text-center text-slate-800 dark:text-white">{{ fontSize }} px</span>
+            <button type="button" (click)="zoomFlip(1)" class="px-2 py-1 text-xs rounded-lg bg-slate-200 dark:bg-white/10">A+</button>
           </div>
           <p class="text-[10px] text-zinc-500 mt-2">Police et interligne dans le panneau droit (grand écran).</p>
         </div>
@@ -244,10 +244,10 @@
               <button
                 type="button"
                 (click)="selectTocChapter(t.index)"
-                class="w-full text-left text-xs px-2 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-white/10 transition"
+                class="w-full px-2 py-2 text-xs text-left transition rounded-lg hover:bg-slate-100 dark:hover:bg-white/10"
                 [ngClass]="chapterIndex === t.index ? 'bg-indigo-500/15 text-indigo-600 dark:text-indigo-300' : 'text-slate-700 dark:text-zinc-300'"
               >
-                <span class="text-zinc-500 mr-2">{{ t.index }}.</span>{{ t.title }}
+                <span class="mr-2 text-zinc-500">{{ t.index }}.</span>{{ t.title }}
               </button>
             </li>
           </ul>
@@ -264,7 +264,7 @@
             type="search"
             [(ngModel)]="searchQuery"
             placeholder="Mot dans le chapitre…"
-            class="w-full text-xs rounded-lg border border-slate-300 dark:border-white/15 bg-white dark:bg-zinc-900 px-2 py-2 text-slate-900 dark:text-white placeholder-zinc-500"
+            class="w-full px-2 py-2 text-xs bg-white border rounded-lg border-slate-300 dark:border-white/15 dark:bg-zinc-900 text-slate-900 dark:text-white placeholder-zinc-500"
           />
           <button type="button" (click)="clearSearch()" class="mt-2 text-[11px] text-indigo-600 dark:text-indigo-400 hover:underline">
             Effacer
@@ -272,14 +272,14 @@
         </div>
       </div>
 
-      <div class="flex-1 overflow-y-auto relative">
-        <div *ngIf="manuscriptError" class="max-w-3xl mx-auto px-4 sm:px-8 pt-6">
-          <div class="rounded-xl border border-rose-200 dark:border-rose-500/20 bg-rose-50 dark:bg-rose-500/10 text-rose-800 dark:text-rose-200 text-sm px-4 py-3">
+      <div class="relative flex-1 overflow-y-auto">
+        <div *ngIf="manuscriptError" class="max-w-3xl px-4 pt-6 mx-auto sm:px-8">
+          <div class="px-4 py-3 text-sm border rounded-xl border-rose-200 dark:border-rose-500/20 bg-rose-50 dark:bg-rose-500/10 text-rose-800 dark:text-rose-200">
             {{ manuscriptError }}
           </div>
         </div>
         <div
-          class="mx-auto px-4 sm:px-8 py-8 min-h-full transition-all duration-300 reader-flip-host"
+          class="min-h-full px-4 py-8 mx-auto transition-all duration-300 sm:px-8 reader-flip-host"
           [class.max-w-3xl]="!spreadView || readMode === 'excerpt'"
           [class.max-w-6xl]="spreadView && readMode === 'manuscript'"
           [class.reader-flip-active]="pageAnim === 'cube' && flipActive"
@@ -293,18 +293,18 @@
         >
           <div
             *ngIf="readMode === 'manuscript' && manuscriptUrl && isPdfManuscript && !pageFlipMode"
-            class="rounded-xl overflow-hidden border border-slate-200 dark:border-white/10 bg-white"
+            class="overflow-hidden bg-white border rounded-xl border-slate-200 dark:border-white/10"
           >
-            <div class="px-4 py-2 text-xs text-slate-700 bg-slate-50 border-b border-slate-200 flex items-center justify-between flex-wrap gap-2">
+            <div class="flex flex-wrap items-center justify-between gap-2 px-4 py-2 text-xs border-b text-slate-700 bg-slate-50 border-slate-200">
               <span
-                ><i class="fas fa-file-pdf mr-2 text-rose-600"></i>Manuscrit (PDF)<span *ngIf="spreadView" class="text-zinc-500 font-normal ml-2">· deux pages</span></span
+                ><i class="mr-2 fas fa-file-pdf text-rose-600"></i>Manuscrit (PDF)<span *ngIf="spreadView" class="ml-2 font-normal text-zinc-500">· deux pages</span></span
               >
-              <span class="text-zinc-500" *ngIf="manuscriptBusy"><i class="fas fa-spinner fa-spin mr-2"></i>Chargement…</span>
+              <span class="text-zinc-500" *ngIf="manuscriptBusy"><i class="mr-2 fas fa-spinner fa-spin"></i>Chargement…</span>
             </div>
             <div *ngIf="!spreadView" class="w-full">
               <iframe [src]="pdfFrameSrc('single')" class="w-full h-[78vh] border-0" title="PDF"></iframe>
             </div>
-            <div *ngIf="spreadView" class="grid grid-cols-1 md:grid-cols-2 gap-1">
+            <div *ngIf="spreadView" class="grid grid-cols-1 gap-1 md:grid-cols-2">
               <iframe [src]="pdfFrameSrc('left')" class="w-full h-[78vh] min-h-[40vh] border-0" title="PDF gauche"></iframe>
               <iframe [src]="pdfFrameSrc('right')" class="w-full h-[78vh] min-h-[40vh] border-0" title="PDF droite"></iframe>
             </div>
@@ -312,7 +312,7 @@
 
           <div
             *ngIf="readMode === 'manuscript' && manuscriptUrl && isPdfManuscript && pageFlipMode && manuscriptObjectUrlRaw"
-            class="rounded-xl overflow-hidden border border-slate-200 dark:border-white/10 bg-white"
+            class="overflow-hidden bg-white border rounded-xl border-slate-200 dark:border-white/10"
           >
             <app-pdf-page-flip
               class="block"
@@ -328,19 +328,19 @@
 
           <div *ngIf="readMode === 'manuscript' && !manuscriptUrl" class="rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#14141c] px-4 py-4">
             <div class="flex items-start gap-3">
-              <div class="w-10 h-10 rounded-xl bg-indigo-500/15 text-indigo-500 flex items-center justify-center shrink-0">
+              <div class="flex items-center justify-center w-10 h-10 text-indigo-500 rounded-xl bg-indigo-500/15 shrink-0">
                 <i class="fas fa-file-arrow-down"></i>
               </div>
-              <div class="min-w-0 flex-1">
+              <div class="flex-1 min-w-0">
                 <p class="text-sm font-semibold text-slate-900 dark:text-white">Manuscrit non affichable</p>
-                <p class="text-xs text-zinc-500 mt-1">
+                <p class="mt-1 text-xs text-zinc-500">
                   {{ manuscriptError || "Le format n'est pas lisible dans le lecteur intégré." }}
                 </p>
                 <a
                   *ngIf="manuscriptDownloadUrl"
                   [href]="manuscriptDownloadUrl"
                   download
-                  class="inline-flex items-center gap-2 mt-3 px-3 py-2 rounded-lg bg-indigo-600 text-white text-xs hover:brightness-110 transition"
+                  class="inline-flex items-center gap-2 px-3 py-2 mt-3 text-xs text-white transition bg-indigo-600 rounded-lg hover:brightness-110"
                 >
                   <i class="fas fa-download"></i>
                   Télécharger
@@ -367,17 +367,17 @@
               </p>
             </div>
           </div>
-          <div class="mt-10 rounded-xl overflow-hidden border border-slate-200 dark:border-white/10 opacity-90">
+          <div class="mt-10 overflow-hidden border rounded-xl border-slate-200 dark:border-white/10 opacity-90">
             <img [src]="book.coverImage" class="w-full max-h-56 object-cover grayscale-[30%]" alt="" />
           </div>
         </div>
 
         <!-- Notes flottantes droite (desktop) -->
-        <div class="hidden xl:flex flex-col gap-3 absolute right-4 top-24">
-          <button type="button" class="note-badge w-10 h-10 rounded-full flex items-center justify-center text-white shadow-lg">
+        <div class="absolute flex-col hidden gap-3 xl:flex right-4 top-24">
+          <button type="button" class="flex items-center justify-center w-10 h-10 text-white rounded-full shadow-lg note-badge">
             <span class="text-xs font-bold">{{ notesCount }}</span>
           </button>
-          <button type="button" class="w-10 h-10 rounded-full bg-amber-500/90 flex items-center justify-center text-white shadow-lg">
+          <button type="button" class="flex items-center justify-center w-10 h-10 text-white rounded-full shadow-lg bg-amber-500/90">
             <span class="text-xs font-bold">{{ bookmarksCount }}</span>
           </button>
         </div>
@@ -385,10 +385,10 @@
     </div>
 
     <!-- Lecteur audio bas -->
-    <div *ngIf="pageFlipMode" class="player-bar px-4 py-3 shrink-0">
-      <div class="flex flex-col sm:flex-row sm:items-center gap-3 max-w-4xl mx-auto">
+    <div *ngIf="pageFlipMode" class="px-4 py-3 player-bar shrink-0">
+      <div class="flex flex-col max-w-4xl gap-3 mx-auto sm:flex-row sm:items-center">
         <div class="flex-1 min-w-0 text-xs text-zinc-600 dark:text-zinc-400">
-          <p class="text-slate-800 dark:text-white font-medium truncate" [title]="book.title">{{ book.title }}</p>
+          <p class="font-medium truncate text-slate-800 dark:text-white" [title]="book.title">{{ book.title }}</p>
           <p class="mt-0.5 truncate">
             <span>{{ chapterShort }}</span>
             <span *ngIf="!pageFlipMode && currentChapterTitle" class="text-zinc-500"> · {{ currentChapterTitle }}</span>
@@ -401,24 +401,24 @@
             {{ remainingLabel }} · audio sur l’extrait affiché · {{ book.reviewCount }} avis · note {{ (book.rating | number: '1.1-1') }}/5
           </p>
         </div>
-        <div class="flex items-center gap-3 justify-center flex-1">
-          <button type="button" class="text-zinc-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white p-2" (click)="seek(-15)"><i class="fas fa-undo-alt"></i></button>
+        <div class="flex items-center justify-center flex-1 gap-3">
+          <button type="button" class="p-2 text-zinc-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white" (click)="seek(-15)"><i class="fas fa-undo-alt"></i></button>
           <button
             type="button"
             (click)="togglePlay()"
-            class="w-12 h-12 rounded-full bg-indigo-600 text-white flex items-center justify-center shadow-lg shadow-indigo-900/50 hover:brightness-110 transition"
+            class="flex items-center justify-center w-12 h-12 text-white transition bg-indigo-600 rounded-full shadow-lg shadow-indigo-900/50 hover:brightness-110"
           >
             <i class="fas" [class.fa-play]="!isPlaying" [class.fa-pause]="isPlaying" [class.pl-1]="!isPlaying"></i>
           </button>
-          <button type="button" class="text-zinc-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white p-2" (click)="seek(15)"><i class="fas fa-redo-alt"></i></button>
+          <button type="button" class="p-2 text-zinc-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white" (click)="seek(15)"><i class="fas fa-redo-alt"></i></button>
           <span class="text-[11px] text-zinc-500 w-10 text-center">{{ playbackRate.toFixed(1) }}×</span>
         </div>
-        <div class="flex-1 flex flex-col sm:flex-row items-center gap-2">
-          <div class="flex gap-2 order-2 sm:order-1">
+        <div class="flex flex-col items-center flex-1 gap-2 sm:flex-row">
+          <div class="flex order-2 gap-2 sm:order-1">
             <button type="button" (click)="prevChapter()" class="text-[11px] text-zinc-600 dark:text-zinc-500 hover:text-slate-900 dark:hover:text-white px-2">Ch. préc.</button>
             <button type="button" (click)="nextChapter()" class="text-[11px] text-zinc-600 dark:text-zinc-500 hover:text-slate-900 dark:hover:text-white px-2">Ch. suiv.</button>
           </div>
-          <div class="flex items-center gap-2 flex-1 w-full order-1 sm:order-2">
+          <div class="flex items-center flex-1 order-1 w-full gap-2 sm:order-2">
             <span class="text-[10px] text-zinc-500 w-8 shrink-0">{{ formatTime(audioCurrent) }}</span>
             <div class="flex-1 h-1.5 rounded-full bg-zinc-300 dark:bg-zinc-700 overflow-hidden cursor-pointer" (click)="onSeekBar($event)">
               <div class="h-full bg-indigo-500 transition-[width]" [style.width.%]="audioProgress"></div>
@@ -447,7 +447,7 @@
       </button>
     </div>
 
-    <div class="p-4 flex-1 space-y-6" *ngIf="activeToolTab === 'read'">
+    <div class="flex-1 p-4 space-y-6" *ngIf="activeToolTab === 'read'">
       <div>
         <p class="text-[10px] uppercase tracking-wider text-zinc-500 mb-2">Thèmes</p>
         <div class="grid grid-cols-2 gap-2">
@@ -455,7 +455,7 @@
             type="button"
             *ngFor="let th of readerThemes"
             (click)="readerTheme = th.id"
-            class="py-2 px-2 rounded-lg text-xs border transition"
+            class="px-2 py-2 text-xs transition border rounded-lg"
             [ngClass]="
               readerTheme === th.id
                 ? 'border-indigo-500 bg-indigo-500/20 text-slate-900 dark:text-white'
@@ -468,13 +468,13 @@
       </div>
       <div>
         <p class="text-[10px] uppercase tracking-wider text-zinc-500 mb-2">Police</p>
-        <select [(ngModel)]="fontFamily" class="w-full bg-white dark:bg-zinc-900 border border-slate-300 dark:border-white/15 rounded-lg px-2 py-2 text-xs text-slate-900 dark:text-white">
+        <select [(ngModel)]="fontFamily" class="w-full px-2 py-2 text-xs bg-white border rounded-lg dark:bg-zinc-900 border-slate-300 dark:border-white/15 text-slate-900 dark:text-white">
           <option *ngFor="let f of fontFamilies" [value]="f">{{ f }}</option>
         </select>
         <div class="flex items-center gap-2 mt-2">
-          <button type="button" (click)="adjustFont(-1)" class="px-2 py-1 rounded bg-slate-200 dark:bg-white/10 text-xs text-slate-800 dark:text-white">A−</button>
-          <span class="text-xs text-zinc-600 dark:text-zinc-400 flex-1 text-center">{{ fontSize }}px</span>
-          <button type="button" (click)="adjustFont(1)" class="px-2 py-1 rounded bg-slate-200 dark:bg-white/10 text-xs text-slate-800 dark:text-white">A+</button>
+          <button type="button" (click)="adjustFont(-1)" class="px-2 py-1 text-xs rounded bg-slate-200 dark:bg-white/10 text-slate-800 dark:text-white">A−</button>
+          <span class="flex-1 text-xs text-center text-zinc-600 dark:text-zinc-400">{{ fontSize }}px</span>
+          <button type="button" (click)="adjustFont(1)" class="px-2 py-1 text-xs rounded bg-slate-200 dark:bg-white/10 text-slate-800 dark:text-white">A+</button>
         </div>
       </div>
       <div>
@@ -500,20 +500,20 @@
           </button>
         </div>
       </div>
-      <div class="p-3 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10">
+      <div class="p-3 border rounded-xl bg-slate-50 dark:bg-white/5 border-slate-200 dark:border-white/10">
         <p class="text-[10px] text-zinc-500 mb-1">Dictionnaire · sélection</p>
         <p class="text-sm font-semibold text-slate-900 dark:text-white">{{ dictWord }}</p>
-        <p class="text-xs text-zinc-400 mt-2 leading-relaxed">{{ dictDef }}</p>
+        <p class="mt-2 text-xs leading-relaxed text-zinc-400">{{ dictDef }}</p>
       </div>
       <div>
         <p class="text-[10px] uppercase tracking-wider text-zinc-500 mb-2">Note rapide</p>
         <textarea
           [(ngModel)]="quickNote"
           rows="3"
-          class="w-full bg-white dark:bg-zinc-900 border border-slate-300 dark:border-white/15 rounded-lg px-2 py-2 text-xs text-slate-900 dark:text-white placeholder-zinc-500 dark:placeholder-zinc-600"
+          class="w-full px-2 py-2 text-xs bg-white border rounded-lg dark:bg-zinc-900 border-slate-300 dark:border-white/15 text-slate-900 dark:text-white placeholder-zinc-500 dark:placeholder-zinc-600"
           placeholder="Votre pensée…"
         ></textarea>
-        <button type="button" (click)="saveQuickNote()" class="mt-2 w-full py-2 rounded-lg bg-indigo-600 text-white text-xs font-medium">
+        <button type="button" (click)="saveQuickNote()" class="w-full py-2 mt-2 text-xs font-medium text-white bg-indigo-600 rounded-lg">
           Enregistrer
         </button>
       </div>
@@ -526,12 +526,12 @@
 </div>
 
 <!-- États chargement / erreur -->
-<div class="min-h-screen pt-app-header bg-slate-100 dark:bg-zinc-950 flex flex-col items-center justify-center px-4" *ngIf="loading">
-  <i class="fas fa-circle-notch fa-spin text-3xl text-indigo-600 dark:text-indigo-500 mb-4"></i>
+<div class="flex flex-col items-center justify-center min-h-screen px-4 pt-app-header bg-slate-100 dark:bg-zinc-950" *ngIf="loading">
+  <i class="mb-4 text-3xl text-indigo-600 fas fa-circle-notch fa-spin dark:text-indigo-500"></i>
   <p class="text-zinc-600 dark:text-zinc-400">Chargement du livre…</p>
 </div>
 
-<div class="min-h-screen pt-app-header bg-slate-100 dark:bg-zinc-950 flex flex-col items-center justify-center px-4" *ngIf="!loading && !book">
-  <p class="text-zinc-600 dark:text-zinc-400 mb-4">Livre introuvable.</p>
-  <a routerLink="/books" class="text-indigo-600 dark:text-indigo-400 underline">Catalogue</a>
+<div class="flex flex-col items-center justify-center min-h-screen px-4 pt-app-header bg-slate-100 dark:bg-zinc-950" *ngIf="!loading && !book">
+  <p class="mb-4 text-zinc-600 dark:text-zinc-400">Livre introuvable.</p>
+  <a routerLink="/books" class="text-indigo-600 underline dark:text-indigo-400">Catalogue</a>
 </div>

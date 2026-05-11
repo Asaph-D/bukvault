@@ -146,8 +146,8 @@ export class BookDetailComponent implements OnInit, OnDestroy {
     this.routeSub = this.route.paramMap
       .pipe(
         tap(() => {
-          this.loading = true;
-          this.book = undefined;
+          // this.loading = true;
+          // this.book = undefined;
           // Important: quand on change de livre via “Sélection catalogue”, on purge le manuscrit précédent.
           this.manuscriptBusy = false;
           this.manuscriptError = null;
@@ -172,7 +172,6 @@ export class BookDetailComponent implements OnInit, OnDestroy {
         })
       )
       .subscribe(({ book, list }) => {
-        this.loading = false;
         this.book = book;
         if (book) {
           let merged = list;
@@ -185,11 +184,14 @@ export class BookDetailComponent implements OnInit, OnDestroy {
           this.spreadView = false;
           this.leftToolPanel = null;
           this.searchQuery = '';
+
           this.syncMetaFromBook();
           this.buildChapterContent();
           this.preloadManuscript();
           this.loadLikeAndSubscriptionStatus();
         }
+
+        this.loading = false;
       });
   }
 
@@ -199,6 +201,10 @@ export class BookDetailComponent implements OnInit, OnDestroy {
     this.stopTick();
     this.stopSpeech();
     this.revokeManuscriptUrl();
+  }
+
+  trackByBook(index: number, book: Book): string {
+    return book.id;
   }
 
   get chapterLabel(): string {
