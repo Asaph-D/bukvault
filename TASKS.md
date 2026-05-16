@@ -127,5 +127,6 @@ Chaque service est un projet Maven Spring Boot autonome (`api-gateway`, `auth-se
 - [ ] Intercepteur JWT + refresh ; guards par rôle.
 
 ---
-
+docker compose down -v
+docker compose up -d --build
 _Dernière mise à jour : api-gateway + ports services + proxy Angular /api/v1._
