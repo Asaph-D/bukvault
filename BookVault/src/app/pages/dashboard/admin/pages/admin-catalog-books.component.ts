@@ -1,66 +1,260 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
-import { BookService, PLACEHOLDER_COVER } from '../../../../services/book.service';
-import { Book } from '../../../../models/book.model';
+import { Subscription, finalize } from 'rxjs';
+import { DashboardInternalHeaderComponent } from '../../shared/dashboard-internal-header.component';
+import {
+  AdminCatalogService,
+  BookStatusFilter,
+} from '../../../../services/admin-catalog.service';
+import { AuthorService } from '../../../../services/author.service';
+import { PLACEHOLDER_COVER } from '../../../../services/book.service';
+import { BookDetailDto, BookListItemDto } from '../../../../models/api.types';
+import { environment } from '../../../../../environments/environment';
+
+type BannerKind = 'success' | 'danger' | 'info';
 
 @Component({
   standalone: true,
   selector: 'app-admin-catalog-books',
-  imports: [CommonModule, RouterModule],
-  template: `
-    <header class="mb-8 dash-animate-in">
-      <h1 class="text-2xl md:text-3xl font-semibold font-[family-name:var(--font-display)] text-slate-900 dark:text-white">
-        Catalogue livres
-      </h1>
-      <p class="text-slate-600 dark:text-zinc-400 mt-1 text-sm">Vue consolidée — même source que le catalogue public.</p>
-    </header>
-    <p *ngIf="loading" class="text-zinc-600 dark:text-zinc-400">Chargement…</p>
-    <p *ngIf="error" class="text-red-600 dark:text-red-400">{{ error }}</p>
-    <div *ngIf="!loading && !error" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-      <div
-        *ngFor="let book of books"
-        class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-700 rounded-lg overflow-hidden shadow-sm"
-      >
-        <img
-          [src]="book.coverImage"
-          (error)="onCoverErr($event)"
-          [alt]="book.title"
-          class="w-full h-52 object-cover"
-        />
-        <div class="p-4">
-          <h2 class="font-semibold text-lg text-slate-900 dark:text-white">{{ book.title }}</h2>
-          <p class="text-zinc-500 dark:text-zinc-400 text-sm mb-2">{{ book.author }}</p>
-          <div class="flex justify-between items-center mt-2">
-            <span class="font-semibold text-indigo-600 dark:text-indigo-400">{{ book.price | currency: 'EUR' }}</span>
-            <a [routerLink]="['/books', book.id]" class="text-sm text-emerald-600 dark:text-emerald-400 hover:underline">Fiche publique</a>
-          </div>
-        </div>
-      </div>
-    </div>
-  `,
+  imports: [CommonModule, RouterModule, FormsModule, DashboardInternalHeaderComponent],
+  templateUrl: './admin-catalog-books.component.html',
 })
-export class AdminCatalogBooksComponent implements OnInit {
-  books: Book[] = [];
-  loading = true;
-  error: string | null = null;
+export class AdminCatalogBooksComponent implements OnInit, OnDestroy {
+  private readonly sub = new Subscription();
+  private searchTimer: ReturnType<typeof setTimeout> | null = null;
 
-  constructor(private bookService: BookService) {}
+  loadingList = false;
+  loadingDetail = false;
+  listError: string | null = null;
+
+  books: BookListItemDto[] = [];
+  selected: BookDetailDto | null = null;
+  authorNames = new Map<string, string>();
+
+  totalElements = 0;
+  totalPages = 0;
+  page = 0;
+  pageSize = 15;
+
+  filterStatus: BookStatusFilter = '';
+  searchQuery = '';
+  apiSearch = '';
+
+  banner: { kind: BannerKind; text: string } | null = null;
+  busyPublish = false;
+
+  constructor(
+    private adminCatalog: AdminCatalogService,
+    private authorService: AuthorService
+  ) {}
+
+  ngOnInit(): void {
+    this.loadList();
+  }
+
+  ngOnDestroy(): void {
+    this.sub.unsubscribe();
+    if (this.searchTimer) clearTimeout(this.searchTimer);
+  }
+
+  get publishedCountOnPage(): number {
+    return this.books.filter(b => b.status === 'PUBLISHED').length;
+  }
+
+  get draftCountOnPage(): number {
+    return this.books.filter(b => b.status === 'DRAFT').length;
+  }
+
+  clearBanner(): void {
+    this.banner = null;
+  }
+
+  onSearchInput(): void {
+    if (this.searchTimer) clearTimeout(this.searchTimer);
+    this.searchTimer = setTimeout(() => {
+      this.apiSearch = this.searchQuery.trim();
+      this.page = 0;
+      this.selected = null;
+      this.loadList();
+    }, 350);
+  }
+
+  applyFilters(): void {
+    this.apiSearch = this.searchQuery.trim();
+    this.page = 0;
+    this.selected = null;
+    this.loadList();
+  }
+
+  loadList(): void {
+    this.loadingList = true;
+    this.listError = null;
+
+    this.adminCatalog
+      .listBooks({
+        page: this.page,
+        size: this.pageSize,
+        status: this.filterStatus || undefined,
+        q: this.apiSearch || undefined,
+        sort: 'createdAt,desc',
+      })
+      .pipe(finalize(() => (this.loadingList = false)))
+      .subscribe({
+        next: res => {
+          this.books = res.content;
+          this.totalElements = res.totalElements;
+          this.totalPages = res.totalPages;
+          this.page = res.number;
+          this.loadAuthorNames();
+          if (this.selected && !this.books.some(b => b.id === this.selected!.id)) {
+            this.selected = null;
+          }
+        },
+        error: () => {
+          this.listError = 'Impossible de charger le catalogue admin.';
+          this.books = [];
+        },
+      });
+  }
+
+  private loadAuthorNames(): void {
+    const ids = [...new Set(this.books.map(b => b.authorId))];
+    for (const id of ids) {
+      if (this.authorNames.has(id)) continue;
+      this.authorService.getProfile(id).subscribe({
+        next: p => this.authorNames.set(id, p.penName || 'Auteur'),
+        error: () => this.authorNames.set(id, 'Auteur'),
+      });
+    }
+  }
+
+  authorName(authorId: string): string {
+    return this.authorNames.get(authorId) ?? '…';
+  }
+
+  goPage(delta: number): void {
+    const next = this.page + delta;
+    if (next < 0 || next >= this.totalPages) return;
+    this.page = next;
+    this.loadList();
+  }
+
+  selectBook(book: BookListItemDto): void {
+    if (this.selected?.id === book.id) return;
+    this.clearBanner();
+    this.loadingDetail = true;
+    this.adminCatalog
+      .getBook(book.id)
+      .pipe(finalize(() => (this.loadingDetail = false)))
+      .subscribe({
+        next: d => {
+          this.selected = d;
+          if (!this.authorNames.has(d.authorId)) {
+            this.authorService.getProfile(d.authorId).subscribe({
+              next: p => this.authorNames.set(d.authorId, p.penName || 'Auteur'),
+              error: () => this.authorNames.set(d.authorId, 'Auteur'),
+            });
+          }
+        },
+        error: () => {
+          this.banner = { kind: 'danger', text: 'Impossible de charger le détail du livre.' };
+        },
+      });
+  }
+
+  togglePublish(): void {
+    if (!this.selected || this.busyPublish) return;
+    const publish = this.selected.status !== 'PUBLISHED';
+    this.busyPublish = true;
+    this.adminCatalog
+      .setPublished(this.selected.id, publish)
+      .pipe(finalize(() => (this.busyPublish = false)))
+      .subscribe({
+        next: d => {
+          this.selected = d;
+          const idx = this.books.findIndex(b => b.id === d.id);
+          if (idx >= 0) {
+            this.books[idx] = {
+              ...this.books[idx],
+              status: d.status,
+              publishedAt: d.publishedAt,
+            };
+          }
+          this.banner = {
+            kind: 'success',
+            text: publish ? 'Livre publié.' : 'Livre dépublié (brouillon).',
+          };
+        },
+        error: () => {
+          this.banner = { kind: 'danger', text: 'Impossible de modifier la publication.' };
+        },
+      });
+  }
+
+  coverUrl(book: { id: string; coverUrl: string | null }): string {
+    if (book.coverUrl?.trim()) {
+      const url = book.coverUrl.trim();
+      if (url.startsWith('http')) return url;
+      return url.startsWith('/') ? url : `/${url}`;
+    }
+    return `${environment.apiUrl}/files/cover/${book.id}`;
+  }
 
   onCoverErr(ev: Event): void {
     (ev.target as HTMLImageElement).src = PLACEHOLDER_COVER;
   }
 
-  ngOnInit(): void {
-    this.bookService.getBooks(0, 48).subscribe({
-      next: b => {
-        this.books = b;
-        this.loading = false;
-      },
-      error: () => {
-        this.error = 'Impossible de charger le catalogue.';
-        this.loading = false;
-      },
-    });
+  statusLabel(status: string): string {
+    switch (status) {
+      case 'PUBLISHED':
+        return 'Publié';
+      case 'DRAFT':
+        return 'Brouillon';
+      case 'REJECTED':
+        return 'Refusé';
+      default:
+        return status;
+    }
+  }
+
+  statusClass(status: string): string {
+    switch (status) {
+      case 'PUBLISHED':
+        return 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300';
+      case 'DRAFT':
+        return 'bg-amber-500/15 text-amber-700 dark:text-amber-300';
+      case 'REJECTED':
+        return 'bg-red-500/15 text-red-700 dark:text-red-300';
+      default:
+        return 'bg-slate-500/15 text-slate-700 dark:text-zinc-300';
+    }
+  }
+
+  formatLabel(fmt: string): string {
+    switch (fmt) {
+      case 'EBOOK':
+        return 'Numérique';
+      case 'PHYSICAL':
+        return 'Papier';
+      case 'BOTH':
+        return 'Les deux';
+      default:
+        return fmt;
+    }
+  }
+
+  formatDate(iso: string | null | undefined): string {
+    if (!iso) return '—';
+    try {
+      return new Date(iso).toLocaleString('fr-FR', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+      });
+    } catch {
+      return iso;
+    }
   }
 }

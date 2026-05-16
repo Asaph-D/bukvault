@@ -8,6 +8,18 @@ export interface PageDto<T> {
   number: number;
 }
 
+export interface BookSubscriptionItemDto {
+  bookId: string;
+  subscribedAt: string;
+}
+
+/** GET/PUT `/api/v1/notifications/preferences` */
+export interface NotificationPreferencesDto {
+  emailEnabled: boolean;
+  inAppEnabled: boolean;
+  marketingEnabled: boolean;
+}
+
 export interface UserResponseDto {
   id: string;
   email: string;
@@ -41,6 +53,16 @@ export interface UpdateUserProfileRequest {
   avatarUrl: string | null;
   preferredLanguage: string | null;
   newsletter: boolean;
+}
+
+export type UserRoleDto = 'USER' | 'AUTHOR' | 'ADMIN';
+
+export interface UpdateUserRoleRequest {
+  role: UserRoleDto;
+}
+
+export interface UpdateUserActiveRequest {
+  active: boolean;
 }
 
 /** GET/PUT /users/{id}/reader-settings */
@@ -218,6 +240,40 @@ export interface ReadingProgressDto {
   clientUpdatedAt: string | null;
 }
 
+/** wishlist-service */
+export interface WishlistItemDto {
+  id: number;
+  bookId: string;
+  addedAt: string;
+}
+
+export interface MoveToCartResponseDto {
+  addedToCart: string[];
+  errors: string[];
+}
+
+/** order-service */
+export interface OrderLineDto {
+  id: number;
+  bookId: string;
+  quantity: number;
+  unitPrice: number;
+  format: string;
+  lineTotal: number;
+}
+
+export interface OrderResponseDto {
+  id: number;
+  userId: string;
+  status: 'PENDING' | 'PAID' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED' | string;
+  totalAmount: number;
+  currency: string;
+  paymentReference: string | null;
+  createdAt: string;
+  updatedAt: string;
+  lines: OrderLineDto[];
+}
+
 /** community-service */
 export interface CommunityHubDto {
   activeReaders: number;
@@ -269,4 +325,39 @@ export interface ChatMessageDto {
   senderId: string;
   content: string;
   createdAt: string;
+}
+
+/** GET /admin/dashboard — vue d'ensemble admin (admin-service). */
+export interface AdminDashboardKpiDto {
+  label: string;
+  value: number;
+  delta: string;
+  up: boolean;
+  severity: 'success' | 'info' | 'warn' | 'danger' | string;
+}
+
+export interface AdminCategoryShareDto {
+  name: string;
+  pct: number;
+  color: string;
+}
+
+export interface AdminTopAuthorDto {
+  name: string;
+  reads: string;
+  load: number;
+}
+
+export interface AdminDashboardDto {
+  kpis: AdminDashboardKpiDto[];
+  readsByDay: number[];
+  readsByDayLabels: string[];
+  totalReads: number;
+  categoryShares: AdminCategoryShareDto[];
+  topAuthors: AdminTopAuthorDto[];
+  activityByWeekday: number[];
+  activityWeekdayLabels: string[];
+  pendingModeration: number;
+  openReports: number;
+  note: string | null;
 }

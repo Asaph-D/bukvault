@@ -1,0 +1,198 @@
+<app-dashboard-internal-header
+  title="Mes œuvres"
+  eyebrow="Espace auteur"
+  subtitle="Tous vos titres rattachés au catalogue BookVault : statut, métriques et accès à la fiche de publication ou au livre public."
+  [badges]="[
+    { label: 'Catalogue', icon: 'fas fa-book' },
+    { label: 'Publication', icon: 'fas fa-file-signature' },
+  ]"
+>
+  <div actions class="flex flex-wrap gap-2">
+    <a
+      routerLink="/dashboard/author/home"
+      class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium border border-slate-200 dark:border-white/15 bg-white/90 dark:bg-white/5 text-slate-800 dark:text-zinc-100 hover:bg-slate-50 dark:hover:bg-white/10 transition"
+    >
+      <i class="fas fa-arrow-left text-xs opacity-70"></i>
+      Accueil
+    </a>
+    <a
+      routerLink="/dashboard/author/new-book"
+      class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-violet-600 hover:bg-violet-500 text-white transition"
+    >
+      <i class="fas fa-plus text-xs"></i>
+      Nouveau livre
+    </a>
+  </div>
+</app-dashboard-internal-header>
+
+<div class="dash-animate-in space-y-6">
+  <p *ngIf="error" class="text-red-600 dark:text-red-400">{{ error }}</p>
+  <div
+    *ngIf="actionFeedback"
+    class="rounded-xl border px-4 py-3 text-sm"
+    [ngClass]="
+      actionFeedback.kind === 'ok'
+        ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-900 dark:text-emerald-200'
+        : 'border-red-500/40 bg-red-500/10 text-red-900 dark:text-red-200'
+    "
+  >
+    {{ actionFeedback.text }}
+  </div>
+  <p *ngIf="loading" class="text-zinc-600 dark:text-zinc-400">Chargement…</p>
+
+  <ng-container *ngIf="!loading && !error">
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div class="dash-glass rounded-2xl border border-violet-200/60 dark:border-violet-500/20 p-4">
+        <p class="text-[11px] font-semibold uppercase tracking-wider text-violet-600 dark:text-violet-400">Titres</p>
+        <p class="text-2xl font-semibold text-slate-900 dark:text-white mt-1">{{ books.length | number }}</p>
+      </div>
+      <div class="dash-glass rounded-2xl border border-emerald-200/60 dark:border-emerald-500/20 p-4">
+        <p class="text-[11px] font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">Publiés</p>
+        <p class="text-2xl font-semibold text-slate-900 dark:text-white mt-1">{{ publishedCount | number }}</p>
+      </div>
+      <div class="dash-glass rounded-2xl border border-amber-200/60 dark:border-amber-500/20 p-4">
+        <p class="text-[11px] font-semibold uppercase tracking-wider text-amber-600 dark:text-amber-400">Brouillons</p>
+        <p class="text-2xl font-semibold text-slate-900 dark:text-white mt-1">{{ draftCount | number }}</p>
+        <p class="text-[10px] text-zinc-500 mt-1" *ngIf="rejectedCount > 0">
+          Dont {{ rejectedCount | number }} refusé<span *ngIf="rejectedCount > 1">s</span> à corriger
+        </p>
+      </div>
+      <div class="dash-glass rounded-2xl border border-slate-200/80 dark:border-white/10 p-4">
+        <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-zinc-400">Résultats filtre</p>
+        <p class="text-2xl font-semibold text-slate-900 dark:text-white mt-1">{{ filtered.length | number }}</p>
+      </div>
+    </div>
+
+    <section class="dash-glass rounded-2xl border border-slate-200/80 dark:border-white/10 p-4">
+      <div class="flex flex-col lg:flex-row lg:items-end gap-4">
+        <div class="flex-1 min-w-[200px]">
+          <label class="block text-xs font-medium text-zinc-600 dark:text-zinc-400 mb-1">Rechercher</label>
+          <div class="relative">
+            <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+            <input
+              type="search"
+              [(ngModel)]="searchQuery"
+              (ngModelChange)="applyFilters()"
+              placeholder="Titre, ISBN, description…"
+              class="w-full rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-zinc-950 pl-9 pr-3 py-2 text-sm"
+            />
+          </div>
+        </div>
+        <div class="w-full sm:w-48">
+          <label class="block text-xs font-medium text-zinc-600 dark:text-zinc-400 mb-1">Statut</label>
+          <select
+            [(ngModel)]="statusFilter"
+            (ngModelChange)="applyFilters()"
+            class="w-full rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-zinc-950 px-3 py-2 text-sm"
+          >
+            <option value="">Tous</option>
+            <option value="PUBLISHED">Publiés</option>
+            <option value="DRAFT">Brouillons</option>
+            <option value="REJECTED">Refusés</option>
+          </select>
+        </div>
+      </div>
+    </section>
+
+    <div *ngIf="filtered.length === 0" class="dash-glass rounded-2xl border border-dashed border-slate-300 dark:border-white/15 p-10 text-center">
+      <i class="fas fa-book-open text-3xl text-violet-400/80 mb-3"></i>
+      <p class="text-slate-800 dark:text-white font-medium">Aucun titre ne correspond.</p>
+      <p *ngIf="books.length === 0" class="text-sm text-zinc-600 dark:text-zinc-400 mt-2">
+        Commencez par créer un livre — il apparaîtra ici dès qu’il sera enregistré dans le catalogue.
+      </p>
+      <a
+        routerLink="/dashboard/author/new-book"
+        class="inline-flex mt-5 items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium bg-violet-600 text-white hover:bg-violet-500"
+      >
+        Créer un livre
+      </a>
+    </div>
+
+    <div *ngIf="filtered.length > 0" class="grid sm:grid-cols-2 xl:grid-cols-3 gap-5">
+      <article
+        *ngFor="let book of filtered"
+        class="dash-glass rounded-2xl border border-slate-200/80 dark:border-white/10 overflow-hidden flex flex-col hover:border-violet-500/35 transition"
+      >
+        <div class="relative aspect-[3/4] max-h-52 bg-slate-100 dark:bg-zinc-900">
+          <img
+            [src]="book.coverImage"
+            (error)="onCoverErr($event)"
+            [alt]="book.title"
+            class="w-full h-full object-cover"
+          />
+          <span
+            class="absolute top-2 right-2 text-[10px] font-bold uppercase tracking-wide px-2 py-1 rounded-lg border {{ statusClass(book.status) }}"
+          >
+            {{ statusLabel(book.status) }}
+          </span>
+        </div>
+        <div class="p-4 flex-1 flex flex-col">
+          <h3 class="font-semibold text-slate-900 dark:text-white line-clamp-2">{{ book.title }}</h3>
+          <p class="text-xs text-zinc-500 mt-1">{{ book.price | currency : 'EUR' }} · {{ book.reviewCount }} avis · {{ book.sales ?? 0 }} vues</p>
+          <p class="text-xs text-zinc-400 mt-1 line-clamp-2" *ngIf="book.category">{{ book.category }}</p>
+          <div class="mt-auto pt-4 space-y-2">
+            <div class="flex flex-wrap gap-2">
+              <a
+                [routerLink]="['/dashboard/author/publication', book.id]"
+                class="inline-flex flex-1 min-w-[8rem] justify-center items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium bg-violet-600 text-white hover:bg-violet-500"
+              >
+                <i class="fas fa-file-alt text-[10px]"></i>
+                Fiche publication
+              </a>
+              <a
+                *ngIf="statusNorm(book) === 'PUBLISHED'"
+                [routerLink]="['/books', book.id]"
+                class="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium border border-slate-200 dark:border-white/15 hover:bg-slate-50 dark:hover:bg-white/10"
+              >
+                <i class="fas fa-external-link-alt text-[10px]"></i>
+                Public
+              </a>
+            </div>
+            <div class="flex flex-wrap gap-1.5 border-t border-slate-100 dark:border-white/10 pt-3">
+              <ng-container *ngIf="statusNorm(book) !== 'PUBLISHED'">
+                <button
+                  type="button"
+                  (click)="submitForReview(book)"
+                  [disabled]="busyBookId === book.id"
+                  class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-medium bg-slate-800 text-white dark:bg-zinc-200 dark:text-zinc-900 hover:opacity-90 disabled:opacity-50"
+                >
+                  <i class="fas fa-paper-plane text-[9px]"></i>
+                  Envoyer validation
+                </button>
+                <button
+                  type="button"
+                  (click)="publishNow(book)"
+                  [disabled]="busyBookId === book.id"
+                  class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-medium border border-emerald-600/60 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-500/10 disabled:opacity-50"
+                >
+                  <i class="fas fa-bullhorn text-[9px]"></i>
+                  Publier
+                </button>
+              </ng-container>
+              <button
+                *ngIf="statusNorm(book) === 'PUBLISHED'"
+                type="button"
+                (click)="unpublish(book)"
+                [disabled]="busyBookId === book.id"
+                class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-medium border border-amber-600/50 text-amber-900 dark:text-amber-200 hover:bg-amber-500/10 disabled:opacity-50"
+              >
+                <i class="fas fa-eye-slash text-[9px]"></i>
+                Retirer vitrine
+              </button>
+              <button
+                type="button"
+                (click)="deleteBook(book)"
+                [disabled]="busyBookId === book.id"
+                class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-medium text-red-700 dark:text-red-300 hover:bg-red-500/10 disabled:opacity-50"
+              >
+                <i class="fas fa-trash-alt text-[9px]" *ngIf="busyBookId !== book.id"></i>
+                <i class="fas fa-spinner fa-spin text-[9px]" *ngIf="busyBookId === book.id"></i>
+                Supprimer
+              </button>
+            </div>
+          </div>
+        </div>
+      </article>
+    </div>
+  </ng-container>
+</div>

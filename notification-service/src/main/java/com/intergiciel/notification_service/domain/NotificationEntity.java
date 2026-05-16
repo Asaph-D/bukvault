@@ -33,6 +33,9 @@ public class NotificationEntity {
 	@Column(nullable = false, length = 4000)
 	private String message;
 
+	@Column(length = 512)
+	private String actionUrl;
+
 	@Column(nullable = false)
 	private boolean readFlag;
 
@@ -42,11 +45,13 @@ public class NotificationEntity {
 	protected NotificationEntity() {
 	}
 
-	public NotificationEntity(UUID userId, NotificationKind kind, String title, String message, boolean readFlag) {
+	public NotificationEntity(UUID userId, NotificationKind kind, String title, String message, String actionUrl,
+			boolean readFlag) {
 		this.userId = userId;
 		this.kind = kind;
 		this.title = title;
 		this.message = message;
+		this.actionUrl = actionUrl;
 		this.readFlag = readFlag;
 	}
 
@@ -68,6 +73,10 @@ public class NotificationEntity {
 
 	public String getMessage() {
 		return message;
+	}
+
+	public String getActionUrl() {
+		return actionUrl;
 	}
 
 	public boolean isReadFlag() {

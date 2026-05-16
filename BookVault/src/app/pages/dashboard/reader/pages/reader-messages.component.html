@@ -1,94 +1,259 @@
+<!-- reader-messages.component.html -->
 <app-dashboard-internal-header
   title="Messages"
-  eyebrow="Messagerie"
-  subtitle="Conversations directes (community-service). Les libellés interlocuteurs viendront du profil utilisateur plus tard."
+  eyebrow="Messagerie directe"
+  subtitle="Conversations privées avec les membres et auteurs de la communauté. Répondez, échangez, et continuez vos discussions littéraires."
   [badges]="[
-    { label: 'Direct', icon: 'fas fa-envelope' },
-    { label: 'JWT', icon: 'fas fa-shield-alt' },
+    { label: 'Direct & privé',      icon: 'fas fa-lock'        },
+    { label: 'Temps réel',          icon: 'fas fa-bolt'        },
+    { label: 'JWT sécurisé',        icon: 'fas fa-shield-alt'  },
+    { label: 'Community-service',   icon: 'fas fa-server'      },
   ]"
 >
+  <div actions class="flex flex-wrap gap-2">
+    <a
+      routerLink="/dashboard/reader/community"
+      class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium border border-slate-200 dark:border-white/15 bg-white/90 dark:bg-white/5 text-slate-800 dark:text-zinc-100 hover:bg-slate-50 dark:hover:bg-white/10 transition"
+    >
+      <i class="fas fa-users text-xs"></i>
+      Hub communauté
+    </a>
+    <button
+      type="button"
+      (click)="refreshConversations()"
+      class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-sky-600 hover:bg-sky-500 text-white shadow-lg shadow-sky-900/25 transition"
+    >
+      <i class="fas fa-sync-alt text-xs"></i>
+      Rafraîchir
+    </button>
+  </div>
 </app-dashboard-internal-header>
 
-<p *ngIf="error" class="text-amber-700 dark:text-amber-300 text-sm mb-4">{{ error }}</p>
+<!-- Error banner -->
+<div
+  *ngIf="error"
+  class="flex items-center gap-3 mb-5 px-4 py-3 rounded-xl border border-amber-400/40 bg-amber-50/80 dark:bg-amber-950/30 text-amber-800 dark:text-amber-300 text-sm"
+>
+  <i class="fas fa-exclamation-triangle shrink-0"></i>
+  <span>{{ error }}</span>
+</div>
 
-<div class="grid grid-cols-1 lg:grid-cols-5 gap-6 min-h-[420px]">
-  <aside class="lg:col-span-2 dash-glass rounded-2xl border border-slate-200/80 dark:border-white/10 p-3 flex flex-col">
-    <div class="flex items-center justify-between px-2 py-2 border-b border-slate-200/60 dark:border-white/10 mb-2">
-      <span class="text-sm font-semibold text-slate-800 dark:text-zinc-100">Conversations</span>
-      <button
-        type="button"
-        (click)="refreshConversations()"
-        class="text-xs text-sky-600 dark:text-sky-400 hover:underline"
-      >
-        Rafraîchir
-      </button>
+<!-- Main layout -->
+<div class="grid grid-cols-1 lg:grid-cols-5 gap-5 min-h-[520px]">
+
+  <!-- ── Sidebar conversations ─────────────────────────────────────── -->
+  <aside class="lg:col-span-2 dash-glass rounded-2xl border border-slate-200/80 dark:border-white/10 flex flex-col overflow-hidden">
+
+    <!-- Header sidebar -->
+    <div class="flex items-center justify-between px-4 py-3.5 border-b border-slate-200/60 dark:border-white/10 bg-gradient-to-r from-sky-500/5 via-indigo-500/5 to-transparent">
+      <div class="flex items-center gap-2">
+        <i class="fas fa-comments text-sky-500 text-sm"></i>
+        <span class="text-sm font-semibold text-slate-800 dark:text-zinc-100">Conversations</span>
+        <span
+          *ngIf="conversations.length"
+          class="ml-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-sky-500/15 text-sky-700 dark:text-sky-300"
+        >{{ conversations.length }}</span>
+      </div>
     </div>
-    <p *ngIf="loadingList" class="text-sm text-zinc-500 p-3">Chargement…</p>
-    <ul *ngIf="!loadingList" class="space-y-1 overflow-y-auto max-h-[min(60vh,28rem)]">
+
+    <!-- Loading state -->
+    <div *ngIf="loadingList" class="flex-1 flex flex-col gap-2 p-3">
+      <div *ngFor="let _ of [1,2,3]" class="flex items-center gap-3 p-3 rounded-xl animate-pulse">
+        <div class="h-10 w-10 rounded-xl bg-slate-200 dark:bg-white/10 shrink-0"></div>
+        <div class="flex-1 space-y-2">
+          <div class="h-3 w-3/4 rounded bg-slate-200 dark:bg-white/10"></div>
+          <div class="h-2.5 w-1/2 rounded bg-slate-100 dark:bg-white/5"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Conversation list -->
+    <ul *ngIf="!loadingList" class="flex-1 overflow-y-auto space-y-1 p-2">
       <li *ngFor="let c of conversations">
         <button
           type="button"
           (click)="select(c)"
-          class="w-full text-left px-3 py-2.5 rounded-xl transition border border-transparent hover:bg-slate-100 dark:hover:bg-white/10"
+          class="w-full text-left px-3 py-3 rounded-xl transition-all border border-transparent hover:bg-slate-100 dark:hover:bg-white/8 group"
           [ngClass]="{
-            'bg-sky-500/15 border-sky-500/30': selected?.id === c.id,
+            'bg-gradient-to-r from-sky-500/12 to-indigo-500/8 border-sky-400/30 shadow-sm': selected?.id === c.id,
           }"
         >
-          <p class="text-sm font-medium text-slate-900 dark:text-white truncate">{{ peerLabel(c) }}</p>
-          <p class="text-xs text-slate-500 dark:text-zinc-500 truncate">{{ c.lastMessagePreview || '—' }}</p>
+          <div class="flex items-center gap-3">
+            <!-- Avatar initials -->
+            <div
+              class="h-10 w-10 rounded-xl bg-gradient-to-br shrink-0 flex items-center justify-center text-white text-xs font-bold shadow-sm"
+              [ngClass]="peerColor(c)"
+            >
+              {{ peerInitials(c) }}
+            </div>
+            <div class="flex-1 min-w-0">
+              <p class="text-sm font-semibold text-slate-900 dark:text-white truncate group-hover:text-sky-700 dark:group-hover:text-sky-300 transition"
+                 [ngClass]="{ 'text-sky-700 dark:text-sky-300': selected?.id === c.id }">
+                {{ peerLabel(c) }}
+              </p>
+              <p class="text-xs text-slate-500 dark:text-zinc-500 truncate mt-0.5">
+                {{ c.lastMessagePreview || 'Aucun message' }}
+              </p>
+            </div>
+            <i
+              class="fas fa-chevron-right text-[10px] text-slate-300 dark:text-slate-600 shrink-0 transition group-hover:text-sky-400"
+              [ngClass]="{ 'text-sky-500': selected?.id === c.id }"
+            ></i>
+          </div>
         </button>
       </li>
-      <li *ngIf="!conversations.length" class="text-sm text-zinc-500 px-3 py-4">Aucune conversation.</li>
+
+      <!-- Empty state -->
+      <li *ngIf="!conversations.length" class="flex flex-col items-center justify-center py-12 gap-3 text-center px-4">
+        <div class="h-14 w-14 rounded-2xl bg-slate-100 dark:bg-white/8 flex items-center justify-center">
+          <i class="fas fa-inbox text-slate-400 dark:text-zinc-500 text-xl"></i>
+        </div>
+        <p class="text-sm font-medium text-slate-700 dark:text-zinc-300">Aucune conversation</p>
+        <p class="text-xs text-slate-500 dark:text-zinc-500">
+          Rendez-vous sur le <a routerLink="/dashboard/reader/community" class="text-sky-600 dark:text-sky-400 hover:underline">Hub communauté</a> pour démarrer un échange.
+        </p>
+      </li>
     </ul>
   </aside>
 
-  <section class="lg:col-span-3 dash-glass rounded-2xl border border-slate-200/80 dark:border-white/10 flex flex-col min-h-[420px]">
-    <div class="px-4 py-3 border-b border-slate-200/60 dark:border-white/10">
-      <p class="text-sm font-semibold text-slate-900 dark:text-white">
-        {{ selected ? peerLabel(selected) : 'Sélectionnez une conversation' }}
-      </p>
-    </div>
-    <div class="flex-1 overflow-y-auto p-4 space-y-3 max-h-[min(55vh,26rem)]">
-      <p *ngIf="loadingMessages" class="text-sm text-zinc-500">Chargement des messages…</p>
+  <!-- ── Chat panel ─────────────────────────────────────────────────── -->
+  <section class="lg:col-span-3 dash-glass rounded-2xl border border-slate-200/80 dark:border-white/10 flex flex-col min-h-[520px] overflow-hidden">
+
+    <!-- Chat header -->
+    <div class="flex items-center gap-3 px-5 py-3.5 border-b border-slate-200/60 dark:border-white/10 bg-gradient-to-r from-sky-500/5 via-indigo-500/5 to-transparent">
       <div
-        *ngFor="let m of messages"
-        class="flex"
-        [class.justify-end]="isMine(m)"
+        *ngIf="selected"
+        class="h-9 w-9 rounded-xl bg-gradient-to-br shrink-0 flex items-center justify-center text-white text-xs font-bold shadow-sm"
+        [ngClass]="peerColor(selected)"
       >
-        <div
-          class="max-w-[85%] rounded-2xl px-3 py-2 text-sm shadow-sm"
-          [ngClass]="
-            isMine(m)
-              ? 'bg-sky-600 text-white'
-              : 'bg-slate-100 dark:bg-white/10 text-slate-900 dark:text-zinc-100'
-          "
-        >
-          <p class="whitespace-pre-wrap">{{ m.content }}</p>
-          <p class="text-[10px] opacity-70 mt-1">{{ m.createdAt | date : 'short' }}</p>
+        {{ peerInitials(selected) }}
+      </div>
+      <div class="flex-1 min-w-0">
+        <p class="text-sm font-semibold text-slate-900 dark:text-white truncate">
+          {{ selected ? peerLabel(selected) : 'Sélectionnez une conversation' }}
+        </p>
+        <p *ngIf="selected" class="text-[11px] text-emerald-500 dark:text-emerald-400 font-medium">
+          <span class="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500 mr-1 align-middle"></span>En ligne
+        </p>
+      </div>
+      <button
+        *ngIf="selected"
+        type="button"
+        (click)="loadMessages()"
+        title="Actualiser"
+        class="h-8 w-8 rounded-lg border border-slate-200 dark:border-white/15 bg-white/70 dark:bg-white/5 hover:bg-sky-50 dark:hover:bg-sky-950/30 flex items-center justify-center transition text-slate-500 dark:text-zinc-400 hover:text-sky-600 dark:hover:text-sky-400"
+      >
+        <i class="fas fa-sync-alt text-xs"></i>
+      </button>
+    </div>
+
+    <!-- Messages area -->
+    <div class="flex-1 overflow-y-auto p-4 space-y-3" style="max-height: min(55vh, 28rem)">
+
+      <!-- Loading skeleton -->
+      <div *ngIf="loadingMessages" class="space-y-3">
+        <div *ngFor="let _ of [1,2,3]" class="flex gap-2 animate-pulse">
+          <div class="h-7 w-7 rounded-full bg-slate-200 dark:bg-white/10 shrink-0 mt-1"></div>
+          <div class="flex-1 space-y-1.5 max-w-[70%]">
+            <div class="h-9 rounded-2xl bg-slate-200 dark:bg-white/10"></div>
+            <div class="h-2 w-16 rounded bg-slate-100 dark:bg-white/5"></div>
+          </div>
         </div>
       </div>
-      <p *ngIf="!loadingMessages && selected && !messages.length" class="text-sm text-zinc-500">
-        Pas encore de messages.
-      </p>
-    </div>
-    <div class="p-4 border-t border-slate-200/60 dark:border-white/10">
-      <label class="sr-only" for="dm-input">Message</label>
-      <textarea
-        id="dm-input"
-        [(ngModel)]="draft"
-        rows="3"
-        [disabled]="!selected || sending"
-        placeholder="Écrire un message…"
-        class="w-full rounded-xl border border-slate-200 dark:border-white/15 bg-white/90 dark:bg-slate-950/50 text-sm p-3 mb-2 focus:ring-2 focus:ring-sky-500/40 outline-none resize-none"
-      ></textarea>
-      <button
-        type="button"
-        (click)="send()"
-        [disabled]="!selected || sending || !draft.trim()"
-        class="px-4 py-2 rounded-xl text-sm font-semibold bg-sky-600 text-white disabled:opacity-50 hover:bg-sky-500 transition"
+
+      <!-- No selection -->
+      <div *ngIf="!loadingMessages && !selected" class="flex-1 flex flex-col items-center justify-center py-20 gap-3 text-center">
+        <div class="h-16 w-16 rounded-2xl bg-gradient-to-br from-sky-500/20 to-indigo-500/20 flex items-center justify-center">
+          <i class="fas fa-paper-plane text-sky-500 text-2xl"></i>
+        </div>
+        <p class="text-sm font-medium text-slate-700 dark:text-zinc-300">Choisissez une conversation</p>
+        <p class="text-xs text-slate-500 dark:text-zinc-500 max-w-48">Sélectionnez un échange dans la liste pour afficher les messages.</p>
+      </div>
+
+      <!-- Empty conversation -->
+      <div *ngIf="!loadingMessages && selected && !messages.length" class="flex flex-col items-center justify-center py-16 gap-3 text-center">
+        <div class="h-14 w-14 rounded-2xl bg-gradient-to-br from-indigo-500/20 to-violet-500/20 flex items-center justify-center">
+          <i class="fas fa-feather-alt text-indigo-400 text-xl"></i>
+        </div>
+        <p class="text-sm font-medium text-slate-700 dark:text-zinc-300">Démarrez la conversation</p>
+        <p class="text-xs text-slate-500 dark:text-zinc-500">Soyez le premier à écrire un message.</p>
+      </div>
+
+      <!-- Message bubbles -->
+      <div
+        *ngFor="let m of messages"
+        class="flex items-end gap-2"
+        [class.flex-row-reverse]="isMine(m)"
       >
-        {{ sending ? 'Envoi…' : 'Envoyer' }}
-      </button>
+        <!-- Peer avatar (only on their messages) -->
+        <div
+          *ngIf="!isMine(m) && selected"
+          class="h-7 w-7 rounded-lg bg-gradient-to-br shrink-0 flex items-center justify-center text-white text-[10px] font-bold shadow-sm"
+          [ngClass]="peerColor(selected)"
+        >
+          {{ peerInitials(selected) }}
+        </div>
+
+        <div
+          class="max-w-[78%] rounded-2xl px-3.5 py-2.5 text-sm shadow-sm"
+          [ngClass]="
+            isMine(m)
+              ? 'bg-gradient-to-br from-sky-600 to-indigo-600 text-white rounded-br-sm'
+              : 'bg-white/80 dark:bg-white/10 text-slate-900 dark:text-zinc-100 border border-slate-200/80 dark:border-white/10 rounded-bl-sm'
+          "
+        >
+          <p class="whitespace-pre-wrap leading-relaxed">{{ m.content }}</p>
+          <p class="text-[10px] opacity-60 mt-1.5" [class.text-right]="isMine(m)">
+            {{ m.createdAt | date : 'HH:mm · d MMM' }}
+          </p>
+        </div>
+      </div>
+
+      <!-- Scroll anchor -->
+      <div #messagesEnd></div>
+    </div>
+
+    <!-- Composer -->
+    <div class="p-4 border-t border-slate-200/60 dark:border-white/10 bg-slate-50/50 dark:bg-slate-950/20">
+      <div
+        class="flex flex-col gap-2 rounded-xl border transition-all"
+        [ngClass]="
+          selected
+            ? 'border-slate-200 dark:border-white/15 bg-white/90 dark:bg-slate-950/50 focus-within:border-sky-400/60 focus-within:ring-2 focus-within:ring-sky-500/20'
+            : 'border-slate-200/50 dark:border-white/8 bg-slate-100/50 dark:bg-white/3 opacity-60'
+        "
+      >
+        <label class="sr-only" for="dm-input">Message</label>
+        <textarea
+          id="dm-input"
+          [(ngModel)]="draft"
+          (keydown)="onKeydown($event)"
+          rows="3"
+          [disabled]="!selected || sending"
+          placeholder="{{ selected ? 'Écrire un message… (Ctrl+Entrée pour envoyer)' : 'Sélectionnez une conversation' }}"
+          class="w-full rounded-t-xl bg-transparent text-sm px-4 pt-3 pb-1 outline-none resize-none text-slate-900 dark:text-zinc-100 placeholder-slate-400 dark:placeholder-zinc-600"
+        ></textarea>
+        <div class="flex items-center justify-between px-3 pb-2.5">
+          <div class="flex gap-1.5">
+            <button type="button" [disabled]="!selected" class="h-7 px-2 rounded-lg text-[11px] text-slate-500 dark:text-zinc-500 hover:bg-slate-100 dark:hover:bg-white/10 transition disabled:opacity-40">
+              <i class="fas fa-smile"></i>
+            </button>
+            <button type="button" [disabled]="!selected" class="h-7 px-2 rounded-lg text-[11px] text-slate-500 dark:text-zinc-500 hover:bg-slate-100 dark:hover:bg-white/10 transition disabled:opacity-40">
+              <i class="fas fa-paperclip"></i>
+            </button>
+          </div>
+          <button
+            type="button"
+            (click)="send()"
+            [disabled]="!selected || sending || !draft.trim()"
+            class="inline-flex items-center gap-2 px-4 py-1.5 rounded-lg text-xs font-semibold bg-gradient-to-r from-sky-600 to-indigo-600 text-white shadow-md shadow-sky-900/20 disabled:opacity-40 hover:opacity-90 transition"
+          >
+            <i class="fas fa-paper-plane text-[10px]"></i>
+            {{ sending ? 'Envoi…' : 'Envoyer' }}
+          </button>
+        </div>
+      </div>
+      <p class="text-[10px] text-slate-400 dark:text-zinc-600 mt-1.5 px-1">Ctrl + Entrée pour envoyer rapidement.</p>
     </div>
   </section>
 </div>

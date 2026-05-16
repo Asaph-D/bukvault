@@ -1,3 +1,4 @@
+// reader-community.component.ts
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -14,7 +15,7 @@ import {
   CommunityHubDto,
   CommunityMemberDto,
   MessagingConversationDto,
-  CommunityThreadDto
+  CommunityThreadDto,
 } from '../../../../models/api.types';
 
 @Component({
@@ -79,9 +80,7 @@ export class ReaderCommunityComponent implements OnInit {
         }));
         if (books[0] && this.communityThreads.length) {
           this.communityThreads = this.communityThreads.map((t, i) =>
-            i === 0
-              ? { ...t, title: `« ${books[0].title} » — discussion communauté` }
-              : t
+            i === 0 ? { ...t, title: `« ${books[0].title} » — discussion communauté` } : t
           );
         }
         this.loadError = null;
@@ -118,7 +117,9 @@ export class ReaderCommunityComponent implements OnInit {
   startConversation(userId: string): void {
     this.messagingService.startDirect(userId).subscribe({
       next: (conv: MessagingConversationDto) => {
-        this.router.navigate(['/dashboard/reader/messages'], { queryParams: { conversationId: conv.id } });
+        this.router.navigate(['/dashboard/reader/messages'], {
+          queryParams: { conversationId: conv.id },
+        });
       },
     });
   }

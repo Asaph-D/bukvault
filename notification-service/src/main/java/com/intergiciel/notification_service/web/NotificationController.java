@@ -39,6 +39,13 @@ public class NotificationController {
 		return notificationService.list(AuthSupport.userId(authentication), pageable);
 	}
 
+	@GetMapping("/unread-count")
+	@Operation(summary = "Nombre de notifications non lues")
+	public UnreadCountResponse unreadCount(Authentication authentication) {
+		long n = notificationService.countUnread(AuthSupport.userId(authentication));
+		return new UnreadCountResponse(n);
+	}
+
 	@PatchMapping("/{id}/read")
 	@Operation(summary = "Marquer comme lue")
 	public NotificationResponse markRead(Authentication authentication, @PathVariable Long id) {
@@ -66,5 +73,8 @@ public class NotificationController {
 	}
 
 	public record MarkAllReadResult(int updatedCount) {
+	}
+
+	public record UnreadCountResponse(long count) {
 	}
 }

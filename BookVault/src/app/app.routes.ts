@@ -46,6 +46,11 @@ export const routes: Routes = [
       import('./pages/books/books-reader/book-reader.component').then(m => m.BookReaderComponent)
   },
   {
+    path: 'publication/:bookId',
+    loadComponent: () =>
+      import('./pages/publication/publication-page.component').then(m => m.PublicationPageComponent)
+  },
+  {
     path: 'books/:id',
     loadComponent: () => import('./pages/books/book-detail/book-detail.component').then(m => m.BookDetailComponent)
   },

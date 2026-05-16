@@ -1,7 +1,7 @@
 import { Component, ElementRef, HostListener, OnInit, ViewChild } from '@angular/core';
 import { NavigationEnd, Router, RouterModule } from '@angular/router';
-import { filter } from 'rxjs/operators';
-import { Observable } from 'rxjs';
+import { filter, map, distinctUntilChanged } from 'rxjs/operators';
+import { combineLatest, Observable } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
 import { CartService } from '../../services/cart.service';
 import { NotificationService } from '../../services/notification.service';
@@ -21,20 +21,6 @@ import { ThemeId } from '../../services/theme.service';
     <header
       class="fixed top-0 left-0 right-0 z-50 border-b border-slate-200/90 dark:border-white/10 bg-white/90 dark:bg-[#12121a]/90 backdrop-blur-md transition-colors"
     >
-      <div *ngIf="(authNotice$ | async) as notice" class="border-b border-amber-200/80 dark:border-amber-500/20 bg-amber-50/90 dark:bg-amber-950/30 text-amber-900 dark:text-amber-200">
-        <div class="max-w-7xl mx-auto px-3 sm:px-4 py-2 flex items-center justify-between gap-3">
-          <div class="text-xs sm:text-sm flex items-center gap-2 min-w-0">
-            <i class="fas fa-triangle-exclamation text-amber-600 dark:text-amber-300"></i>
-            <span class="truncate">{{ notice }}</span>
-          </div>
-          <div class="flex items-center gap-2 shrink-0">
-            <a [routerLink]="['/auth/login']" class="text-xs sm:text-sm font-medium underline">Se reconnecter</a>
-            <button type="button" (click)="dismissAuthNotice()" class="p-1.5 rounded-lg hover:bg-amber-100/80 dark:hover:bg-amber-900/30" aria-label="Fermer">
-              <i class="fas fa-times text-xs"></i>
-            </button>
-          </div>
-        </div>
-      </div>
       <div class="max-w-7xl mx-auto px-3 sm:px-4 py-2.5 flex items-center justify-between gap-2 sm:gap-4">
         <a [routerLink]="['/']" class="flex items-center gap-2 sm:gap-2.5 shrink-0 min-w-0">
           <img
@@ -113,7 +99,7 @@ import { ThemeId } from '../../services/theme.service';
             <i [class]="theme === 'dark' ? 'fas fa-sun text-base' : 'fas fa-moon text-base'"></i>
           </button>
 
-          <ng-container *ngIf="(currentUser$ | async) as user; else loginTemplate">
+          <ng-container *ngIf="(currentUser$ | async); else loginTemplate">
             <a
               [routerLink]="dashboardEntryPath"
               class="hidden md:inline-flex items-center text-sm text-indigo-600 dark:text-indigo-400 px-2 py-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-white/10 transition"
@@ -121,62 +107,6 @@ import { ThemeId } from '../../services/theme.service';
             >
               <i class="fas fa-user text-xs opacity-80"></i>
             </a>
-            <div class="relative hidden md:block">
-              <button
-                #notifBtn
-                (click)="toggleNotifications()"
-                class="p-2 rounded-lg text-zinc-600 dark:text-zinc-400 hover:bg-slate-100 dark:hover:bg-white/10 relative"
-                title="Notifications"
-              >
-                <i class="fas fa-bell text-base"></i>
-                <span
-                  *ngIf="((unreadCount$ | async) || 0) > 0"
-                  class="absolute -top-0.5 -right-0.5 bg-red-500 text-white rounded-full h-4 min-w-[1rem] px-0.5 flex items-center justify-center text-[10px] leading-none"
-                >
-                  {{ unreadCount$ | async }}
-                </span>
-              </button>
-              <div
-                *ngIf="showNotifications"
-                #notifMenu
-                class="absolute right-0 mt-2 w-80 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg overflow-hidden z-20"
-              >
-                <div
-                  class="p-3 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-zinc-800/80"
-                >
-                  <h3 class="text-sm font-medium text-slate-900 dark:text-white">Notifications</h3>
-                  <button (click)="markAllAsRead()" class="text-xs text-indigo-600 dark:text-indigo-400 hover:underline">
-                    Tout marquer lu
-                  </button>
-                </div>
-                <div class="max-h-96 overflow-y-auto">
-                  <div *ngIf="(notifications$ | async)?.length === 0" class="p-4 text-center text-sm text-zinc-500 dark:text-zinc-400">
-                    Aucune notification
-                  </div>
-                  <button
-                    type="button"
-                    *ngFor="let notification of (notifications$ | async)"
-                    (click)="markAsRead(notification.id)"
-                    [ngClass]="{ 'bg-slate-50 dark:bg-slate-800/80': !notification.isRead }"
-                    class="w-full text-left p-3 border-b border-slate-100 dark:border-slate-700/80 hover:bg-slate-50 dark:hover:bg-slate-800/50"
-                  >
-                    <div class="flex items-start">
-                      <div
-                        [ngClass]="getNotificationIconClass(notification.type)"
-                        class="mr-3 rounded-full w-9 h-9 flex items-center justify-center text-sm"
-                      >
-                        <i [class]="getNotificationIcon(notification.type)"></i>
-                      </div>
-                      <div class="flex-1 min-w-0">
-                        <h4 class="text-sm font-medium text-slate-900 dark:text-slate-100">{{ notification.title }}</h4>
-                        <p class="text-xs text-zinc-600 dark:text-zinc-400 mt-0.5">{{ notification.message }}</p>
-                        <span class="text-[11px] text-zinc-400 dark:text-zinc-500">{{ notification.date | date: 'short' }}</span>
-                      </div>
-                    </div>
-                  </button>
-                </div>
-              </div>
-            </div>
           </ng-container>
           <ng-template #loginTemplate>
             <a
@@ -186,6 +116,74 @@ import { ThemeId } from '../../services/theme.service';
               Connexion
             </a>
           </ng-template>
+
+          <!-- Cloche : connectés, ou non connectés mais avec au moins une alerte locale (ex. session expirée). -->
+          <div *ngIf="showNotifBell$ | async" class="relative">
+            <button
+              #notifBtn
+              (click)="toggleNotifications()"
+              class="p-2 rounded-lg text-zinc-600 dark:text-zinc-400 hover:bg-slate-100 dark:hover:bg-white/10 relative"
+              title="Notifications"
+              type="button"
+            >
+              <i class="fas fa-bell text-base"></i>
+              <span
+                *ngIf="((unreadCount$ | async) || 0) > 0"
+                class="absolute -top-0.5 -right-0.5 bg-red-500 text-white rounded-full h-4 min-w-[1rem] px-0.5 flex items-center justify-center text-[10px] leading-none"
+              >
+                {{ unreadCount$ | async }}
+              </span>
+            </button>
+            <div
+              *ngIf="showNotifications"
+              #notifMenu
+              class="absolute right-0 mt-2 w-80 max-w-[calc(100vw-1.5rem)] bg-white dark:bg-zinc-900 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg overflow-hidden z-20"
+            >
+              <div
+                class="p-3 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-zinc-800/80"
+              >
+                <h3 class="text-sm font-medium text-slate-900 dark:text-white">Notifications</h3>
+                <button type="button" (click)="markAllAsRead()" class="text-xs text-indigo-600 dark:text-indigo-400 hover:underline">
+                  Tout marquer lu
+                </button>
+              </div>
+              <div class="max-h-96 overflow-y-auto">
+                <div *ngIf="(notifications$ | async)?.length === 0" class="p-4 text-center text-sm text-zinc-500 dark:text-zinc-400">
+                  Aucune notification
+                </div>
+                <button
+                  type="button"
+                  *ngFor="let notification of (notifications$ | async)"
+                  (click)="openNotification(notification)"
+                  [ngClass]="{ 'bg-slate-50 dark:bg-slate-800/80': !notification.isRead }"
+                  class="w-full text-left p-3 border-b border-slate-100 dark:border-slate-700/80 hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                >
+                  <div class="flex items-start">
+                    <div
+                      [ngClass]="getNotificationIconClass(notification.type)"
+                      class="mr-3 rounded-full w-9 h-9 flex items-center justify-center text-sm shrink-0"
+                    >
+                      <i [class]="getNotificationIcon(notification.type)"></i>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                      <h4 class="text-sm font-medium text-slate-900 dark:text-slate-100">{{ notification.title }}</h4>
+                      <p class="text-xs text-zinc-600 dark:text-zinc-400 mt-0.5">{{ notification.message }}</p>
+                      <span class="text-[11px] text-zinc-400 dark:text-zinc-500">{{ notification.date | date: 'short' }}</span>
+                    </div>
+                  </div>
+                </button>
+              </div>
+              <div *ngIf="currentUser$ | async" class="p-2 border-t border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-zinc-800/50">
+                <a
+                  [routerLink]="notificationsFullPath"
+                  (click)="showNotifications = false"
+                  class="block text-center text-xs font-medium text-indigo-600 dark:text-indigo-400 py-2 rounded-md hover:bg-white/80 dark:hover:bg-white/5"
+                >
+                  Voir tout
+                </a>
+              </div>
+            </div>
+          </div>
           <a
             [routerLink]="['/cart']"
             class="hidden sm:flex p-2 rounded-lg text-zinc-600 dark:text-zinc-400 hover:bg-slate-100 dark:hover:bg-white/10 relative"
@@ -323,7 +321,8 @@ import { ThemeId } from '../../services/theme.service';
 })
 export class HeaderComponent implements OnInit {
   currentUser$: Observable<User | null>;
-  authNotice$: Observable<string | null>;
+  /** Affiche la cloche si connecté OU s’il y a des non lues (ex. alerte locale session expirée). */
+  showNotifBell$: Observable<boolean>;
   notifications$: Observable<any[]>;
   unreadCount$: Observable<number>;
   showNotifications = false;
@@ -334,6 +333,8 @@ export class HeaderComponent implements OnInit {
   isDashboardArea = false;
   /** Entrée « vue d’ensemble » selon le rôle (JWT). */
   dashboardEntryPath = '/dashboard';
+  /** Lien vers le centre de notifications du tableau de bord. */
+  notificationsFullPath = '/dashboard/reader/notifications';
 
   @ViewChild('notifBtn', { static: false }) notifBtn?: ElementRef<HTMLElement>;
   @ViewChild('notifMenu', { static: false }) notifMenu?: ElementRef<HTMLElement>;
@@ -346,9 +347,15 @@ export class HeaderComponent implements OnInit {
     private themeService: ThemeService
   ) {
     this.currentUser$ = this.authService.currentUser$;
-    this.authNotice$ = this.authService.authNotice$;
     this.notifications$ = this.notificationService.notifications$;
     this.unreadCount$ = this.notificationService.unreadCount$;
+    this.showNotifBell$ = combineLatest([
+      this.authService.currentUser$,
+      this.notificationService.unreadCount$,
+    ]).pipe(
+      map(([user, unread]) => !!user || unread > 0),
+      distinctUntilChanged(),
+    );
   }
 
   ngOnInit(): void {
@@ -387,14 +394,18 @@ export class HeaderComponent implements OnInit {
     const u = this.authService.getCurrentUser();
     if (!u) {
       this.dashboardEntryPath = '/dashboard';
+      this.notificationsFullPath = '/dashboard/reader/notifications';
       return;
     }
     if (u.role === 'admin') {
       this.dashboardEntryPath = '/dashboard/admin/home';
+      this.notificationsFullPath = '/dashboard/admin/notifications';
     } else if (u.role === 'author') {
       this.dashboardEntryPath = '/dashboard/author/home';
+      this.notificationsFullPath = '/dashboard/author/notifications';
     } else {
       this.dashboardEntryPath = '/dashboard/reader/home';
+      this.notificationsFullPath = '/dashboard/reader/notifications';
     }
   }
 
@@ -420,6 +431,17 @@ export class HeaderComponent implements OnInit {
 
   markAsRead(id: string): void {
     this.notificationService.markAsRead(id).subscribe();
+  }
+
+  openNotification(notification: { id: string; link?: string }): void {
+    this.markAsRead(notification.id);
+    this.showNotifications = false;
+    if (notification.link) {
+      const path = notification.link.startsWith('http')
+        ? notification.link.replace(/^https?:\/\/[^/]+/, '') || '/'
+        : notification.link;
+      this.router.navigateByUrl(path);
+    }
   }
 
   @HostListener('document:mousedown', ['$event'])
@@ -468,9 +490,5 @@ export class HeaderComponent implements OnInit {
   logout(): void {
     this.authService.logout();
     this.router.navigate(['/']);
-  }
-
-  dismissAuthNotice(): void {
-    this.authService.dismissAuthNotice();
   }
 }

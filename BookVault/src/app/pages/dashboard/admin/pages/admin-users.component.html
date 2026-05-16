@@ -1,0 +1,288 @@
+<app-dashboard-internal-header
+  title="Lecteurs"
+  eyebrow="Administration"
+  subtitle="Comptes lecteurs uniquement : profil, suspension, préférences de lecture."
+  [badges]="[
+    { label: 'Lecteurs', icon: 'fas fa-book-reader' },
+    { label: 'Statuts', icon: 'fas fa-user-shield' },
+    { label: 'Préférences', icon: 'fas fa-sliders-h' }
+  ]"
+>
+  <a
+    actions
+    routerLink="/dashboard/admin/home"
+    class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium border border-slate-200 dark:border-white/15 bg-white/90 dark:bg-white/5 text-slate-800 dark:text-zinc-100 hover:bg-slate-50 dark:hover:bg-white/10 transition"
+  >
+    <i class="fas fa-arrow-left text-xs opacity-70"></i>
+    Vue d'ensemble
+  </a>
+</app-dashboard-internal-header>
+
+<div class="dash-animate-in space-y-6">
+  <div
+    *ngIf="banner"
+    class="rounded-2xl border p-4 flex items-start gap-3 max-w-5xl"
+    [ngClass]="
+      banner.kind === 'success'
+        ? 'border-emerald-200/90 bg-emerald-50/80 text-emerald-900 dark:border-emerald-400/20 dark:bg-emerald-400/10 dark:text-emerald-100'
+        : banner.kind === 'danger'
+          ? 'border-red-200/90 bg-red-50/80 text-red-900 dark:border-red-400/20 dark:bg-red-400/10 dark:text-red-100'
+          : 'border-slate-200/90 bg-white/70 text-slate-800 dark:border-white/10 dark:bg-white/5 dark:text-zinc-200'
+    "
+  >
+    <i
+      class="fas mt-0.5"
+      [ngClass]="
+        banner.kind === 'success'
+          ? 'fa-check-circle'
+          : banner.kind === 'danger'
+            ? 'fa-exclamation-triangle'
+            : 'fa-info-circle'
+      "
+    ></i>
+    <p class="text-sm flex-1">{{ banner.text }}</p>
+    <button type="button" (click)="clearBanner()" class="text-sm opacity-70 hover:opacity-100">
+      <i class="fas fa-times"></i>
+    </button>
+  </div>
+
+  <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+    <div class="dash-glass rounded-2xl border border-slate-200/80 dark:border-white/10 p-4">
+      <p class="text-[11px] font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">Total (plateforme)</p>
+      <p class="text-2xl font-semibold text-slate-900 dark:text-white mt-1">{{ totalElements | number }}</p>
+    </div>
+    <div class="dash-glass rounded-2xl border border-slate-200/80 dark:border-white/10 p-4">
+      <p class="text-[11px] font-semibold uppercase tracking-wider text-sky-600 dark:text-sky-400">Page courante</p>
+      <p class="text-2xl font-semibold text-slate-900 dark:text-white mt-1">{{ users.length }}</p>
+    </div>
+    <div class="dash-glass rounded-2xl border border-slate-200/80 dark:border-white/10 p-4">
+      <p class="text-[11px] font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">Actifs (page)</p>
+      <p class="text-2xl font-semibold text-slate-900 dark:text-white mt-1">{{ activeCountOnPage }}</p>
+    </div>
+    <div class="dash-glass rounded-2xl border border-slate-200/80 dark:border-white/10 p-4">
+      <p class="text-[11px] font-semibold uppercase tracking-wider text-amber-600 dark:text-amber-400">Pagination</p>
+      <p class="text-sm font-medium text-slate-700 dark:text-zinc-300 mt-2">Page {{ page + 1 }} / {{ totalPages || 1 }}</p>
+    </div>
+  </div>
+
+  <section class="dash-glass rounded-2xl border border-slate-200/80 dark:border-white/10 p-4">
+    <div class="flex flex-col lg:flex-row lg:items-end gap-4">
+      <div class="flex-1 min-w-[200px]">
+        <label class="block text-xs font-medium text-zinc-600 dark:text-zinc-400 mb-1">Rechercher (page courante)</label>
+        <div class="relative">
+          <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+          <input
+            type="search"
+            [(ngModel)]="searchQuery"
+            (ngModelChange)="onSearchInput()"
+            placeholder="Nom, e-mail…"
+            class="w-full rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-zinc-950 pl-9 pr-3 py-2 text-sm"
+          />
+        </div>
+      </div>
+      <div class="w-full sm:w-40">
+        <label class="block text-xs font-medium text-zinc-600 dark:text-zinc-400 mb-1">Statut</label>
+        <select [(ngModel)]="filterActive" class="w-full rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-zinc-950 px-3 py-2 text-sm">
+          <option value="all">Tous</option>
+          <option value="true">Actifs</option>
+          <option value="false">Suspendus</option>
+        </select>
+      </div>
+      <button
+        type="button"
+        (click)="applyFilters()"
+        class="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-900/20 transition shrink-0"
+      >
+        <i class="fas fa-filter text-xs"></i>
+        Appliquer
+      </button>
+    </div>
+  </section>
+
+  <div class="grid grid-cols-1 xl:grid-cols-5 gap-6 items-start">
+    <section class="xl:col-span-2 dash-glass rounded-2xl border border-slate-200/80 dark:border-white/10 overflow-hidden">
+      <div class="px-4 py-3 border-b border-slate-200/80 dark:border-white/10 flex items-center justify-between">
+        <h2 class="text-sm font-semibold text-slate-900 dark:text-white">Lecteurs</h2>
+        <button type="button" (click)="loadList()" [disabled]="loadingList" class="text-xs text-emerald-600 dark:text-emerald-400 hover:underline disabled:opacity-50">
+          <i class="fas fa-sync-alt" [class.fa-spin]="loadingList"></i> Actualiser
+        </button>
+      </div>
+
+      <p *ngIf="listError" class="p-4 text-sm text-red-600 dark:text-red-400">{{ listError }}</p>
+      <p *ngIf="loadingList && !listError" class="p-6 text-sm text-slate-500 dark:text-zinc-400 text-center">
+        <i class="fas fa-spinner fa-spin mr-2"></i> Chargement…
+      </p>
+
+      <div *ngIf="!loadingList && !listError" class="max-h-[min(70vh,640px)] overflow-y-auto dash-scroll-thin">
+        <button
+          type="button"
+          *ngFor="let u of filteredUsers"
+          (click)="selectUser(u)"
+          class="w-full text-left px-4 py-3 border-b border-slate-100 dark:border-white/5 transition flex gap-3 items-center"
+          [ngClass]="selected?.id === u.id ? 'bg-emerald-500/10 dark:bg-emerald-400/10' : 'hover:bg-slate-50 dark:hover:bg-white/5'"
+        >
+          <span
+            class="h-10 w-10 shrink-0 rounded-full flex items-center justify-center text-sm font-semibold"
+            [ngClass]="u.active ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300' : 'bg-slate-200/80 text-slate-500 dark:bg-white/10 dark:text-zinc-400'"
+          >
+            {{ initials(u) }}
+          </span>
+          <span class="min-w-0 flex-1">
+            <span class="flex items-center gap-2 flex-wrap">
+              <span class="font-medium text-slate-900 dark:text-white truncate">{{ u.firstName }} {{ u.lastName }}</span>
+            </span>
+            <span class="text-xs text-slate-500 dark:text-zinc-400 truncate block">{{ u.email }}</span>
+          </span>
+          <span
+            class="shrink-0 text-[10px] font-semibold uppercase px-2 py-1 rounded-full"
+            [ngClass]="u.active ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300' : 'bg-red-500/15 text-red-700 dark:text-red-300'"
+          >
+            {{ u.active ? 'Actif' : 'Suspendu' }}
+          </span>
+        </button>
+        <p *ngIf="filteredUsers.length === 0" class="p-8 text-center text-sm text-slate-500 dark:text-zinc-400">Aucun lecteur sur cette page.</p>
+      </div>
+
+      <div *ngIf="totalPages > 1" class="px-4 py-3 border-t border-slate-200/80 dark:border-white/10 flex items-center justify-between text-xs">
+        <button type="button" (click)="goPage(-1)" [disabled]="page <= 0 || loadingList" class="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-white/15 disabled:opacity-40">Précédent</button>
+        <span class="text-slate-500 dark:text-zinc-400">{{ page + 1 }} / {{ totalPages }}</span>
+        <button type="button" (click)="goPage(1)" [disabled]="page >= totalPages - 1 || loadingList" class="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-white/15 disabled:opacity-40">Suivant</button>
+      </div>
+    </section>
+
+    <section class="xl:col-span-3 dash-glass rounded-2xl border border-slate-200/80 dark:border-white/10 min-h-[420px]">
+      <div *ngIf="!selected" class="h-full flex flex-col items-center justify-center p-12 text-center">
+        <span class="h-16 w-16 rounded-2xl bg-emerald-500/12 dark:bg-emerald-400/15 text-emerald-600 dark:text-emerald-300 flex items-center justify-center mb-4">
+          <i class="fas fa-user-cog text-2xl"></i>
+        </span>
+        <p class="text-slate-900 dark:text-white font-semibold">Sélectionnez un lecteur</p>
+        <p class="text-sm text-slate-500 dark:text-zinc-400 mt-2 max-w-sm">Profil, suspension du compte et préférences lecteur.</p>
+      </div>
+
+      <div *ngIf="selected" class="p-6">
+        <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6 pb-6 border-b border-slate-200/80 dark:border-white/10">
+          <div class="flex gap-4">
+            <span class="h-14 w-14 rounded-2xl flex items-center justify-center text-lg font-semibold shrink-0" [ngClass]="selected.active ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300' : 'bg-slate-200/80 dark:bg-white/10'">
+              {{ initials(selected) }}
+            </span>
+            <div>
+              <h2 class="text-xl font-semibold text-slate-900 dark:text-white">{{ selected.firstName }} {{ selected.lastName }}</h2>
+              <p class="text-sm text-slate-500 dark:text-zinc-400">{{ selected.email }}</p>
+              <div class="flex flex-wrap gap-2 mt-2">
+                <span class="text-[10px] font-semibold uppercase px-2 py-0.5 rounded-full border bg-sky-500/15 text-sky-800 dark:text-sky-200 border-sky-500/25">Lecteur</span>
+                <span class="text-[10px] font-semibold uppercase px-2 py-0.5 rounded-full" [ngClass]="selected.active ? 'bg-emerald-500/15 text-emerald-700' : 'bg-red-500/15 text-red-700'">
+                  {{ selected.active ? 'Compte actif' : 'Compte suspendu' }}
+                </span>
+              </div>
+              <p class="text-xs text-slate-400 dark:text-zinc-500 mt-2">Inscrit le {{ formatDate(selected.createdAt) }} · MAJ {{ formatDate(selected.updatedAt) }}</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            (click)="toggleActive()"
+            [disabled]="busyActive"
+            class="inline-flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold border transition disabled:opacity-60"
+            [ngClass]="selected.active ? 'border-red-200 text-red-700 dark:border-red-400/30 dark:text-red-300' : 'border-emerald-200 text-emerald-700 dark:border-emerald-400/30 dark:text-emerald-300'"
+          >
+            <i *ngIf="busyActive" class="fas fa-spinner fa-spin"></i>
+            <i *ngIf="!busyActive" class="fas" [ngClass]="selected.active ? 'fa-ban' : 'fa-check'"></i>
+            {{ selected.active ? 'Suspendre' : 'Réactiver' }}
+          </button>
+        </div>
+
+        <div class="flex gap-2 mb-6">
+          <button type="button" (click)="detailTab = 'profile'" class="px-4 py-2 rounded-xl text-sm font-medium transition" [ngClass]="detailTab === 'profile' ? 'bg-emerald-600 text-white shadow' : 'bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-zinc-300'">Profil</button>
+          <button type="button" (click)="detailTab = 'settings'" class="px-4 py-2 rounded-xl text-sm font-medium transition" [ngClass]="detailTab === 'settings' ? 'bg-emerald-600 text-white shadow' : 'bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-zinc-300'">Préférences lecteur</button>
+        </div>
+
+        <p *ngIf="loadingDetail" class="text-sm text-slate-500 mb-4"><i class="fas fa-spinner fa-spin"></i> Actualisation…</p>
+
+        <div *ngIf="detailTab === 'profile'" class="space-y-6">
+          <form [formGroup]="profileForm" (ngSubmit)="saveProfile()" class="space-y-4">
+            <h3 class="text-sm font-semibold text-slate-900 dark:text-white">Informations</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-medium text-zinc-600 dark:text-zinc-400 mb-1">Prénom</label>
+                <input formControlName="firstName" class="w-full rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-zinc-950 px-3 py-2 text-sm" />
+              </div>
+              <div>
+                <label class="block text-xs font-medium text-zinc-600 dark:text-zinc-400 mb-1">Nom</label>
+                <input formControlName="lastName" class="w-full rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-zinc-950 px-3 py-2 text-sm" />
+              </div>
+              <div class="sm:col-span-2">
+                <label class="block text-xs font-medium text-zinc-600 dark:text-zinc-400 mb-1">Bio</label>
+                <textarea formControlName="bio" rows="3" class="w-full rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-zinc-950 px-3 py-2 text-sm"></textarea>
+              </div>
+              <div>
+                <label class="block text-xs font-medium text-zinc-600 dark:text-zinc-400 mb-1">Langue</label>
+                <input formControlName="preferredLanguage" class="w-full rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-zinc-950 px-3 py-2 text-sm" />
+              </div>
+              <div class="flex items-center gap-2 pt-6">
+                <input type="checkbox" formControlName="newsletter" id="newsletter" class="h-4 w-4 accent-emerald-600" />
+                <label for="newsletter" class="text-sm text-slate-700 dark:text-zinc-300">Newsletter</label>
+              </div>
+            </div>
+            <div class="flex justify-end">
+              <button type="submit" [disabled]="busyProfile || profileForm.invalid" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-emerald-600 hover:bg-emerald-500 text-white disabled:opacity-60">
+                <i *ngIf="busyProfile" class="fas fa-spinner fa-spin text-xs"></i>
+                Enregistrer le profil
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <div *ngIf="detailTab === 'settings'">
+          <p *ngIf="!readerSettings" class="text-sm text-slate-500 dark:text-zinc-400">Préférences non disponibles.</p>
+          <div *ngIf="readerSettings" class="space-y-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+              <div class="rounded-xl border border-slate-200/80 dark:border-white/10 p-3 bg-white/50 dark:bg-white/5">
+                <p class="text-xs text-slate-500">Thème</p>
+                <p class="font-medium text-slate-900 dark:text-white">{{ readerSettings.theme }}</p>
+              </div>
+              <div class="rounded-xl border border-slate-200/80 dark:border-white/10 p-3 bg-white/50 dark:bg-white/5">
+                <p class="text-xs text-slate-500">Densité UI</p>
+                <p class="font-medium text-slate-900 dark:text-white">{{ readerSettings.uiDensity }}</p>
+              </div>
+              <div class="rounded-xl border border-slate-200/80 dark:border-white/10 p-3 bg-white/50 dark:bg-white/5">
+                <p class="text-xs text-slate-500">Visibilité communauté</p>
+                <p class="font-medium text-slate-900 dark:text-white">{{ readerSettings.communityVisibility }}</p>
+              </div>
+              <div class="rounded-xl border border-slate-200/80 dark:border-white/10 p-3 bg-white/50 dark:bg-white/5">
+                <p class="text-xs text-slate-500">Accueil par défaut</p>
+                <p class="font-medium text-slate-900 dark:text-white">{{ readerSettings.readerHomeDefault }}</p>
+              </div>
+            </div>
+            <h3 class="text-sm font-semibold text-slate-900 dark:text-white pt-2">Notifications & options</h3>
+            <div class="space-y-2">
+              <label class="flex items-center justify-between gap-4 p-3 rounded-xl border border-slate-200/80 dark:border-white/10 bg-white/50 dark:bg-white/5 cursor-pointer">
+                <span class="text-sm text-slate-700 dark:text-zinc-300">Commandes</span>
+                <input type="checkbox" [checked]="readerSettings.notifyOrders" (change)="saveReaderSettingToggle('notifyOrders', $any($event.target).checked)" [disabled]="busySettings" class="h-4 w-4 accent-emerald-600" />
+              </label>
+              <label class="flex items-center justify-between gap-4 p-3 rounded-xl border border-slate-200/80 dark:border-white/10 bg-white/50 dark:bg-white/5 cursor-pointer">
+                <span class="text-sm text-slate-700 dark:text-zinc-300">Promotions</span>
+                <input type="checkbox" [checked]="readerSettings.notifyPromotions" (change)="saveReaderSettingToggle('notifyPromotions', $any($event.target).checked)" [disabled]="busySettings" class="h-4 w-4 accent-emerald-600" />
+              </label>
+              <label class="flex items-center justify-between gap-4 p-3 rounded-xl border border-slate-200/80 dark:border-white/10 bg-white/50 dark:bg-white/5 cursor-pointer">
+                <span class="text-sm text-slate-700 dark:text-zinc-300">Social</span>
+                <input type="checkbox" [checked]="readerSettings.notifySocial" (change)="saveReaderSettingToggle('notifySocial', $any($event.target).checked)" [disabled]="busySettings" class="h-4 w-4 accent-emerald-600" />
+              </label>
+              <label class="flex items-center justify-between gap-4 p-3 rounded-xl border border-slate-200/80 dark:border-white/10 bg-white/50 dark:bg-white/5 cursor-pointer">
+                <span class="text-sm text-slate-700 dark:text-zinc-300">Messages directs</span>
+                <input type="checkbox" [checked]="readerSettings.allowDirectMessages" (change)="saveReaderSettingToggle('allowDirectMessages', $any($event.target).checked)" [disabled]="busySettings" class="h-4 w-4 accent-emerald-600" />
+              </label>
+              <label class="flex items-center justify-between gap-4 p-3 rounded-xl border border-slate-200/80 dark:border-white/10 bg-white/50 dark:bg-white/5 cursor-pointer">
+                <span class="text-sm text-slate-700 dark:text-zinc-300">Progression bibliothèque</span>
+                <input type="checkbox" [checked]="readerSettings.libraryShowProgress" (change)="saveReaderSettingToggle('libraryShowProgress', $any($event.target).checked)" [disabled]="busySettings" class="h-4 w-4 accent-emerald-600" />
+              </label>
+              <label class="flex items-center justify-between gap-4 p-3 rounded-xl border border-slate-200/80 dark:border-white/10 bg-white/50 dark:bg-white/5 cursor-pointer">
+                <span class="text-sm text-slate-700 dark:text-zinc-300">Réduire les animations</span>
+                <input type="checkbox" [checked]="readerSettings.reduceMotion" (change)="saveReaderSettingToggle('reduceMotion', $any($event.target).checked)" [disabled]="busySettings" class="h-4 w-4 accent-emerald-600" />
+              </label>
+            </div>
+            <p class="text-xs text-slate-500 dark:text-zinc-400">Dernière mise à jour : {{ formatDate(readerSettings.updatedAt) }}</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>

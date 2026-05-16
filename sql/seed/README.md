@@ -32,9 +32,22 @@ $dbUrl = "-h localhost -p 5432 -U postgres"
 & $psql $dbUrl -d bookvault_notifications -v ON_ERROR_STOP=1 -f sql/seed/08_bookvault_notifications.sql
 & $psql $dbUrl -d bookvault_reading -v ON_ERROR_STOP=1 -f sql/seed/09_bookvault_reading.sql
 & $psql $dbUrl -d bookvault_files -v ON_ERROR_STOP=1 -f sql/seed/10_bookvault_files.sql
+& $psql $dbUrl -d bookvault_community -v ON_ERROR_STOP=1 -f sql/seed/11_bookvault_community.sql
+& $psql $dbUrl -v ON_ERROR_STOP=1 -f sql/seed/12_bookvault_admin_dashboard.sql
 ```
 
-Ordre important : `auth` → `users` → `authors` → `catalog` → services qui référencent des UUID de livres/utilisateurs.
+Ordre important : `auth` → `users` → `authors` → `catalog` → services qui référencent des UUID de livres/utilisateurs → **`12_bookvault_admin_dashboard.sql`** (multi-bases, données pour `/api/v1/admin/dashboard`).
+
+### Seed admin-service (vue d’ensemble)
+
+Le fichier `12_bookvault_admin_dashboard.sql` enrichit **sans base dédiée** (admin-service est une façade) :
+
+| Base | Contenu |
+|------|---------|
+| `bookvault_users` | `UPDATE` des `created_at` (Paul, Marie, Samuel + lecteurs 004–00a du seed 02) |
+| `bookvault_catalog` | `UPDATE` métadonnées sur livres publiés du seed 04 |
+| `bookvault_reading` | Progressions sur 14 j + activité semaine |
+| `bookvault_reviews` | 3 signalements d’avis (`openReports`) |
 
 ## Identifiants seed (UUID fixes)
 
@@ -47,7 +60,14 @@ Ordre important : `auth` → `users` → `authors` → `catalog` → services qu
 | User   | paul.atangana@users.cm      | `30000000-0000-4000-a000-000000000001` |
 | User   | marie.essama@users.cm       | `30000000-0000-4000-a000-000000000002` |
 | User   | samuel.beko@users.cm        | `30000000-0000-4000-a000-000000000003` |
+| User   | aicha.mballa@users.cm       | `30000000-0000-4000-a000-000000000004` |
+| User   | brice.owona@users.cm        | `30000000-0000-4000-a000-000000000005` |
+| User   | clarisse.ndjock@users.cm    | `30000000-0000-4000-a000-000000000006` |
+| User   | david.fouda@users.cm        | `30000000-0000-4000-a000-000000000007` |
+| User   | estelle.kamga@users.cm      | `30000000-0000-4000-a000-000000000008` |
+| User   | fabrice.tchinda@users.cm    | `30000000-0000-4000-a000-000000000009` |
+| User   | gisele.abega@users.cm       | `30000000-0000-4000-a000-00000000000a` |
 
-Les livres utilisent les UUID `f0000001-…` à `f0000005-…` (voir scripts catalog).
+Les livres utilisent les UUID `f0000001-…` à `f000000c` (publiés), plus `f000000d`–`e` (histoire/littérature), `f000000f`–`11` (brouillons admin).
 
 Pour réinitialiser : ré-exécuter chaque script (ils commencent par des `DELETE` / `TRUNCATE` ciblés là où c’est sûr).

@@ -129,6 +129,17 @@
         </button>
         <button
           type="button"
+          (click)="toggleWishlist()"
+          [disabled]="wishlistBusy"
+          class="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-white/10"
+          [ngClass]="inWishlist ? 'text-rose-500' : 'text-zinc-600 dark:text-zinc-400'"
+          [title]="inWishlist ? 'Retirer des favoris' : 'Ajouter aux favoris'"
+        >
+          <i *ngIf="wishlistBusy" class="fas fa-spinner fa-spin"></i>
+          <i *ngIf="!wishlistBusy" [class]="inWishlist ? 'fas fa-heart' : 'far fa-heart'"></i>
+        </button>
+        <button
+          type="button"
           (click)="toggleLike()"
           [disabled]="likeBusy"
           class="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-white/10"

@@ -1,15 +1,24 @@
 <app-dashboard-internal-header
   title="Vue plateforme"
   eyebrow="Administration BookVault"
-  subtitle="Pilotage, conformité et analytiques consolidées. Les graphiques PrimeNG utilisent des données mock jusqu’au branchement sur le service admin."
+  subtitle="Pilotage, conformité et analytiques consolidées depuis les microservices (utilisateurs, catalogue, lecture, modération)."
   [badges]="[
-    { label: 'RGPD', icon: 'fas fa-shield-alt' },
-    { label: 'API & sauvegardes', icon: 'fas fa-database' },
-    { label: 'Temps réel (mock)', icon: 'fas fa-bolt' },
+    { label: 'Données live', icon: 'fas fa-bolt' },
+    { label: 'Agrégation admin', icon: 'fas fa-database' },
+    { label: '14 j glissants', icon: 'fas fa-chart-line' }
   ]"
 >
+
   <div actions class="flex flex-wrap gap-2">
-    <p-button label="Export rapide" icon="pi pi-download" [outlined]="true" severity="secondary" styleClass="!rounded-xl" />
+    <p-button
+      label="Actualiser"
+      icon="pi pi-refresh"
+      [outlined]="true"
+      severity="secondary"
+      styleClass="!rounded-xl"
+      [loading]="loading"
+      (onClick)="loadDashboard()"
+    />
     <a
       pButton
       type="button"
@@ -21,20 +30,30 @@
   </div>
 </app-dashboard-internal-header>
 
-<!-- KPI PrimeNG -->
-<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+<p *ngIf="loadError" class="mb-4 text-sm text-red-600 dark:text-red-400 rounded-xl border border-red-200/80 dark:border-red-400/20 bg-red-50/80 dark:bg-red-400/10 px-4 py-3">
+  {{ loadError }}
+</p>
+
+<p *ngIf="loading && !loadError" class="mb-6 text-sm text-slate-500 dark:text-zinc-400">
+  <i class="fas fa-spinner fa-spin mr-2"></i> Chargement des indicateurs…
+</p>
+
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8" [class.opacity-60]="loading">
   <p-card *ngFor="let k of platformKpis" [header]="k.label" styleClass="admin-prime-surface !rounded-2xl !shadow-none overflow-hidden">
     <div class="flex items-baseline justify-between gap-2">
       <span class="text-2xl font-bold text-slate-900 dark:text-white">{{ k.value }}</span>
       <p-tag [value]="k.delta" [severity]="k.up ? 'success' : 'danger'" styleClass="!text-[10px]" />
     </div>
   </p-card>
+  <p-card *ngIf="platformKpis.length === 0 && !loading" header="—" styleClass="admin-prime-surface !rounded-2xl col-span-full">
+    <p class="text-sm text-slate-500">Aucun indicateur disponible.</p>
+  </p-card>
 </div>
 
-<div class="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-8">
+<div class="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-8" [class.opacity-60]="loading">
   <p-card
     header="Lectures par jour"
-    subheader="Courbe lissée · agrégat plateforme"
+    subheader="Mises à jour de progression · 14 derniers jours"
     styleClass="admin-prime-surface xl:col-span-2 !rounded-2xl"
   >
     <div class="h-[280px] admin-chart-wrap">
@@ -42,10 +61,10 @@
     </div>
   </p-card>
 
-  <p-card header="Répartition" subheader="Genres · % des lectures" styleClass="admin-prime-surface !rounded-2xl">
+  <p-card header="Répartition" subheader="Genres · % des vues catalogue" styleClass="admin-prime-surface !rounded-2xl">
     <p class="text-center text-2xl font-bold text-slate-900 dark:text-white mb-2">
       {{ totalReadsK }}
-      <span class="text-sm font-normal text-slate-500 dark:text-zinc-400">lectures</span>
+      <span class="text-sm font-normal text-slate-500 dark:text-zinc-400">vues</span>
     </p>
     <div class="h-[220px] admin-chart-wrap">
       <p-chart type="doughnut" [data]="doughnutData" [options]="doughnutOptions" class="h-full w-full" />
@@ -57,25 +76,27 @@
   <span class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-zinc-500">Engagement</span>
 </p-divider>
 
-<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8 mt-6">
-  <p-card header="Top auteurs" subheader="Volume de lectures estimé" styleClass="admin-prime-surface !rounded-2xl">
-    <ul class="space-y-4">
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8 mt-6" [class.opacity-60]="loading">
+  <p-card header="Top auteurs" subheader="Volume de vues catalogue" styleClass="admin-prime-surface !rounded-2xl">
+    <ul class="space-y-4" *ngIf="topAuthors.length > 0">
       <li *ngFor="let a of topAuthors; let i = index" class="flex items-center gap-3">
         <span class="text-emerald-600 dark:text-emerald-400 font-bold w-6 tabular-nums">{{ i + 1 }}</span>
         <div class="flex-1 min-w-0">
           <p class="text-slate-900 dark:text-white text-sm font-medium truncate">{{ a.name }}</p>
-          <p class="text-xs text-slate-500 dark:text-zinc-500">{{ a.reads }} lectures</p>
+          <p class="text-xs text-slate-500 dark:text-zinc-500">{{ a.reads }} vues</p>
           <p-progressBar [value]="a.load" [showValue]="false" styleClass="!h-1.5 !mt-2 !rounded-full admin-progress-emerald" />
         </div>
       </li>
     </ul>
+    <p *ngIf="topAuthors.length === 0" class="text-sm text-slate-500 dark:text-zinc-400">Pas encore de données auteurs.</p>
   </p-card>
 
-  <p-card header="Activité utilisateurs" subheader="Sessions · semaine glissante" styleClass="admin-prime-surface !rounded-2xl">
+  <p-card header="Activité utilisateurs" subheader="Sessions lecture · semaine glissante" styleClass="admin-prime-surface !rounded-2xl">
+
     <div class="h-[220px] admin-chart-wrap">
       <p-chart type="bar" [data]="barData" [options]="barOptions" class="h-full w-full" />
     </div>
-    <p class="text-xs text-slate-500 dark:text-zinc-500 mt-3 text-center">Indicateur directionnel — données fictives</p>
+    <p class="text-xs text-slate-500 dark:text-zinc-500 mt-3 text-center">Barres normalisées sur la semaine (reading-service)</p>
   </p-card>
 </div>
 
@@ -83,7 +104,9 @@
   <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
     <div>
       <p class="text-sm font-semibold text-slate-900 dark:text-white">File de validations</p>
-      <p class="text-xs text-slate-500 dark:text-zinc-400 mt-1">Titres en attente de publication et modération.</p>
+      <p class="text-xs text-slate-500 dark:text-zinc-400 mt-1">
+        {{ pendingModeration }} titre(s) en brouillon · {{ openReports }} signalement(s) avis
+      </p>
     </div>
     <p-button label="Ouvrir la file" icon="pi pi-arrow-right" iconPos="right" [link]="true" routerLink="/dashboard/admin/validations" />
   </div>

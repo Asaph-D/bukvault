@@ -402,7 +402,7 @@ export class AuthorUploadPageComponent implements OnInit {
                 coverUrl: `${environment.apiUrl}/files/cover/${bookId}`,
               })
             ),
-            switchMap(() => this.books.setPublished(bookId, true)),
+            switchMap(() => this.books.submitForReview(bookId)),
             switchMap(() => of(bookId))
           )
         ),

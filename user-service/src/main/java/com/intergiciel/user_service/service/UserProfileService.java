@@ -117,6 +117,15 @@ public class UserProfileService {
 		return toResponse(userProfileRepository.save(u));
 	}
 
+	@Transactional
+	public UserResponse setActive(UUID id, boolean active) {
+		UserProfile u = userProfileRepository.findById(id)
+				.orElseThrow(() -> new UserNotFoundException("Utilisateur introuvable."));
+		u.setActive(active);
+		u.setUpdatedAt(Instant.now());
+		return toResponse(userProfileRepository.save(u));
+	}
+
 	@Transactional(readOnly = true)
 	public Page<OrderSummaryResponse> listOrdersPlaceholder(UUID userId, Jwt jwt, Pageable pageable) {
 		requireSelfOrAdmin(userId, jwt);

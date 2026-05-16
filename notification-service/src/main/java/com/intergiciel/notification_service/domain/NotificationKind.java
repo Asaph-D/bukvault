@@ -5,5 +5,6 @@ public enum NotificationKind {
 	PROMO,
 	SYSTEM,
 	REVIEW,
-	SOCIAL
+	SOCIAL,
+	BOOK
 }

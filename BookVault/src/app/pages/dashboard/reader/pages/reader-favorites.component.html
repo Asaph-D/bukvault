@@ -1,0 +1,108 @@
+<app-dashboard-internal-header
+  title="Favoris"
+  eyebrow="Mon espace"
+  subtitle="Votre liste de souhaits synchronisée : titres à acheter ou à lire plus tard, avec envoi groupé vers le panier."
+  [badges]="[
+    { label: 'Liste de souhaits', icon: 'fas fa-heart' },
+    { label: 'Panier', icon: 'fas fa-cart-shopping' },
+  ]"
+>
+  <div actions class="flex flex-wrap gap-2">
+    <a
+      routerLink="/dashboard/reader/home"
+      class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium border border-slate-200 dark:border-white/15 bg-white/90 dark:bg-white/5 text-slate-800 dark:text-zinc-100 hover:bg-slate-50 dark:hover:bg-white/10 transition"
+    >
+      <i class="fas fa-arrow-left text-xs opacity-70"></i>
+      Accueil
+    </a>
+    <a
+      routerLink="/cart"
+      class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-sky-600 hover:bg-sky-500 text-white transition"
+    >
+      <i class="fas fa-shopping-cart text-xs"></i>
+      Panier
+    </a>
+    <button
+      type="button"
+      (click)="moveAllToCart()"
+      [disabled]="moveBusy || !rows.length"
+      class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-indigo-600 hover:bg-indigo-500 text-white disabled:opacity-40 disabled:pointer-events-none transition"
+    >
+      <i class="fas fa-right-to-bracket text-xs"></i>
+      {{ moveBusy ? 'Transfert…' : 'Tout au panier' }}
+    </button>
+  </div>
+</app-dashboard-internal-header>
+
+<div class="dash-animate-in space-y-6">
+  <div
+    *ngIf="banner"
+    class="rounded-2xl border p-4 flex items-start gap-3 max-w-4xl"
+    [ngClass]="
+      banner.kind === 'success'
+        ? 'border-emerald-200/90 bg-emerald-50/80 text-emerald-900 dark:border-emerald-400/20 dark:bg-emerald-400/10 dark:text-emerald-100'
+        : 'border-red-200/90 bg-red-50/80 text-red-900 dark:border-red-400/20 dark:bg-red-400/10 dark:text-red-100'
+    "
+  >
+    <i class="fas mt-0.5" [ngClass]="banner.kind === 'success' ? 'fa-check-circle' : 'fa-exclamation-triangle'"></i>
+    <p class="text-sm flex-1">{{ banner.text }}</p>
+    <button type="button" (click)="clearBanner()" class="text-sm opacity-70 hover:opacity-100"><i class="fas fa-times"></i></button>
+  </div>
+
+  <p *ngIf="loading" class="text-zinc-600 dark:text-zinc-400">Chargement…</p>
+  <p *ngIf="error" class="text-red-600 dark:text-red-400">{{ error }}</p>
+
+  <div *ngIf="!loading && !error && rows.length === 0" class="dash-glass rounded-2xl border border-dashed border-slate-300 dark:border-white/20 p-10 text-center">
+    <i class="fas fa-heart text-3xl text-sky-400/80 mb-3"></i>
+    <p class="text-slate-800 dark:text-white font-medium">Aucun favori pour l’instant</p>
+    <p class="text-sm text-zinc-600 dark:text-zinc-400 mt-2 max-w-md mx-auto">
+      Parcourez le catalogue et ajoutez des titres à votre liste depuis la fiche livre (si l’action est disponible) ou gardez cette page pour retrouver vos envies.
+    </p>
+    <a
+      routerLink="/dashboard/reader/discover"
+      class="inline-flex mt-5 items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium bg-sky-600 text-white hover:bg-sky-500"
+    >
+      Découvrir des livres
+    </a>
+  </div>
+
+  <div *ngIf="!loading && !error && rows.length > 0" class="grid sm:grid-cols-2 xl:grid-cols-3 gap-5">
+    <article
+      *ngFor="let r of rows"
+      class="dash-glass rounded-2xl border border-slate-200/80 dark:border-white/10 overflow-hidden flex flex-col hover:border-sky-500/30 transition"
+    >
+      <div class="relative aspect-[3/4] max-h-56 bg-slate-100 dark:bg-zinc-900">
+        <img
+          [src]="r.book?.coverImage || PLACEHOLDER_COVER"
+          (error)="onCoverErr($event)"
+          [alt]="r.book?.title || 'Couverture'"
+          class="w-full h-full object-cover"
+        />
+      </div>
+      <div class="p-4 flex-1 flex flex-col">
+        <h3 class="font-semibold text-slate-900 dark:text-white line-clamp-2">{{ r.book?.title || 'Livre' }}</h3>
+        <p class="text-sm text-zinc-500 dark:text-zinc-400 mt-1">{{ r.book?.author || '—' }}</p>
+        <p class="text-[11px] text-zinc-400 mt-2">Ajouté le {{ r.item.addedAt | date : 'short' }}</p>
+        <div class="mt-auto pt-4 flex flex-wrap gap-2">
+          <a
+            *ngIf="r.book"
+            [routerLink]="['/books', r.book.id]"
+            class="inline-flex flex-1 min-w-[7rem] justify-center items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium bg-sky-600 text-white hover:bg-sky-500"
+          >
+            <i class="fas fa-book-open text-[10px]"></i>
+            Fiche
+          </a>
+          <button
+            type="button"
+            (click)="remove(r.item.bookId)"
+            [disabled]="busyIds.has(r.item.bookId)"
+            class="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium border border-slate-200 dark:border-white/15 hover:bg-red-50 dark:hover:bg-red-500/10 text-red-700 dark:text-red-300 disabled:opacity-40"
+          >
+            <i class="fas fa-trash-alt text-[10px]"></i>
+            Retirer
+          </button>
+        </div>
+      </div>
+    </article>
+  </div>
+</div>

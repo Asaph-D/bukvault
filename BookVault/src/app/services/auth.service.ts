@@ -16,6 +16,10 @@ import {
     storeAuthResponse,
     storeTokensAfterLogin,
 } from './auth-token.store';
+import {
+    AUTH_SESSION_EXPIRED_UI_EVENT,
+    AUTH_SESSION_RESTORED_UI_EVENT,
+} from './auth-ui.events';
 
 /** Ré-export pour les imports existants (`auth.interceptor`, etc.). */
 export { ACCESS_TOKEN_KEY, REFRESH_TOKEN_KEY } from './auth-token.store';
@@ -29,10 +33,6 @@ export const AUTH_TOKENS_PURGED_EVENT = 'bookvault-auth-tokens-purged';
 export class AuthService {
   private currentUserSubject = new BehaviorSubject<User | null>(null);
   public currentUser$ = this.currentUserSubject.asObservable();
-
-  private authNoticeSubject = new BehaviorSubject<string | null>(null);
-  /** Message global (ex: session expirée) à afficher dans le header. */
-  public authNotice$ = this.authNoticeSubject.asObservable();
 
   private jwtHelper = new JwtHelperService();
   private readonly apiBase = environment.apiUrl;
@@ -63,7 +63,9 @@ export class AuthService {
         } else {
           this.clearLocalSession();
         }
-        this.authNoticeSubject.next('Session expirée. Veuillez vous reconnecter.');
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent(AUTH_SESSION_EXPIRED_UI_EVENT));
+        }
       });
 
       window.addEventListener(AUTH_TOKENS_REFRESHED_EVENT, (ev: Event) => {
@@ -71,14 +73,12 @@ export class AuthService {
         const u = e?.detail?.user;
         if (u) {
           this.currentUserSubject.next(this.mapUser(u));
-          this.authNoticeSubject.next(null);
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent(AUTH_SESSION_RESTORED_UI_EVENT));
+          }
         }
       });
     }
-  }
-
-  dismissAuthNotice(): void {
-    this.authNoticeSubject.next(null);
   }
 
   private hydrateMinimalUserFromAccessToken(access: string): void {
@@ -185,7 +185,9 @@ export class AuthService {
         tap(res => {
           storeTokensAfterLogin(res, rememberMe);
           this.currentUserSubject.next(this.mapUser(res.user));
-          this.authNoticeSubject.next(null);
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent(AUTH_SESSION_RESTORED_UI_EVENT));
+          }
         }),
         map(res => this.mapUser(res.user)),
         catchError((err: HttpErrorResponse) =>
@@ -207,7 +209,9 @@ export class AuthService {
         tap(res => {
           storeTokensAfterLogin(res, true);
           this.currentUserSubject.next(this.mapUser(res.user));
-          this.authNoticeSubject.next(null);
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent(AUTH_SESSION_RESTORED_UI_EVENT));
+          }
         }),
         map(res => this.mapUser(res.user)),
         catchError((err: HttpErrorResponse) =>

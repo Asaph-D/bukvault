@@ -2,6 +2,7 @@ package com.intergiciel.catalog_service.web;
 
 import com.intergiciel.catalog_service.domain.BookFormat;
 import com.intergiciel.catalog_service.service.BookCatalogService;
+import com.intergiciel.catalog_service.service.CatalogAccess;
 import com.intergiciel.catalog_service.web.dto.BookDetailResponse;
 import com.intergiciel.catalog_service.web.dto.BookListItemResponse;
 import com.intergiciel.catalog_service.web.dto.CreateBookRequest;
@@ -77,6 +78,16 @@ public class BookController {
 		return bookCatalogService.preview(id, jwtFrom(authentication));
 	}
 
+	@GetMapping("/mine")
+	@Operation(summary = "Mes livres (auteur connecté — tous statuts, hors supprimés)")
+	@PreAuthorize("hasRole('AUTHOR')")
+	public Page<BookListItemResponse> myBooks(
+			Authentication authentication,
+			@PageableDefault(size = 48, sort = "updatedAt", direction = Sort.Direction.DESC) Pageable pageable) {
+		Jwt jwt = jwtFrom(authentication);
+		return bookCatalogService.listForAuthor(CatalogAccess.userId(jwt), pageable);
+	}
+
 	@GetMapping("/{id}")
 	public BookDetailResponse getOne(@PathVariable UUID id, Authentication authentication) {
 		return bookCatalogService.getById(id, jwtFrom(authentication));
@@ -127,6 +138,12 @@ public class BookController {
 			@Valid @RequestBody PublishBookRequest request,
 			Authentication authentication) {
 		return bookCatalogService.publish(id, request, (Jwt) authentication.getPrincipal());
+	}
+
+	@PostMapping("/{id}/submit-for-review")
+	@PreAuthorize("hasRole('AUTHOR')")
+	public BookDetailResponse submitForReview(@PathVariable UUID id, Authentication authentication) {
+		return bookCatalogService.submitForReview(id, (Jwt) authentication.getPrincipal());
 	}
 
 	private static Jwt jwtFrom(Authentication authentication) {

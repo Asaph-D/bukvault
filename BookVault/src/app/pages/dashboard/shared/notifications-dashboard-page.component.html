@@ -1,0 +1,20 @@
+<app-dashboard-internal-header
+  [title]="data.title"
+  [subtitle]="data.subtitle"
+  [eyebrow]="data.eyebrow"
+  [badges]="[
+    { label: 'Historique', icon: 'fas fa-clock-rotate-left' },
+    { label: 'Préférences', icon: 'fas fa-sliders-h' },
+  ]"
+>
+  <a
+    actions
+    [routerLink]="data.backLink"
+    class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium border border-slate-200 dark:border-white/15 bg-white/90 dark:bg-white/5 text-slate-800 dark:text-zinc-100 hover:bg-slate-50 dark:hover:bg-white/10 transition"
+  >
+    <i class="fas fa-arrow-left text-xs opacity-70"></i>
+    {{ data.backLabel }}
+  </a>
+</app-dashboard-internal-header>
+
+<app-notification-center />

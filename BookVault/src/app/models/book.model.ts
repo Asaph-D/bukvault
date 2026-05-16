@@ -10,6 +10,7 @@ export interface Book {
   rating: number;
   reviewCount: number;
   format: 'digital' | 'physical' | 'both';
+  status?: string;
   datePublished: Date;
   sales?: number;
   revenue?: number;
@@ -23,6 +24,9 @@ export interface BookCategory {
   id: string;
   name: string;
   slug: string;
+  description?: string | null;
+  iconUrl?: string | null;
+  bookCount?: number;
 }
 
 export interface Author {

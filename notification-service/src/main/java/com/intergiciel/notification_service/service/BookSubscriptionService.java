@@ -3,10 +3,12 @@ package com.intergiciel.notification_service.service;
 import com.intergiciel.notification_service.domain.BookSubscriptionEntity;
 import com.intergiciel.notification_service.domain.BookSubscriptionId;
 import com.intergiciel.notification_service.repository.BookSubscriptionRepository;
+import com.intergiciel.notification_service.web.dto.BookSubscriptionItemResponse;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -35,6 +37,13 @@ public class BookSubscriptionService {
 	@Transactional(readOnly = true)
 	public boolean isSubscribed(UUID userId, UUID bookId) {
 		return repo.existsById(new BookSubscriptionId(userId, bookId));
+	}
+
+	@Transactional(readOnly = true)
+	public List<BookSubscriptionItemResponse> listForUser(UUID userId) {
+		return repo.findAllByUserIdOrderByCreatedAtDesc(userId).stream()
+				.map(e -> new BookSubscriptionItemResponse(e.getId().getBookId(), e.getCreatedAt()))
+				.toList();
 	}
 }
 

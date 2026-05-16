@@ -32,4 +32,10 @@ foreach ($e in $map.GetEnumerator()) {
   & $Psql -h $PgHost -p $Port -U $User -d $e.Value -v ON_ERROR_STOP=1 -f $script
 }
 
+$adminSeed = Join-Path $PSScriptRoot "12_bookvault_admin_dashboard.sql"
+if (Test-Path $adminSeed) {
+  Write-Host ">>> multi-DB <= 12_bookvault_admin_dashboard.sql"
+  & $Psql -h $PgHost -p $Port -U $User -v ON_ERROR_STOP=1 -f $adminSeed
+}
+
 Write-Host "Terminé."

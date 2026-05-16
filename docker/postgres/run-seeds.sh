@@ -64,5 +64,14 @@ run_file bookvault_notifications "$SEED_DIR/08_bookvault_notifications.sql"
 run_file bookvault_reading "$SEED_DIR/09_bookvault_reading.sql"
 run_file bookvault_files "$SEED_DIR/10_bookvault_files.sql"
 
+if [ -f "$SEED_DIR/11_bookvault_community.sql" ]; then
+  run_file bookvault_community "$SEED_DIR/11_bookvault_community.sql"
+fi
+
+if [ -f "$SEED_DIR/12_bookvault_admin_dashboard.sql" ]; then
+  echo "[db-seed] multi-DB <= 12_bookvault_admin_dashboard.sql"
+  psql -v ON_ERROR_STOP=1 -f "$SEED_DIR/12_bookvault_admin_dashboard.sql"
+fi
+
 touch "$MARKER"
 echo "[db-seed] Done. Marker written to $MARKER"

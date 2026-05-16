@@ -9,18 +9,7 @@ import { BookService, PLACEHOLDER_COVER } from '../../../../services/book.servic
 import { ReadingService } from '../../../../services/reading.service';
 import { ReadingProgressDto } from '../../../../models/api.types';
 import { DashboardInternalHeaderComponent } from '../../shared/dashboard-internal-header.component';
-
-function parseProgressPercent(json: string): number {
-  try {
-    const o = JSON.parse(json) as { percent?: number };
-    if (typeof o.percent === 'number') {
-      return Math.min(100, Math.max(0, Math.round(o.percent)));
-    }
-  } catch {
-    /* ignore */
-  }
-  return 0;
-}
+import { parseProgressPercent } from '../utils/reading-progress.util';
 
 @Component({
   standalone: true,

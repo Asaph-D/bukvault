@@ -8,6 +8,7 @@ import com.intergiciel.user_service.web.dto.OrderSummaryResponse;
 import com.intergiciel.user_service.web.dto.ReaderSettingsResponse;
 import com.intergiciel.user_service.web.dto.UpdateReaderSettingsRequest;
 import com.intergiciel.user_service.web.dto.UpdateRoleRequest;
+import com.intergiciel.user_service.web.dto.UpdateUserActiveRequest;
 import com.intergiciel.user_service.web.dto.UpdateUserRequest;
 import com.intergiciel.user_service.web.dto.UserResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -122,5 +123,12 @@ public class UserController {
 	@Operation(summary = "Change le rôle métier (profil) — à synchroniser avec auth-service en production")
 	public UserResponse updateRole(@PathVariable UUID id, @Valid @RequestBody UpdateRoleRequest request) {
 		return userProfileService.updateRole(id, request);
+	}
+
+	@PutMapping("/{id}/active")
+	@PreAuthorize("hasRole('ADMIN')")
+	@Operation(summary = "Active ou suspend un compte (monitoring admin)")
+	public UserResponse setActive(@PathVariable UUID id, @Valid @RequestBody UpdateUserActiveRequest request) {
+		return userProfileService.setActive(id, request.active());
 	}
 }

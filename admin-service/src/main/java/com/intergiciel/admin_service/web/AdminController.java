@@ -30,9 +30,10 @@ public class AdminController {
 	}
 
 	@GetMapping("/dashboard")
-	@Operation(summary = "Vue synthétique (stub)")
-	public AdminDashboardResponse dashboard() {
-		return adminFacadeService.dashboard();
+	@Operation(summary = "Vue synthétique plateforme (agrégation microservices)")
+	public AdminDashboardResponse dashboard(HttpServletRequest request) {
+		String auth = request.getHeader(org.springframework.http.HttpHeaders.AUTHORIZATION);
+		return adminFacadeService.dashboard(auth);
 	}
 
 	@GetMapping("/books/pending")

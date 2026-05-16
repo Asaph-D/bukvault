@@ -50,7 +50,7 @@ export class AuthorHomeComponent implements OnInit {
   ];
 
   quickTools: { icon: string; label: string; link: string }[] = [
-    { icon: 'fas fa-plus', label: 'Chapitre', link: '/dashboard/author/chapters' },
+    { icon: 'fas fa-book', label: 'Mes œuvres', link: '/dashboard/author/works' },
     { icon: 'fas fa-calendar-alt', label: 'Planning', link: '/dashboard/author/progress' },
     { icon: 'fas fa-database', label: 'Sauvegardes', link: '/dashboard/author/resources' },
     { icon: 'fas fa-file-export', label: 'Export', link: '/dashboard/author/works' },
@@ -69,44 +69,63 @@ export class AuthorHomeComponent implements OnInit {
       this.booksError = 'Compte auteur requis pour les statistiques catalogue.';
       return;
     }
-    this.bookService.getBooksByAuthor(u.id, 0, 32).subscribe({
+    this.bookService.getMyBooks(0, 32).subscribe({
       next: books => {
-        const n = books.length;
-        const views = books.reduce((s, b) => s + (b.sales || 0), 0);
-        const reviews = books.reduce((s, b) => s + (b.reviewCount || 0), 0);
+        const pub = books.filter(b => (b.status || '').toUpperCase() === 'PUBLISHED');
+        const inProgress = books.filter(b =>
+          ['DRAFT', 'REJECTED'].includes((b.status || '').toUpperCase()),
+        );
+        const n = pub.length;
+        const views = pub.reduce((s, b) => s + (b.sales || 0), 0);
+        const reviews = pub.reduce((s, b) => s + (b.reviewCount || 0), 0);
         const avg =
-          n > 0 ? (books.reduce((s, b) => s + b.price, 0) / n).toFixed(2) : '—';
+          n > 0 ? (pub.reduce((s, b) => s + b.price, 0) / n).toFixed(2) : '—';
+        const progressHint =
+          inProgress.length > 0 ? ` · ${inProgress.length} brouillon(s) ou refus` : '';
         this.authorStats = [
-          { label: 'Œuvres publiées', value: String(n), hint: 'Visibles sur le catalogue' },
-          { label: 'Vues (catalogue)', value: views >= 1000 ? `${(views / 1000).toFixed(1)}k` : String(views), hint: 'Cumul vues fiches' },
-          { label: 'Avis reçus', value: String(reviews), hint: 'Tous titres' },
-          { label: 'Prix moyen', value: `${avg} €`, hint: 'Prix catalogue' },
+          {
+            label: 'Titres publiés',
+            value: String(n),
+            hint: 'Visibles sur le catalogue public' + progressHint,
+          },
+          {
+            label: 'Vues (catalogue)',
+            value: views >= 1000 ? `${(views / 1000).toFixed(1)}k` : String(views),
+            hint: 'Cumul vues fiches',
+          },
+          { label: 'Avis reçus', value: String(reviews), hint: 'Titres publiés' },
+          { label: 'Prix moyen', value: `${avg} €`, hint: 'Sur titres publiés' },
         ];
-        if (books[0]) {
-          const b = books[0];
-          const progress = Math.min(95, 20 + (b.sales || 0) % 75);
+        const focus =
+          books.find(b => ['DRAFT', 'REJECTED'].includes((b.status || '').toUpperCase())) || books[0];
+        if (focus) {
+          const progress = Math.min(95, 20 + ((focus.sales ?? 0) % 75));
+          const isPub = (focus.status || '').toUpperCase() === 'PUBLISHED';
           this.currentProject = {
-            title: b.title,
-            blurb: b.description || 'Aucune description longue — éditez la fiche dans le catalogue.',
+            title: focus.title + (isPub ? '' : ' (brouillon / refus)'),
+            blurb:
+              focus.description ||
+              'Aucune description longue — complétez depuis la création ou la fiche catalogue.',
             progress,
-            cover: b.coverImage,
+            cover: focus.coverImage,
           };
         } else {
           this.currentProject = {
-            title: 'Aucun titre publié',
-            blurb: 'Créez un livre pour voir ici la progression et les métriques catalogue.',
+            title: 'Aucun titre',
+            blurb:
+              'Créez un livre pour voir ici la progression ; les métriques catalogue suivent vos publications.',
             progress: 0,
             cover: PLACEHOLDER_COVER,
           };
         }
-        this.activities = books.slice(0, 3).map((b, i) => ({
+        this.activities = books.slice(0, 5).map((b, i) => ({
           icon: 'fas fa-book',
-          title: `« ${b.title} » — ${b.sales || 0} vues · ${b.reviewCount} avis`,
-          time: i === 0 ? 'Récemment' : 'Dans le catalogue',
+          title: `« ${b.title} » — ${this.statusSnippet(b.status)} · ${b.sales || 0} vues · ${b.reviewCount} avis`,
+          time: i === 0 ? 'Récent' : 'Vos titres',
         }));
         if (this.activities.length === 0) {
           this.activities = [
-            { icon: 'fas fa-inbox', title: 'Aucun livre publié pour l’instant', time: 'Publiez depuis le formulaire' },
+            { icon: 'fas fa-inbox', title: 'Aucun livre encore — créez-en un', time: 'Démarrage' },
           ];
         }
         this.dataLoading = false;
@@ -120,5 +139,18 @@ export class AuthorHomeComponent implements OnInit {
 
   onCoverErr(ev: Event): void {
     (ev.target as HTMLImageElement).src = PLACEHOLDER_COVER;
+  }
+
+  private statusSnippet(s: string | undefined): string {
+    switch ((s || '').toUpperCase()) {
+      case 'PUBLISHED':
+        return 'Publié';
+      case 'DRAFT':
+        return 'Brouillon';
+      case 'REJECTED':
+        return 'Refusé';
+      default:
+        return s || 'Statut inconnu';
+    }
   }
 }

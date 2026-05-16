@@ -51,27 +51,65 @@ export const dashboardRoutes: Routes = [
             loadComponent: () =>
               import('./reader/pages/reader-community.component').then(m => m.ReaderCommunityComponent),
           },
-          stub('reading-lists', 'Listes de lecture', 'Organisez vos envies de lecture et vos séries.'),
-          stub('favorites', 'Favoris', 'Retrouvez les titres que vous avez mis en favori.'),
-          stub('history', 'Historique', 'Historique des consultations et achats récents.'),
+          {
+            path: 'reading-lists',
+            loadComponent: () =>
+              import('./reader/pages/reader-reading-lists.component').then(m => m.ReaderReadingListsComponent),
+          },
+          {
+            path: 'favorites',
+            loadComponent: () =>
+              import('./reader/pages/reader-favorites.component').then(m => m.ReaderFavoritesComponent),
+          },
+          {
+            path: 'history',
+            loadComponent: () =>
+              import('./reader/pages/reader-history.component').then(m => m.ReaderHistoryComponent),
+          },
           {
             path: 'profile',
             loadComponent: () =>
               import('./shared/dashboard-account-profile.component').then(m => m.DashboardAccountProfileComponent),
             data: { profileVariant: 'reader' },
           },
-          stub('preferences', 'Goûts & préférences', 'Genres, langues et recommandations.'),
+          {
+            path: 'preferences',
+            loadComponent: () =>
+              import('./reader/pages/reader-tastes-preferences.component').then(
+                m => m.ReaderTastesPreferencesComponent,
+              ),
+          },
           {
             path: 'settings',
             loadComponent: () =>
               import('./reader/pages/reader-settings.component').then(m => m.ReaderSettingsComponent),
           },
-          stub('subscriptions', 'Abonnements', 'Offres BookVault et facturation.'),
+          {
+            path: 'subscriptions',
+            loadComponent: () =>
+              import('./reader/pages/reader-subscriptions.component').then(m => m.ReaderSubscriptionsComponent),
+          },
           stub('comments', 'Commentaires', 'Vos avis et discussions sur les livres.'),
           {
             path: 'messages',
             loadComponent: () =>
               import('./reader/pages/reader-messages.component').then(m => m.ReaderMessagesComponent),
+          },
+          {
+            path: 'notifications',
+            loadComponent: () =>
+              import('./shared/notifications-dashboard-page.component').then(
+                m => m.NotificationsDashboardPageComponent,
+              ),
+            data: {
+              notifPage: {
+                eyebrow: 'Mon espace',
+                title: 'Notifications',
+                subtitle: 'Historique des alertes, ouverture des liens et préférences email / in-app.',
+                backLink: '/dashboard/reader/home',
+                backLabel: 'Accueil lecteur',
+              },
+            },
           },
           stub('events', 'Événements', 'Rencontres, dédicaces et sorties à venir.'),
         ],
@@ -94,14 +132,23 @@ export const dashboardRoutes: Routes = [
               import('./shared/dashboard-account-profile.component').then(m => m.DashboardAccountProfileComponent),
             data: { profileVariant: 'author' },
           },
-          stub('works', 'Mes œuvres', 'Liste et statut de vos livres publiés dans BookVault.'),
+          {
+            path: 'works',
+            loadComponent: () =>
+              import('./author/pages/author-works.component').then(m => m.AuthorWorksComponent),
+          },
           {
             path: 'new-book',
             loadComponent: () =>
               import('./author/pages/author-upload-page.component').then(m => m.AuthorUploadPageComponent),
           },
-          stub('chapters', 'Chapitres', 'Structure et publication par chapitre.'),
-          stub('series', 'Séries', 'Regroupement de titres en série.'),
+          {
+            path: 'publication/:bookId',
+            loadComponent: () =>
+              import('./author/pages/author-publication-sheet.component').then(
+                m => m.AuthorPublicationSheetComponent
+              ),
+          },
           {
             path: 'progress',
             loadComponent: () =>
@@ -112,6 +159,22 @@ export const dashboardRoutes: Routes = [
           stub('comments', 'Commentaires', 'Modération des avis sur vos œuvres.'),
           stub('messages', 'Messages', 'Boîte de réception auteur.'),
           stub('challenges', 'Défis & événements', 'Participations et classements.'),
+          {
+            path: 'notifications',
+            loadComponent: () =>
+              import('./shared/notifications-dashboard-page.component').then(
+                m => m.NotificationsDashboardPageComponent,
+              ),
+            data: {
+              notifPage: {
+                eyebrow: 'Espace auteur',
+                title: 'Notifications',
+                subtitle: 'Suivi des validations, du catalogue et des messages liés à vos œuvres.',
+                backLink: '/dashboard/author/home',
+                backLabel: 'Accueil auteur',
+              },
+            },
+          },
           stub('resources', 'Ressources', 'Guides et assets pour auteurs.'),
           stub('templates', 'Modèles', 'Modèles de couverture et métadonnées.'),
           stub('settings', 'Paramètres', 'Compte auteur et versements.'),
@@ -135,8 +198,16 @@ export const dashboardRoutes: Routes = [
               import('./shared/dashboard-account-profile.component').then(m => m.DashboardAccountProfileComponent),
             data: { profileVariant: 'admin' },
           },
-          stub('users', 'Utilisateurs', 'Comptes, rôles et suspension.'),
-          stub('authors', 'Auteurs', 'Catalogue des auteurs et contrats.'),
+          {
+            path: 'users',
+            loadComponent: () =>
+              import('./admin/pages/admin-users.component').then(m => m.AdminUsersComponent),
+          },
+          {
+            path: 'authors',
+            loadComponent: () =>
+              import('./admin/pages/admin-authors.component').then(m => m.AdminAuthorsComponent),
+          },
           {
             path: 'books',
             loadComponent: () =>
@@ -160,7 +231,22 @@ export const dashboardRoutes: Routes = [
           stub('performance', 'Performances', 'SLA et temps de réponse services.'),
           stub('settings', 'Paramètres', 'Configuration plateforme.'),
           stub('logs', "Logs d'activité", 'Traces d’audit et journaux.'),
-          stub('notifications-sys', 'Notifications', 'Notifications système et maintenance.'),
+          {
+            path: 'notifications',
+            loadComponent: () =>
+              import('./shared/notifications-dashboard-page.component').then(
+                m => m.NotificationsDashboardPageComponent,
+              ),
+            data: {
+              notifPage: {
+                eyebrow: 'Administration',
+                title: 'Notifications',
+                subtitle: 'Centre unique pour l’équipe : alertes plateforme, préférences et historique.',
+                backLink: '/dashboard/admin/home',
+                backLabel: "Vue d'ensemble",
+              },
+            },
+          },
         ],
       },
     ],

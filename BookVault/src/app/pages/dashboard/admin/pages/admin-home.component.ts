@@ -1,7 +1,7 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
-import { Subscription } from 'rxjs';
+import { Subscription, finalize } from 'rxjs';
 import { UIChart } from 'primeng/chart';
 import { Card } from 'primeng/card';
 import { Tag } from 'primeng/tag';
@@ -10,6 +10,20 @@ import { Divider } from 'primeng/divider';
 import { ProgressBar } from 'primeng/progressbar';
 import { DashboardInternalHeaderComponent } from '../../shared/dashboard-internal-header.component';
 import { ThemeService } from '../../../../services/theme.service';
+import { AdminDashboardService } from '../../../../services/admin-dashboard.service';
+import {
+  AdminCategoryShareDto,
+  AdminDashboardDto,
+  AdminTopAuthorDto,
+} from '../../../../models/api.types';
+
+interface PlatformKpiView {
+  label: string;
+  value: string;
+  delta: string;
+  up: boolean;
+  severity: 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contrast';
+}
 
 @Component({
   standalone: true,
@@ -30,56 +44,100 @@ import { ThemeService } from '../../../../services/theme.service';
 })
 export class AdminHomeComponent implements OnInit, OnDestroy {
   private themeSub?: Subscription;
+  private loadSub?: Subscription;
 
-  platformKpis = [
-    { label: 'Utilisateurs', value: '12 543', delta: '+12 %', up: true, severity: 'success' as const },
-    { label: 'Livres publiés', value: '1 234', delta: '+3 %', up: true, severity: 'success' as const },
-    { label: 'Lectures', value: '98 765', delta: '+8 %', up: true, severity: 'info' as const },
-    { label: 'Nouveaux comptes', value: '2 456', delta: '−1 %', up: false, severity: 'warn' as const },
-  ];
+  loading = true;
+  loadError: string | null = null;
 
-  readsByDay = [35, 42, 38, 55, 48, 62, 58, 70, 65, 72, 68, 80, 75, 82, 78];
-  dayLabels = ['J−14', 'J−13', 'J−12', 'J−11', 'J−10', 'J−9', 'J−8', 'J−7', 'J−6', 'J−5', 'J−4', 'J−3', 'J−2', 'J−1', 'J'];
+  platformKpis: PlatformKpiView[] = [];
+  topAuthors: AdminTopAuthorDto[] = [];
+  totalReadsK = '—';
+  pendingModeration = 0;
+  openReports = 0;
 
-  totalReadsK = '98.7k';
-
-  categoryShares = [
-    { name: 'Fantasy', pct: 32, color: '#34d399' },
-    { name: 'Romance', pct: 24, color: '#2dd4bf' },
-    { name: 'Sci‑Fi', pct: 18, color: '#22c55e' },
-    { name: 'Thriller', pct: 15, color: '#10b981' },
-    { name: 'Autres', pct: 11, color: '#64748b' },
-  ];
-
-  topAuthors = [
-    { name: 'Camille Ardent', reads: '42k', load: 92 },
-    { name: 'Luc Morel', reads: '31k', load: 78 },
-    { name: 'Inès Hart', reads: '28k', load: 71 },
-    { name: 'Yann Keller', reads: '22k', load: 58 },
-    { name: 'Sofia Lin', reads: '19k', load: 52 },
-  ];
-
-  activityBars = [40, 55, 48, 72, 65, 80, 58];
-  weekLabels = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
+  private readsByDay: number[] = [];
+  private dayLabels: string[] = [];
+  private categoryShares: AdminCategoryShareDto[] = [];
+  private activityBars: number[] = [];
+  private weekLabels: string[] = [];
 
   lineData: unknown = {};
   lineOptions: Record<string, unknown> = {};
-
   doughnutData: unknown = {};
   doughnutOptions: Record<string, unknown> = {};
-
   barData: unknown = {};
   barOptions: Record<string, unknown> = {};
 
-  constructor(private theme: ThemeService) {}
+  constructor(
+    private theme: ThemeService,
+    private adminDashboard: AdminDashboardService
+  ) {}
 
   ngOnInit(): void {
     this.themeSub = this.theme.theme$.subscribe(() => this.syncCharts());
-    this.syncCharts();
+    this.loadDashboard();
   }
 
   ngOnDestroy(): void {
     this.themeSub?.unsubscribe();
+    this.loadSub?.unsubscribe();
+  }
+
+  loadDashboard(): void {
+    this.loading = true;
+    this.loadError = null;
+    this.loadSub?.unsubscribe();
+    this.loadSub = this.adminDashboard
+      .getDashboard()
+      .pipe(finalize(() => (this.loading = false)))
+      .subscribe({
+        next: data => this.applyDashboard(data),
+        error: () => {
+          this.loadError = 'Impossible de charger la vue plateforme. Vérifiez que admin-service et les microservices sont démarrés.';
+          this.syncCharts();
+        },
+      });
+  }
+
+  private applyDashboard(data: AdminDashboardDto): void {
+    this.platformKpis = data.kpis.map(k => ({
+      label: k.label,
+      value: this.formatNumber(k.value),
+      delta: k.delta,
+      up: k.up,
+      severity: this.mapSeverity(k.severity),
+    }));
+    this.readsByDay = data.readsByDay ?? [];
+    this.dayLabels = data.readsByDayLabels ?? [];
+    this.categoryShares = data.categoryShares ?? [];
+    this.activityBars = data.activityByWeekday ?? [];
+    this.weekLabels = data.activityWeekdayLabels ?? [];
+    this.topAuthors = data.topAuthors ?? [];
+    this.totalReadsK = this.formatCompact(data.totalReads);
+    this.pendingModeration = data.pendingModeration ?? 0;
+    this.openReports = data.openReports ?? 0;
+    this.syncCharts();
+  }
+
+  private formatNumber(n: number): string {
+    return new Intl.NumberFormat('fr-FR').format(n);
+  }
+
+  private formatCompact(n: number): string {
+    if (n >= 1_000_000) {
+      return `${(n / 1_000_000).toFixed(1)}M`;
+    }
+    if (n >= 1_000) {
+      return `${(n / 1_000).toFixed(1)}k`;
+    }
+    return String(n);
+  }
+
+  private mapSeverity(s: string): PlatformKpiView['severity'] {
+    if (s === 'success' || s === 'info' || s === 'warn' || s === 'danger') {
+      return s;
+    }
+    return 'secondary';
   }
 
   private syncCharts(): void {
@@ -121,15 +179,8 @@ export class AdminHomeComponent implements OnInit, OnDestroy {
         },
       },
       scales: {
-        x: {
-          ticks: { color: subtle, maxRotation: 0 },
-          grid: { color: grid },
-        },
-        y: {
-          ticks: { color: subtle },
-          grid: { color: grid },
-          beginAtZero: true,
-        },
+        x: { ticks: { color: subtle, maxRotation: 0 }, grid: { color: grid } },
+        y: { ticks: { color: subtle }, grid: { color: grid }, beginAtZero: true },
       },
     };
 
@@ -164,12 +215,13 @@ export class AdminHomeComponent implements OnInit, OnDestroy {
       },
     };
 
+    const maxActivity = Math.max(...this.activityBars, 1);
     this.barData = {
       labels: this.weekLabels,
       datasets: [
         {
           label: 'Sessions',
-          data: this.activityBars,
+          data: this.activityBars.map(v => Math.round((v / maxActivity) * 100)),
           borderRadius: 6,
           borderSkipped: false,
           backgroundColor: dark ? 'rgba(16,185,129,0.55)' : 'rgba(16,185,129,0.65)',
@@ -192,16 +244,8 @@ export class AdminHomeComponent implements OnInit, OnDestroy {
         },
       },
       scales: {
-        x: {
-          ticks: { color: subtle },
-          grid: { display: false },
-        },
-        y: {
-          ticks: { color: subtle },
-          grid: { color: grid },
-          beginAtZero: true,
-          max: 100,
-        },
+        x: { ticks: { color: subtle }, grid: { display: false } },
+        y: { ticks: { color: subtle }, grid: { color: grid }, beginAtZero: true, max: 100 },
       },
     };
   }

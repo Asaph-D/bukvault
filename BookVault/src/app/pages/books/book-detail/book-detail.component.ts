@@ -2,14 +2,17 @@ import {
   Component,
   OnInit,
   OnDestroy,
+  OnChanges,
+  SimpleChanges,
   HostListener,
   ViewChild,
-  ElementRef
+  ElementRef,
+  Input
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { Subscription, forkJoin, of, interval } from 'rxjs';
+import { Subscription, forkJoin, of } from 'rxjs';
 import { switchMap, tap, catchError, finalize } from 'rxjs/operators';
 import { BookService } from '../../../services/book.service';
 import { CartService } from '../../../services/cart.service';
@@ -22,6 +25,7 @@ import { User } from '../../../models/user.model';
 import { CommunityService } from '../../../services/community.service';
 import { NotificationService } from '../../../services/notification.service';
 import { AuthIntentService } from '../../../services/auth-intent.service';
+import { WishlistService } from '../../../services/wishlist.service';
 
 @Component({
   selector: 'app-book-detail',
@@ -30,7 +34,9 @@ import { AuthIntentService } from '../../../services/auth-intent.service';
   templateUrl: './book-detail.component.html',
   styleUrls: ['./book-detail.component.css']
 })
-export class BookDetailComponent implements OnInit, OnDestroy {
+export class BookDetailComponent implements OnInit, OnDestroy, OnChanges {
+  @Input() bookId?: string; // Optionnel: peut être passé en tant que @Input
+  
   @ViewChild('leftToolbar', { static: false }) leftToolbar?: ElementRef<HTMLElement>;
   @ViewChild('leftToolPanelEl', { static: false }) leftToolPanelEl?: ElementRef<HTMLElement>;
   @ViewChild(PdfPageFlipComponent, { static: false }) flipbook?: PdfPageFlipComponent;
@@ -38,6 +44,8 @@ export class BookDetailComponent implements OnInit, OnDestroy {
   libraryBooks: Book[] = [];
   loading = true;
   cartBusy = false;
+  wishlistBusy = false;
+  inWishlist = false;
   likeBusy = false;
   subscribeBusy = false;
   liked = false;
@@ -138,14 +146,21 @@ export class BookDetailComponent implements OnInit, OnDestroy {
     private sanitizer: DomSanitizer,
     private communityService: CommunityService,
     private notificationService: NotificationService,
-    private authIntent: AuthIntentService
+    private authIntent: AuthIntentService,
+    private wishlist: WishlistService
   ) {}
 
   ngOnInit(): void {
     this.userSub = this.authService.currentUser$.subscribe(u => (this.userSnapshot = u));
-    this.routeSub = this.route.paramMap
-      .pipe(
-        tap(() => {
+    
+    // Si bookId est fourni en input, l'utiliser; sinon, gérer via route
+    if (this.bookId) {
+      // bookId sera géré via ngOnChanges lors des changements
+      this.loadBookData(this.bookId);
+    } else {
+      this.routeSub = this.route.paramMap
+        .pipe(
+          tap(() => {
           // this.loading = true;
           // this.book = undefined;
           // Important: quand on change de livre via “Sélection catalogue”, on purge le manuscrit précédent.
@@ -159,19 +174,19 @@ export class BookDetailComponent implements OnInit, OnDestroy {
           this.flipbookParagraphs = [];
           this.stopSpeech();
           this.isPlaying = false;
-        }),
-        switchMap(params => {
-          const id = params.get('id');
-          if (!id) {
-            return of<{ book: Book | undefined; list: Book[] }>({ book: undefined, list: [] });
-          }
-          return forkJoin({
-            book: this.bookService.getBookById(id),
-            list: this.bookService.getBooks(0, 8)
-          });
-        })
-      )
-      .subscribe(({ book, list }) => {
+          }),
+          switchMap(params => {
+            const id = params.get('id');
+            if (!id) {
+              return of<{ book: Book | undefined; list: Book[] }>({ book: undefined, list: [] });
+            }
+            return forkJoin({
+              book: this.bookService.getBookById(id),
+              list: this.bookService.getBooks(0, 8)
+            });
+          })
+        )
+        .subscribe(({ book, list }) => {
         this.book = book;
         if (book) {
           let merged = list;
@@ -193,6 +208,7 @@ export class BookDetailComponent implements OnInit, OnDestroy {
 
         this.loading = false;
       });
+    }
   }
 
   ngOnDestroy(): void {
@@ -201,6 +217,55 @@ export class BookDetailComponent implements OnInit, OnDestroy {
     this.stopTick();
     this.stopSpeech();
     this.revokeManuscriptUrl();
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['bookId']) {
+      const val = changes['bookId'].currentValue;
+      if (val) {
+        this.loadBookData(val);
+      }
+    }
+  }
+
+  private loadBookData(id: string): void {
+    // Reset state
+    this.manuscriptBusy = false;
+    this.manuscriptError = null;
+    this.revokeManuscriptUrl();
+    this.pageFlipMode = false;
+    this.spreadView = false;
+    this.pdfSpreadStartPage = 1;
+    this.pdfDocTotalPages = 0;
+    this.flipbookParagraphs = [];
+    this.stopSpeech();
+    this.isPlaying = false;
+
+    forkJoin({
+      book: this.bookService.getBookById(id),
+      list: this.bookService.getBooks(0, 8)
+    }).subscribe(({ book, list }) => {
+      this.book = book;
+      if (book) {
+        let merged = list;
+        if (!merged.find(x => x.id === book.id)) {
+          merged = [book, ...merged].slice(0, 8);
+        }
+        this.libraryBooks = merged;
+        this.chapterIndex = 1;
+        this.pdfSpreadStartPage = 1;
+        this.spreadView = false;
+        this.leftToolPanel = null;
+        this.searchQuery = '';
+
+        this.syncMetaFromBook();
+        this.buildChapterContent();
+        this.preloadManuscript();
+        this.loadLikeAndSubscriptionStatus();
+      }
+
+      this.loading = false;
+    });
   }
 
   trackByBook(index: number, book: Book): string {
@@ -489,6 +554,40 @@ export class BookDetailComponent implements OnInit, OnDestroy {
     });
   }
 
+  toggleWishlist(): void {
+    if (!this.book || this.wishlistBusy) return;
+    if (!this.authService.isAuthenticated()) {
+      this.authIntent.save(this.router.url, 'wishlist');
+      this.router.navigate(['/auth/login'], { queryParams: { returnUrl: this.router.url } });
+      return;
+    }
+    this.wishlistBusy = true;
+    if (this.inWishlist) {
+      this.wishlist.remove(this.book.id).subscribe({
+        next: () => {
+          this.inWishlist = false;
+          this.wishlistBusy = false;
+        },
+        error: () => {
+          this.wishlistBusy = false;
+        },
+      });
+    } else {
+      this.wishlist.add(this.book.id).subscribe({
+        next: () => {
+          this.inWishlist = true;
+          this.wishlistBusy = false;
+        },
+        error: err => {
+          if (err?.status === 409) {
+            this.inWishlist = true;
+          }
+          this.wishlistBusy = false;
+        },
+      });
+    }
+  }
+
   toggleLike(): void {
     if (!this.book || this.likeBusy) return;
     if (!this.authService.isAuthenticated()) {
@@ -532,6 +631,7 @@ export class BookDetailComponent implements OnInit, OnDestroy {
     if (!this.authService.isAuthenticated()) {
       this.liked = false;
       this.subscribedToAuthor = false;
+      this.inWishlist = false;
       return;
     }
     this.communityService.isBookLiked(this.book.id).subscribe({
@@ -541,6 +641,22 @@ export class BookDetailComponent implements OnInit, OnDestroy {
     this.notificationService.isSubscribedToBook(this.book.id).subscribe({
       next: r => (this.subscribedToAuthor = !!r.subscribed),
       error: () => (this.subscribedToAuthor = false),
+    });
+    this.syncWishlistState();
+  }
+
+  private syncWishlistState(): void {
+    if (!this.book || !this.authService.isAuthenticated()) {
+      this.inWishlist = false;
+      return;
+    }
+    this.wishlist.list().subscribe({
+      next: items => {
+        this.inWishlist = items.some(i => i.bookId === this.book!.id);
+      },
+      error: () => {
+        this.inWishlist = false;
+      },
     });
   }
 

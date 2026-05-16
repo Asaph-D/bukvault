@@ -9,6 +9,7 @@ public record NotificationResponse(
 		NotificationKind kind,
 		String title,
 		String message,
+		String actionUrl,
 		boolean read,
 		Instant createdAt
 ) {

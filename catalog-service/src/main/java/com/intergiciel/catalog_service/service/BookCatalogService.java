@@ -1,6 +1,7 @@
 package com.intergiciel.catalog_service.service;
 
 import com.intergiciel.catalog_service.domain.Book;
+import com.intergiciel.catalog_service.integration.BookPublicationNotifier;
 import com.intergiciel.catalog_service.domain.BookFormat;
 import com.intergiciel.catalog_service.domain.BookStatus;
 import com.intergiciel.catalog_service.domain.Category;
@@ -34,10 +35,15 @@ public class BookCatalogService {
 
 	private final BookRepository bookRepository;
 	private final CategoryRepository categoryRepository;
+	private final BookPublicationNotifier publicationNotifier;
 
-	public BookCatalogService(BookRepository bookRepository, CategoryRepository categoryRepository) {
+	public BookCatalogService(
+			BookRepository bookRepository,
+			CategoryRepository categoryRepository,
+			BookPublicationNotifier publicationNotifier) {
 		this.bookRepository = bookRepository;
 		this.categoryRepository = categoryRepository;
+		this.publicationNotifier = publicationNotifier;
 	}
 
 	@Transactional(readOnly = true)
@@ -57,6 +63,22 @@ public class BookCatalogService {
 				.and(BookSpecs.languageIs(language))
 				.and(BookSpecs.priceBetween(minPrice, maxPrice))
 				.and(BookSpecs.minRating(minRating));
+		return bookRepository.findAll(spec, pageable).map(this::toListItem);
+	}
+
+	/** Liste des livres non supprimés d’un auteur (tous statuts) — tableau de bord auteur. */
+	@Transactional(readOnly = true)
+	public Page<BookListItemResponse> listForAuthor(UUID authorId, Pageable pageable) {
+		Specification<Book> spec = Specification.where(BookSpecs.notDeleted()).and(BookSpecs.authorIs(authorId));
+		return bookRepository.findAll(spec, pageable).map(this::toListItem);
+	}
+
+	@Transactional(readOnly = true)
+	public Page<BookListItemResponse> listAdmin(BookStatus status, UUID authorId, String q, Pageable pageable) {
+		Specification<Book> spec = Specification.where(BookSpecs.notDeleted())
+				.and(BookSpecs.statusIs(status))
+				.and(BookSpecs.authorIs(authorId))
+				.and(BookSpecs.titleOrIsbnContains(q));
 		return bookRepository.findAll(spec, pageable).map(this::toListItem);
 	}
 
@@ -155,6 +177,26 @@ public class BookCatalogService {
 	}
 
 	@Transactional
+	public BookDetailResponse submitForReview(UUID id, Jwt jwt) {
+		Book b = bookRepository.findById(id).orElseThrow(() -> new NotFoundException("Livre introuvable."));
+		if (!CatalogAccess.canEditBook(b, jwt)) {
+			throw new ForbiddenException("Dépôt non autorisé.");
+		}
+		if (b.getStatus() == BookStatus.PUBLISHED) {
+			throw new IllegalArgumentException("Ce livre est déjà publié.");
+		}
+		if (b.getTitle() == null || b.getTitle().isBlank() || b.getCategories().isEmpty()) {
+			throw new IllegalArgumentException("Titre et au moins une catégorie sont requis avant dépôt.");
+		}
+		b.setStatus(BookStatus.DRAFT);
+		b.setPublishedAt(null);
+		b.setUpdatedAt(Instant.now());
+		Book saved = bookRepository.save(b);
+		publicationNotifier.notifyAdminPendingValidation(saved, jwt);
+		return toDetail(saved);
+	}
+
+	@Transactional
 	public BookDetailResponse publish(UUID id, PublishBookRequest request, Jwt jwt) {
 		Book b = bookRepository.findById(id).orElseThrow(() -> new NotFoundException("Livre introuvable."));
 		if (!CatalogAccess.canEditBook(b, jwt)) {
@@ -173,7 +215,11 @@ public class BookCatalogService {
 			b.setPublishedAt(null);
 		}
 		b.setUpdatedAt(Instant.now());
-		return toDetail(bookRepository.save(b));
+		Book saved = bookRepository.save(b);
+		if (Boolean.TRUE.equals(request.publish()) && CatalogAccess.isAdmin(jwt)) {
+			publicationNotifier.notifyAuthorAfterAdminPublish(saved, jwt);
+		}
+		return toDetail(saved);
 	}
 
 	@Transactional(readOnly = true)

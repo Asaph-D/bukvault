@@ -1,0 +1,101 @@
+<div [class.max-w-3xl]="!compact" [class.mx-auto]="!compact">
+  <p *ngIf="loading" class="text-sm text-slate-500 dark:text-zinc-400 py-8 text-center">
+    <i class="fas fa-spinner fa-spin mr-2"></i> Chargement de la fiche…
+  </p>
+  <p *ngIf="error" class="text-sm text-red-600 dark:text-red-400 py-8 text-center">{{ error }}</p>
+
+  <article
+    *ngIf="!loading && book"
+    class="rounded-3xl border overflow-hidden shadow-sm"
+    [ngClass]="
+      isPublished
+        ? 'border-emerald-200/60 dark:border-emerald-400/20 bg-white dark:bg-slate-900'
+        : 'border-amber-200/60 dark:border-amber-400/20 bg-white dark:bg-slate-900'
+    "
+  >
+    <div
+      class="px-6 py-8 text-white"
+      [ngClass]="
+        isPublished
+          ? 'bg-gradient-to-br from-emerald-600/90 to-teal-700/90'
+          : 'bg-gradient-to-br from-amber-500/90 to-orange-600/90'
+      "
+    >
+      <div class="flex items-center gap-2 text-white/90 text-sm mb-3">
+        <i class="fas" [ngClass]="isPublished ? 'fa-check-circle' : 'fa-hourglass-half'"></i>
+        <span>{{ isPublished ? 'Publication validée' : 'En file de validation' }}</span>
+      </div>
+      <h2 class="text-2xl font-semibold font-[family-name:var(--font-display)]">{{ book.title }}</h2>
+      <p *ngIf="penName" class="text-white/90 text-sm mt-1">par {{ penName }}</p>
+    </div>
+
+    <div class="p-6 sm:p-8 flex flex-col sm:flex-row gap-6">
+      <img
+        [src]="book.coverImage"
+        (error)="onCoverErr($event)"
+        [alt]="book.title"
+        class="w-36 h-52 object-cover rounded-xl shadow-lg shrink-0 mx-auto sm:mx-0"
+      />
+      <div class="min-w-0 flex-1 space-y-4">
+        <div class="flex flex-wrap gap-2">
+          <span
+            class="text-[10px] font-semibold uppercase px-2.5 py-1 rounded-full"
+            [ngClass]="
+              isPublished
+                ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300'
+                : 'bg-amber-500/15 text-amber-800 dark:text-amber-200'
+            "
+          >
+            {{ isPublished ? 'Publié' : 'Brouillon — validation admin' }}
+          </span>
+          <span class="text-[10px] font-semibold uppercase px-2.5 py-1 rounded-full bg-slate-500/10 text-slate-600 dark:text-zinc-300">
+            {{ book.category }}
+          </span>
+        </div>
+        <p class="text-sm text-slate-600 dark:text-zinc-400 leading-relaxed">
+          <ng-container *ngIf="isPublished">
+            {{ book.description || 'Ce titre est visible dans le catalogue BookVault.' }}
+          </ng-container>
+          <ng-container *ngIf="!isPublished">
+            Ce manuscrit a été déposé et attend une validation par l'équipe BookVault. Vous serez notifié dès publication.
+          </ng-container>
+        </p>
+        <dl class="grid grid-cols-2 gap-3 text-sm">
+          <div class="rounded-xl border border-slate-200/80 dark:border-white/10 p-3 bg-slate-50/80 dark:bg-white/5">
+            <dt class="text-xs text-slate-500">Prix</dt>
+            <dd class="font-semibold text-slate-900 dark:text-white">{{ book.price | currency: 'EUR' }}</dd>
+          </div>
+          <div class="rounded-xl border border-slate-200/80 dark:border-white/10 p-3 bg-slate-50/80 dark:bg-white/5">
+            <dt class="text-xs text-slate-500">{{ isPublished ? 'Parution' : 'Dépôt' }}</dt>
+            <dd class="font-semibold text-slate-900 dark:text-white">{{ formatDate(book.datePublished) }}</dd>
+          </div>
+        </dl>
+        <div class="flex flex-wrap gap-3 pt-2">
+          <a
+            *ngIf="isPublished"
+            [routerLink]="['/books', book.id]"
+            class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold bg-emerald-600 hover:bg-emerald-500 text-white shadow-md transition"
+          >
+            <i class="fas fa-book-open text-xs"></i>
+            Catalogue public
+          </a>
+          <a
+            *ngIf="canManageAsAdmin"
+            routerLink="/dashboard/admin/validations"
+            class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium border border-violet-200 dark:border-violet-400/30 text-violet-700 dark:text-violet-300 hover:bg-violet-50 dark:hover:bg-violet-400/10 transition"
+          >
+            <i class="fas fa-check-double text-xs"></i>
+            File de validations
+          </a>
+          <a
+            *ngIf="canManageAsAuthor"
+            routerLink="/dashboard/author/home"
+            class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium border border-slate-200 dark:border-white/15 text-slate-700 dark:text-zinc-200 hover:bg-slate-50 dark:hover:bg-white/5 transition"
+          >
+            Mon espace auteur
+          </a>
+        </div>
+      </div>
+    </div>
+  </article>
+</div>

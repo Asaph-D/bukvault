@@ -34,6 +34,11 @@ public class NotificationService {
 				.map(this::toResponse);
 	}
 
+	@Transactional(readOnly = true)
+	public long countUnread(UUID userId) {
+		return notificationRepository.countByUserIdAndReadFlagFalse(userId);
+	}
+
 	@Transactional
 	public NotificationResponse markRead(UUID userId, Long notificationId) {
 		NotificationEntity n = notificationRepository.findByIdAndUserId(notificationId, userId)
@@ -71,6 +76,7 @@ public class NotificationService {
 				n.getKind(),
 				n.getTitle(),
 				n.getMessage(),
+				n.getActionUrl(),
 				n.isReadFlag(),
 				n.getCreatedAt());
 	}

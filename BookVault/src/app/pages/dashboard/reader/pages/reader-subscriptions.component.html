@@ -1,0 +1,169 @@
+<app-dashboard-internal-header
+  title="Abonnements"
+  eyebrow="Mon espace"
+  subtitle="Votre formule BookVault, les offres à venir et les livres pour lesquels vous recevez des alertes."
+  [badges]="[
+    { label: 'Offres', icon: 'fas fa-gem' },
+    { label: 'Alertes livres', icon: 'fas fa-bell' },
+  ]"
+>
+  <div actions class="flex flex-wrap gap-2">
+    <a
+      routerLink="/dashboard/reader/home"
+      class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium border border-slate-200 dark:border-white/15 bg-white/90 dark:bg-white/5 text-slate-800 dark:text-zinc-100 hover:bg-slate-50 dark:hover:bg-white/10 transition"
+    >
+      <i class="fas fa-arrow-left text-xs opacity-70"></i>
+      Accueil
+    </a>
+    <a
+      routerLink="/dashboard/reader/notifications"
+      class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-sky-600 hover:bg-sky-500 text-white transition"
+    >
+      <i class="fas fa-bell text-xs"></i>
+      Notifications
+    </a>
+  </div>
+</app-dashboard-internal-header>
+
+<div class="dash-animate-in space-y-10">
+  <!-- Statut actuel -->
+  <section class="dash-glass rounded-2xl border border-sky-500/20 bg-gradient-to-r from-sky-500/10 via-transparent to-indigo-500/10 dark:from-sky-900/25 dark:to-indigo-950/20 p-5 md:p-6">
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <div>
+        <p class="text-[11px] font-semibold uppercase tracking-wider text-sky-700 dark:text-sky-300">Formule actuelle</p>
+        <p class="text-xl font-semibold text-slate-900 dark:text-white mt-1">{{ displayPlanLabel }}</p>
+        <p class="text-sm text-slate-600 dark:text-zinc-400 mt-2 max-w-xl">
+          Les passages à une offre payante se feront depuis cette page une fois le paiement récurrent branché. En attendant,
+          vous profitez du catalogue en achat unitaire et des alertes par livre.
+        </p>
+      </div>
+      <a
+        routerLink="/dashboard/reader/history"
+        class="shrink-0 inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium border border-slate-200 dark:border-white/15 bg-white/90 dark:bg-white/5 hover:bg-white dark:hover:bg-white/10"
+      >
+        <i class="fas fa-receipt text-sky-600 dark:text-sky-400"></i>
+        Mes achats
+      </a>
+    </div>
+  </section>
+
+  <!-- Offres (présentation — activation ultérieure) -->
+  <section>
+    <h2 class="text-lg font-semibold text-slate-900 dark:text-white mb-1">Offres BookVault</h2>
+    <p class="text-sm text-slate-600 dark:text-zinc-400 mb-6 max-w-3xl">
+      Toutes les actions d’adhésion seront disponibles lorsque la facturation récurrente sera activée. Les prix ci-dessous sont
+      indicatifs pour le pilote produit.
+    </p>
+    <div class="grid md:grid-cols-3 gap-5">
+      <article
+        *ngFor="let plan of plans"
+        class="rounded-2xl border p-5 flex flex-col transition"
+        [ngClass]="
+          plan.highlight
+            ? 'border-sky-500/50 bg-sky-500/5 dark:bg-sky-500/10 ring-2 ring-sky-500/30'
+            : 'border-slate-200/80 dark:border-white/10 bg-white/60 dark:bg-white/5'
+        "
+      >
+        <div class="flex items-start justify-between gap-2">
+          <h3 class="font-[family-name:var(--font-display)] text-lg font-semibold text-slate-900 dark:text-white">{{ plan.name }}</h3>
+          <span
+            *ngIf="plan.highlight"
+            class="text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full bg-sky-600 text-white"
+            >Bientôt</span
+          >
+        </div>
+        <p class="text-sm text-slate-600 dark:text-zinc-400 mt-2 flex-1 leading-relaxed">{{ plan.blurb }}</p>
+        <p class="text-2xl font-semibold text-slate-900 dark:text-white mt-4">{{ plan.priceLabel }}</p>
+        <ul class="mt-4 space-y-2 text-sm text-slate-700 dark:text-zinc-300">
+          <li *ngFor="let f of plan.features" class="flex gap-2">
+            <i class="fas fa-check text-sky-600 dark:text-sky-400 text-xs mt-0.5"></i>
+            <span>{{ f }}</span>
+          </li>
+        </ul>
+        <button
+          type="button"
+          disabled
+          class="mt-6 w-full py-2.5 rounded-xl text-sm font-medium border border-slate-200 dark:border-white/15 text-slate-400 dark:text-zinc-500 cursor-not-allowed"
+        >
+          {{ plan.id === 'free' ? 'Votre formule actuelle' : 'Bientôt disponible' }}
+        </button>
+      </article>
+    </div>
+  </section>
+
+  <!-- Alertes par livre -->
+  <section>
+    <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-4">
+      <div>
+        <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Alertes par livre</h2>
+        <p class="text-sm text-slate-600 dark:text-zinc-400 mt-1">
+          Titres pour lesquels vous avez activé la cloche (nouveautés, publication, rappels). Gérable aussi depuis chaque fiche livre.
+        </p>
+      </div>
+      <button
+        type="button"
+        (click)="reloadBookAlerts()"
+        class="text-sm font-medium text-sky-600 dark:text-sky-400 hover:underline self-start sm:self-auto"
+      >
+        Rafraîchir
+      </button>
+    </div>
+
+    <p *ngIf="booksError" class="text-sm text-red-600 dark:text-red-400 mb-3">{{ booksError }}</p>
+    <p *ngIf="booksLoading" class="text-zinc-500">Chargement…</p>
+
+    <div *ngIf="!booksLoading && !booksError && bookRows.length === 0" class="dash-glass rounded-2xl border border-dashed border-slate-300 dark:border-white/15 p-8 text-center">
+      <p class="text-slate-700 dark:text-zinc-300 text-sm">Aucune alerte livre active.</p>
+      <p class="text-xs text-zinc-500 mt-2">Ouvrez une fiche livre et activez la cloche pour suivre les actualités de ce titre.</p>
+      <a routerLink="/dashboard/reader/discover" class="inline-flex mt-4 items-center gap-2 text-sm font-medium text-sky-600 dark:text-sky-400">
+        Découvrir le catalogue
+      </a>
+    </div>
+
+    <ul *ngIf="!booksLoading && bookRows.length > 0" class="space-y-3">
+      <li
+        *ngFor="let row of bookRows"
+        class="dash-glass rounded-2xl border border-slate-200/80 dark:border-white/10 p-4 flex flex-col sm:flex-row sm:items-center gap-4"
+      >
+        <img
+          [src]="row.book?.coverImage || PLACEHOLDER_COVER"
+          (error)="onCoverErr($event)"
+          alt=""
+          class="w-16 h-24 object-cover rounded-lg shrink-0"
+        />
+        <div class="flex-1 min-w-0">
+          <h3 class="font-semibold text-slate-900 dark:text-white">{{ row.book?.title || 'Livre' }}</h3>
+          <p class="text-sm text-zinc-500">{{ row.book?.author || '—' }}</p>
+          <p class="text-[11px] text-zinc-400 mt-1">Suivi depuis {{ row.sub.subscribedAt | date : 'medium' }}</p>
+          <a *ngIf="row.book" [routerLink]="['/books', row.book.id]" class="text-xs text-sky-600 dark:text-sky-400 mt-1 inline-block"
+            >Voir la fiche</a
+          >
+        </div>
+        <button
+          type="button"
+          (click)="unsubscribe(row.sub.bookId)"
+          [disabled]="busyUnsub.has(row.sub.bookId)"
+          class="shrink-0 inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs font-medium border border-red-200 dark:border-red-500/30 text-red-700 dark:text-red-300 hover:bg-red-50 dark:hover:bg-red-500/10 disabled:opacity-40"
+        >
+          <i class="fas fa-bell-slash"></i>
+          {{ busyUnsub.has(row.sub.bookId) ? '…' : 'Ne plus suivre' }}
+        </button>
+      </li>
+    </ul>
+  </section>
+
+  <!-- Rappels -->
+  <section class="rounded-2xl border border-slate-200/80 dark:border-white/10 p-5 bg-slate-50/80 dark:bg-zinc-900/40">
+    <h3 class="text-sm font-semibold text-slate-900 dark:text-white">Paramètres des canaux</h3>
+    <p class="text-sm text-slate-600 dark:text-zinc-400 mt-2">
+      Pour les e-mails et les notifications in-app (hors abonnement livre), ouvrez le centre dédié.
+    </p>
+    <a
+      routerLink="/dashboard/reader/notifications"
+      class="inline-flex mt-3 items-center gap-2 text-sm font-medium text-indigo-600 dark:text-indigo-400"
+    >
+      Centre de notifications &amp; préférences
+      <i class="fas fa-arrow-right text-xs"></i>
+    </a>
+  </section>
+</div>

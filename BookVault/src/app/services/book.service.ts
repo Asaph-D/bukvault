@@ -62,6 +62,7 @@ export class BookService {
       rating: b.averageRating,
       reviewCount: b.reviewCount,
       format: this.formatLabel(b.format),
+      status: b.status,
       datePublished: b.publishedAt ? new Date(b.publishedAt) : new Date(b.createdAt),
       sales: b.viewCount,
       revenue: undefined
@@ -83,6 +84,7 @@ export class BookService {
       rating: d.averageRating,
       reviewCount: d.reviewCount,
       format: this.formatLabel(d.format),
+      status: d.status,
       datePublished: d.publishedAt ? new Date(d.publishedAt) : new Date(d.createdAt),
       isbn: d.isbn,
       language: d.language,
@@ -170,6 +172,14 @@ export class BookService {
     return this.listToBooks(this.http.get<PageDto<BookListItemDto>>(`${this.base}/books`, { params }));
   }
 
+  /** Livres de l'auteur connecté (tous statuts, JWT requis — route `/books/mine`). */
+  getMyBooks(page = 0, size = 64): Observable<Book[]> {
+    const params = new HttpParams().set('page', String(page)).set('size', String(size));
+    return this.listToBooks(
+      this.http.get<PageDto<BookListItemDto>>(`${this.base}/books/mine`, { params }),
+    );
+  }
+
   searchBooks(query: string, page = 0, size = 24): Observable<Book[]> {
     if (!query.trim()) return of([]);
     const params = new HttpParams()
@@ -185,9 +195,12 @@ export class BookService {
         list.map(c => ({
           id: c.id,
           name: c.name,
-          slug: c.slug
-        }))
-      )
+          slug: c.slug,
+          description: c.description,
+          iconUrl: c.iconUrl,
+          bookCount: c.bookCount,
+        })),
+      ),
     );
   }
 
@@ -217,6 +230,11 @@ export class BookService {
   setPublished(id: string, publish: boolean): Observable<BookDetailDto> {
     const body: PublishBookRequestDto = { publish };
     return this.http.patch<BookDetailDto>(`${this.base}/books/${id}/publish`, body);
+  }
+
+  /** Dépose le manuscrit en file de validation admin (reste en brouillon). */
+  submitForReview(id: string): Observable<BookDetailDto> {
+    return this.http.post<BookDetailDto>(`${this.base}/books/${id}/submit-for-review`, {});
   }
 
   /** API brute : soft-delete. */

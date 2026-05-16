@@ -41,8 +41,10 @@
 </p-message>
 <p-message *ngIf="publishSuccessBookId" severity="success" styleClass="!mb-6 !rounded-xl">
   <span class="text-sm"
-    >Publication OK.
-    <a class="underline" [routerLink]="['/books', publishSuccessBookId]">Ouvrir la fiche</a>.</span
+    >Manuscrit déposé — en file de validation admin.
+    <a class="underline" [routerLink]="['/publication', publishSuccessBookId]" [queryParams]="{ view: 'pending' }"
+      >Voir la fiche de publication</a
+    >.</span
   >
 </p-message>
 <p-message *ngIf="fileSelectionNotice" severity="warn" styleClass="!mb-6 !rounded-xl">

@@ -1,0 +1,225 @@
+<app-dashboard-internal-header
+  title="Listes de lecture"
+  eyebrow="Mon espace"
+  subtitle="Reprenez vos lectures synchronisées et organisez vos propres listes locales (séries, club de lecture, pile à lire)."
+  [badges]="[
+    { label: 'Progression', icon: 'fas fa-bookmark' },
+    { label: 'Listes perso', icon: 'fas fa-list' },
+  ]"
+>
+  <div actions class="flex flex-wrap gap-2">
+    <a
+      routerLink="/dashboard/reader/home"
+      class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium border border-slate-200 dark:border-white/15 bg-white/90 dark:bg-white/5 text-slate-800 dark:text-zinc-100 hover:bg-slate-50 dark:hover:bg-white/10 transition"
+    >
+      <i class="fas fa-arrow-left text-xs opacity-70"></i>
+      Accueil
+    </a>
+    <a
+      routerLink="/dashboard/reader/discover"
+      class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-sky-600 hover:bg-sky-500 text-white transition"
+    >
+      <i class="fas fa-compass text-xs"></i>
+      Découvrir
+    </a>
+  </div>
+</app-dashboard-internal-header>
+
+<div class="dash-animate-in space-y-10">
+  <div
+    *ngIf="banner"
+    class="rounded-2xl border p-4 flex items-start gap-3 max-w-4xl"
+    [ngClass]="
+      banner.kind === 'success'
+        ? 'border-emerald-200/90 bg-emerald-50/80 text-emerald-900 dark:border-emerald-400/20 dark:bg-emerald-400/10 dark:text-emerald-100'
+        : 'border-red-200/90 bg-red-50/80 text-red-900 dark:border-red-400/20 dark:bg-red-400/10 dark:text-red-100'
+    "
+  >
+    <p class="text-sm flex-1">{{ banner.text }}</p>
+    <button type="button" (click)="clearBanner()" class="text-sm opacity-70 hover:opacity-100"><i class="fas fa-times"></i></button>
+  </div>
+
+  <!-- Progression -->
+  <section>
+    <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-4">
+      <div>
+        <h2 class="text-lg font-semibold text-slate-900 dark:text-white">En cours de lecture</h2>
+        <p class="text-sm text-zinc-600 dark:text-zinc-400">Synchronisé avec votre appareil (service lecture).</p>
+      </div>
+      <button
+        type="button"
+        (click)="loadProgress()"
+        class="text-sm font-medium text-sky-600 dark:text-sky-400 hover:underline"
+      >
+        Rafraîchir
+      </button>
+    </div>
+
+    <p *ngIf="progressLoading" class="text-zinc-500">Chargement…</p>
+    <p *ngIf="progressError" class="text-red-600 dark:text-red-400">{{ progressError }}</p>
+
+    <div *ngIf="!progressLoading && !progressError && progressRows.length === 0" class="dash-glass rounded-2xl border border-dashed p-8 text-center text-sm text-zinc-500">
+      Aucune progression enregistrée. Ouvrez un livre numérique pour reprendre ici.
+    </div>
+
+    <div *ngIf="!progressLoading && progressRows.length > 0" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <article
+        *ngFor="let r of progressRows"
+        class="dash-glass rounded-2xl border border-slate-200/80 dark:border-white/10 p-4 flex gap-3"
+      >
+        <img
+          [src]="r.book?.coverImage || PLACEHOLDER_COVER"
+          (error)="onCoverErr($event)"
+          alt=""
+          class="w-16 h-24 object-cover rounded-lg shrink-0"
+        />
+        <div class="min-w-0 flex-1">
+          <p class="text-[10px] font-semibold uppercase tracking-wide text-sky-600 dark:text-sky-400">
+            {{ labelMedia(r.progress.mediaType) }}
+          </p>
+          <h3 class="font-semibold text-slate-900 dark:text-white line-clamp-2">{{ r.book?.title || 'Livre' }}</h3>
+          <p class="text-xs text-zinc-500">{{ r.book?.author || '—' }}</p>
+          <div class="mt-2 h-1.5 rounded-full bg-slate-200 dark:bg-zinc-800 overflow-hidden">
+            <div class="h-full bg-sky-500 rounded-full transition-all" [style.width.%]="r.percent"></div>
+          </div>
+          <p class="text-[11px] text-zinc-400 mt-1">{{ r.percent }} % · MAJ {{ r.progress.serverUpdatedAt | date : 'short' }}</p>
+          <a
+            *ngIf="r.book"
+            [routerLink]="['/books', r.book.id, 'read']"
+            class="inline-flex mt-2 text-xs font-medium text-sky-600 dark:text-sky-400 hover:underline"
+          >
+            Reprendre la lecture →
+          </a>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <!-- Listes perso -->
+  <section>
+    <h2 class="text-lg font-semibold text-slate-900 dark:text-white mb-1">Mes listes personnelles</h2>
+    <p class="text-sm text-zinc-600 dark:text-zinc-400 mb-4 max-w-3xl">
+      Stockées sur ce navigateur (utile pour séries, défis ou piles « à lire »). Ajoutez des titres via la recherche catalogue.
+    </p>
+
+    <div class="flex flex-col lg:flex-row gap-6">
+      <div class="lg:w-56 shrink-0 space-y-2">
+        <div class="flex gap-2">
+          <input
+            type="text"
+            [(ngModel)]="newListName"
+            (keyup.enter)="createList()"
+            placeholder="Nouvelle liste…"
+            class="flex-1 min-w-0 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-zinc-950 px-3 py-2 text-sm"
+          />
+          <button
+            type="button"
+            (click)="createList()"
+            class="shrink-0 px-3 py-2 rounded-xl bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-500"
+          >
+            +
+          </button>
+        </div>
+        <ul class="rounded-xl border border-slate-200/80 dark:border-white/10 divide-y divide-slate-100 dark:divide-white/10 overflow-hidden">
+          <li *ngFor="let l of lists">
+            <button
+              type="button"
+              (click)="selectList(l.id)"
+              [class]="
+                selectedListId === l.id
+                  ? 'w-full text-left px-3 py-2.5 text-sm font-medium bg-sky-500/10 text-sky-800 dark:text-sky-200'
+                  : 'w-full text-left px-3 py-2.5 text-sm hover:bg-slate-50 dark:hover:bg-white/5 text-slate-800 dark:text-zinc-200'
+              "
+            >
+              <span class="line-clamp-1">{{ l.name }}</span>
+              <span class="block text-[10px] text-zinc-400">{{ l.bookIds.length }} titre(s)</span>
+            </button>
+          </li>
+        </ul>
+        <p *ngIf="lists.length === 0" class="text-xs text-zinc-500 px-1">Créez une première liste pour commencer.</p>
+      </div>
+
+      <div class="flex-1 min-w-0 dash-glass rounded-2xl border border-slate-200/80 dark:border-white/10 p-4 md:p-5">
+        <ng-container *ngIf="selectedList as list">
+          <div class="flex flex-wrap items-start justify-between gap-3 mb-4">
+            <div class="min-w-0">
+              <h3 class="font-semibold text-slate-900 dark:text-white text-lg">{{ list.name }}</h3>
+              <p class="text-xs text-zinc-500">Créée le {{ list.createdAt | date : 'mediumDate' }}</p>
+            </div>
+            <div class="flex flex-wrap gap-2">
+              <button
+                type="button"
+                (click)="startRename()"
+                class="text-xs px-3 py-1.5 rounded-lg border border-slate-200 dark:border-white/15 hover:bg-slate-50 dark:hover:bg-white/10"
+              >
+                Renommer
+              </button>
+              <button
+                type="button"
+                (click)="deleteSelectedList()"
+                class="text-xs px-3 py-1.5 rounded-lg text-red-600 dark:text-red-400 border border-red-200/80 dark:border-red-500/30 hover:bg-red-50 dark:hover:bg-red-500/10"
+              >
+                Supprimer
+              </button>
+            </div>
+          </div>
+          <div *ngIf="renameDraft" class="flex gap-2 mb-4">
+            <input
+              type="text"
+              [(ngModel)]="renameDraft"
+              (keyup.enter)="commitRename()"
+              class="flex-1 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-zinc-950 px-3 py-2 text-sm"
+            />
+            <button type="button" (click)="commitRename()" class="px-3 py-2 rounded-xl bg-slate-800 text-white text-sm">OK</button>
+            <button type="button" (click)="renameDraft = ''" class="px-3 py-2 rounded-xl border border-slate-200 dark:border-white/15 text-sm">Annuler</button>
+          </div>
+
+          <div class="mb-4">
+            <label class="block text-xs font-medium text-zinc-500 mb-1">Ajouter un livre (recherche)</label>
+            <input
+              type="search"
+              [(ngModel)]="searchQuery"
+              (ngModelChange)="onSearchInput()"
+              placeholder="Titre, ISBN…"
+              class="w-full max-w-lg rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-zinc-950 px-3 py-2 text-sm"
+            />
+            <p *ngIf="searching" class="text-xs text-zinc-500 mt-1">Recherche…</p>
+            <ul *ngIf="searchHits.length" class="mt-2 max-h-48 overflow-y-auto rounded-xl border border-slate-200 dark:border-white/10 divide-y divide-slate-100 dark:divide-white/10">
+              <li *ngFor="let b of searchHits" class="flex items-center justify-between gap-2 px-3 py-2 text-sm">
+                <span class="truncate">{{ b.title }} — {{ b.author }}</span>
+                <button type="button" (click)="addHitToList(b)" class="shrink-0 text-sky-600 dark:text-sky-400 text-xs font-medium">Ajouter</button>
+              </li>
+            </ul>
+          </div>
+
+          <div *ngIf="!selectedListBooks.length" class="text-sm text-zinc-500 py-6 text-center border border-dashed rounded-xl">
+            Liste vide. Recherchez un titre ci-dessus.
+          </div>
+          <div *ngIf="selectedListBooks.length" class="grid sm:grid-cols-2 gap-3">
+            <div
+              *ngFor="let row of selectedListBooks"
+              class="flex gap-3 p-3 rounded-xl border border-slate-200/70 dark:border-white/10 bg-white/50 dark:bg-zinc-900/40"
+            >
+              <img
+                [src]="row.book?.coverImage || PLACEHOLDER_COVER"
+                (error)="onCoverErr($event)"
+                alt=""
+                class="w-12 h-[4.5rem] object-cover rounded-md shrink-0"
+              />
+              <div class="min-w-0 flex-1">
+                <p class="font-medium text-slate-900 dark:text-white text-sm line-clamp-2">{{ row.book?.title || 'Chargement…' }}</p>
+                <p class="text-xs text-zinc-500">{{ row.book?.author }}</p>
+                <div class="mt-2 flex flex-wrap gap-2">
+                  <a *ngIf="row.book" [routerLink]="['/books', row.id]" class="text-xs text-sky-600 dark:text-sky-400">Fiche</a>
+                  <button type="button" (click)="removeFromList(row.id)" class="text-xs text-red-600 dark:text-red-400">Retirer</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </ng-container>
+
+        <p *ngIf="!selectedList" class="text-sm text-zinc-500 py-8 text-center">Sélectionnez ou créez une liste.</p>
+      </div>
+    </div>
+  </section>
+</div>

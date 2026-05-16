@@ -1,0 +1,257 @@
+#
+# There is insufficient memory for the Java Runtime Environment to continue.
+# Native memory allocation (mmap) failed to map 266338304 bytes. Error detail: G1 virtual space
+# Possible reasons:
+#   The system is out of physical RAM or swap space
+#   This process is running with CompressedOops enabled, and the Java Heap may be blocking the growth of the native heap
+# Possible solutions:
+#   Reduce memory load on the system
+#   Increase physical memory or swap space
+#   Check if swap backing store is full
+#   Decrease Java heap size (-Xmx/-Xms)
+#   Decrease number of Java threads
+#   Decrease Java thread stack sizes (-Xss)
+#   Set larger code cache with -XX:ReservedCodeCacheSize=
+#   JVM is running with Zero Based Compressed Oops mode in which the Java heap is
+#     placed in the first 32GB address space. The Java Heap base address is the
+#     maximum limit for the native heap growth. Please use -XX:HeapBaseMinAddress
+#     to set the Java Heap base and to place the Java Heap above 32GB virtual address.
+# This output file may be truncated or incomplete.
+#
+#  Out of Memory Error (os_windows.cpp:3714), pid=21712, tid=13816
+#
+# JRE version:  (21.0.10+7) (build )
+# Java VM: OpenJDK 64-Bit Server VM (21.0.10+7-LTS, mixed mode, sharing, tiered, compressed oops, compressed class ptrs, g1 gc, windows-amd64)
+# No core dump will be written. Minidumps are not enabled by default on client versions of Windows
+#
+
+---------------  S U M M A R Y ------------
+
+Command Line: --enable-native-access=ALL-UNNAMED 
+
+Host: Intel(R) Core(TM) i7-8665U CPU @ 1.90GHz, 8 cores, 15G,  Windows 11 , 64 bit Build 22000 (10.0.22000.2538)
+Time: Fri May 15 17:02:25 2026 Afr. centrale Ouest elapsed time: 0.014197 seconds (0d 0h 0m 0s)
+
+---------------  T H R E A D  ---------------
+
+Current thread (0x000001887b893010):  JavaThread "Unknown thread" [_thread_in_vm, id=13816, stack(0x0000001544900000,0x0000001544a00000) (1024K)]
+
+Stack: [0x0000001544900000,0x0000001544a00000]
+Native frames: (J=compiled Java code, j=interpreted, Vv=VM code, C=native code)
+V  [jvm.dll+0x6d7a39]
+V  [jvm.dll+0x8b4b26]
+V  [jvm.dll+0x8b70de]
+V  [jvm.dll+0x8b77c3]
+V  [jvm.dll+0x284346]
+V  [jvm.dll+0x6d4355]
+V  [jvm.dll+0x6c808a]
+V  [jvm.dll+0x35edb8]
+V  [jvm.dll+0x3669f6]
+V  [jvm.dll+0x3b7afe]
+V  [jvm.dll+0x3b7da8]
+V  [jvm.dll+0x332fbc]
+V  [jvm.dll+0x333b0b]
+V  [jvm.dll+0x87eadb]
+V  [jvm.dll+0x3c4a81]
+V  [jvm.dll+0x867d25]
+V  [jvm.dll+0x457b31]
+V  [jvm.dll+0x459721]
+C  [jli.dll+0x52d0]
+C  [ucrtbase.dll+0x26c0c]
+C  [KERNEL32.DLL+0x153e0]
+C  [ntdll.dll+0x485b]
+
+
+---------------  P R O C E S S  ---------------
+
+Threads class SMR info:
+_java_thread_list=0x00007ff8d440a1c8, length=0, elements={
+}
+
+Java Threads: ( => current thread )
+Total: 0
+
+Other Threads:
+  0x000001887b8f7a50 WorkerThread "GC Thread#0"                     [id=17052, stack(0x0000001544a00000,0x0000001544b00000) (1024K)]
+  0x000001887b908900 ConcurrentGCThread "G1 Main Marker"            [id=26156, stack(0x0000001544b00000,0x0000001544c00000) (1024K)]
+  0x000001887b90afc0 WorkerThread "G1 Conc#0"                       [id=10776, stack(0x0000001544c00000,0x0000001544d00000) (1024K)]
+
+[error occurred during error reporting (printing all threads), id 0xc0000005, EXCEPTION_ACCESS_VIOLATION (0xc0000005) at pc=0x00007ff8d3b056a7]
+VM state: not at safepoint (not fully initialized)
+
+VM Mutex/Monitor currently owned by a thread:  ([mutex/lock_event])
+[0x00007ff8d447e660] Heap_lock - owner thread: 0x000001887b893010
+
+Heap address: 0x0000000702e00000, size: 4050 MB, Compressed Oops mode: Zero based, Oop shift amount: 3
+
+CDS archive(s) mapped at: [0x0000000000000000-0x0000000000000000-0x0000000000000000), size 0, SharedBaseAddress: 0x0000000800000000, ArchiveRelocationMode: 1.
+Narrow klass base: 0x0000000000000000, Narrow klass shift: 0, Narrow klass range: 0x0
+
+GC Precious Log:
+ CardTable entry size: 512
+ Card Set container configuration: InlinePtr #cards 4 size 8 Array Of Cards #cards 16 size 48 Howl #buckets 8 coarsen threshold 3686 Howl Bitmap #cards 512 size 80 coarsen threshold 460 Card regions per heap region 1 cards per card region 4096
+
+Heap:
+ garbage-first heap   total 0K, used 0K [0x0000000702e00000, 0x0000000800000000)
+  region size 2048K, 0 young (0K), 0 survivors (0K)
+
+[error occurred during error reporting (printing heap information), id 0xc0000005, EXCEPTION_ACCESS_VIOLATION (0xc0000005) at pc=0x00007ff8d3ef13b9]
+GC Heap History (0 events):
+No events
+
+Dll operation events (1 events):
+Event: 0.010 Loaded shared library C:\Users\Asaph\AppData\Roaming\Code\User\globalStorage\pleiades.java-extension-pack-jdk\java\21\bin\java.dll
+
+Deoptimization events (0 events):
+No events
+
+Classes loaded (0 events):
+No events
+
+Classes unloaded (0 events):
+No events
+
+Classes redefined (0 events):
+No events
+
+Internal exceptions (0 events):
+No events
+
+ZGC Phase Switch (0 events):
+No events
+
+VM Operations (0 events):
+No events
+
+Memory protections (0 events):
+No events
+
+Nmethod flushes (0 events):
+No events
+
+Events (0 events):
+No events
+
+
+Dynamic libraries:
+0x00007ff69e0b0000 - 0x00007ff69e0be000 	C:\Users\Asaph\AppData\Roaming\Code\User\globalStorage\pleiades.java-extension-pack-jdk\java\21\bin\java.exe
+0x00007ff994a20000 - 0x00007ff994c29000 	C:\Windows\SYSTEM32\ntdll.dll
+0x00007ff9937c0000 - 0x00007ff99387d000 	C:\Windows\System32\KERNEL32.DLL
+0x00007ff992340000 - 0x00007ff9926c4000 	C:\Windows\System32\KERNELBASE.dll
+0x00007ff9920f0000 - 0x00007ff992201000 	C:\Windows\System32\ucrtbase.dll
+0x00007ff97a820000 - 0x00007ff97a838000 	C:\Users\Asaph\AppData\Roaming\Code\User\globalStorage\pleiades.java-extension-pack-jdk\java\21\bin\jli.dll
+0x00007ff992ee0000 - 0x00007ff99308d000 	C:\Windows\System32\USER32.dll
+0x00007ff979e70000 - 0x00007ff979e8e000 	C:\Users\Asaph\AppData\Roaming\Code\User\globalStorage\pleiades.java-extension-pack-jdk\java\21\bin\VCRUNTIME140.dll
+0x00007ff97ae00000 - 0x00007ff97b0a5000 	C:\Windows\WinSxS\amd64_microsoft.windows.common-controls_6595b64144ccf1df_6.0.22000.120_none_9d947278b86cc467\COMCTL32.dll
+0x00007ff991e80000 - 0x00007ff991ea6000 	C:\Windows\System32\win32u.dll
+0x00007ff993440000 - 0x00007ff9934e3000 	C:\Windows\System32\msvcrt.dll
+0x00007ff992ab0000 - 0x00007ff992ada000 	C:\Windows\System32\GDI32.dll
+0x00007ff991fd0000 - 0x00007ff9920ee000 	C:\Windows\System32\gdi32full.dll
+0x00007ff991eb0000 - 0x00007ff991f4d000 	C:\Windows\System32\msvcp_win.dll
+0x00007ff9932f0000 - 0x00007ff993321000 	C:\Windows\System32\IMM32.DLL
+0x00007ff97b510000 - 0x00007ff97b51c000 	C:\Users\Asaph\AppData\Roaming\Code\User\globalStorage\pleiades.java-extension-pack-jdk\java\21\bin\vcruntime140_1.dll
+0x00007ff96f6f0000 - 0x00007ff96f77d000 	C:\Users\Asaph\AppData\Roaming\Code\User\globalStorage\pleiades.java-extension-pack-jdk\java\21\bin\msvcp140.dll
+0x00007ff8d37c0000 - 0x00007ff8d4561000 	C:\Users\Asaph\AppData\Roaming\Code\User\globalStorage\pleiades.java-extension-pack-jdk\java\21\bin\server\jvm.dll
+0x00007ff992990000 - 0x00007ff992a3e000 	C:\Windows\System32\ADVAPI32.dll
+0x00007ff992b50000 - 0x00007ff992bee000 	C:\Windows\System32\sechost.dll
+0x00007ff992840000 - 0x00007ff992961000 	C:\Windows\System32\RPCRT4.dll
+0x00007ff992ae0000 - 0x00007ff992b4f000 	C:\Windows\System32\WS2_32.dll
+0x00007ff991bb0000 - 0x00007ff991bfd000 	C:\Windows\SYSTEM32\POWRPROF.dll
+0x00007ff9812e0000 - 0x00007ff9812ea000 	C:\Windows\SYSTEM32\VERSION.dll
+0x00007ff987300000 - 0x00007ff987333000 	C:\Windows\SYSTEM32\WINMM.dll
+0x00007ff991b90000 - 0x00007ff991ba3000 	C:\Windows\SYSTEM32\UMPDC.dll
+0x00007ff990eb0000 - 0x00007ff990ec8000 	C:\Windows\SYSTEM32\kernel.appcore.dll
+0x00007ff97a810000 - 0x00007ff97a81a000 	C:\Users\Asaph\AppData\Roaming\Code\User\globalStorage\pleiades.java-extension-pack-jdk\java\21\bin\jimage.dll
+0x00007ff98c0c0000 - 0x00007ff98c2e1000 	C:\Windows\SYSTEM32\DBGHELP.DLL
+0x00007ff97c060000 - 0x00007ff97c091000 	C:\Windows\SYSTEM32\dbgcore.DLL
+0x00007ff991f50000 - 0x00007ff991fcf000 	C:\Windows\System32\bcryptPrimitives.dll
+0x00007ff979e50000 - 0x00007ff979e70000 	C:\Users\Asaph\AppData\Roaming\Code\User\globalStorage\pleiades.java-extension-pack-jdk\java\21\bin\java.dll
+
+JVMTI agents: none
+
+dbghelp: loaded successfully - version: 4.0.5 - missing functions: none
+symbol engine: initialized successfully - sym options: 0x614 - pdb path: .;C:\Users\Asaph\AppData\Roaming\Code\User\globalStorage\pleiades.java-extension-pack-jdk\java\21\bin;C:\Windows\SYSTEM32;C:\Windows\WinSxS\amd64_microsoft.windows.common-controls_6595b64144ccf1df_6.0.22000.120_none_9d947278b86cc467;C:\Users\Asaph\AppData\Roaming\Code\User\globalStorage\pleiades.java-extension-pack-jdk\java\21\bin\server
+
+VM Arguments:
+jvm_args: --enable-native-access=ALL-UNNAMED 
+java_command: <unknown>
+java_class_path (initial): C:\LINGO64_21\Lingo21.jar
+Launcher Type: SUN_STANDARD
+
+[Global flags]
+     intx CICompilerCount                          = 4                                         {product} {ergonomic}
+     uint ConcGCThreads                            = 2                                         {product} {ergonomic}
+     uint G1ConcRefinementThreads                  = 8                                         {product} {ergonomic}
+   size_t G1HeapRegionSize                         = 2097152                                   {product} {ergonomic}
+    uintx GCDrainStackTargetSize                   = 64                                        {product} {ergonomic}
+   size_t InitialHeapSize                          = 266338304                                 {product} {ergonomic}
+   size_t MarkStackSize                            = 4194304                                   {product} {ergonomic}
+   size_t MaxHeapSize                              = 4246732800                                {product} {ergonomic}
+   size_t MinHeapDeltaBytes                        = 2097152                                   {product} {ergonomic}
+   size_t MinHeapSize                              = 8388608                                   {product} {ergonomic}
+    uintx NonNMethodCodeHeapSize                   = 5839372                                {pd product} {ergonomic}
+    uintx NonProfiledCodeHeapSize                  = 122909434                              {pd product} {ergonomic}
+    uintx ProfiledCodeHeapSize                     = 122909434                              {pd product} {ergonomic}
+    uintx ReservedCodeCacheSize                    = 251658240                              {pd product} {ergonomic}
+     bool SegmentedCodeCache                       = true                                      {product} {ergonomic}
+   size_t SoftMaxHeapSize                          = 4246732800                             {manageable} {ergonomic}
+     bool UseCompressedOops                        = true                           {product lp64_product} {ergonomic}
+     bool UseG1GC                                  = true                                      {product} {ergonomic}
+     bool UseLargePagesIndividualAllocation        = false                                  {pd product} {ergonomic}
+
+Logging:
+Log output configuration:
+ #0: stdout all=warning uptime,level,tags foldmultilines=false
+ #1: stderr all=off uptime,level,tags foldmultilines=false
+
+Release file:
+<release file has not been read>
+Environment Variables:
+JAVA_HOME=C:\Users\Asaph\AppData\Roaming\Code\User\globalStorage\pleiades.java-extension-pack-jdk\java\21
+CLASSPATH=C:\LINGO64_21\Lingo21.jar
+PATH=C:\Users\Asaph\AppData\Roaming\Code\User\globalStorage\pleiades.java-extension-pack-jdk\java\21\bin;C:\Users\Asaph\AppData\Local\flutter\bin;C:\Java\jdk-17\bin;C:\Users\Asaph\AppData\Roaming\Code\User\globalStorage\pleiades.java-extension-pack-jdk\java\21\bin;C:\Program Files (x86)\Common Files\Oracle\Java\java8path;C:\Program Files (x86)\Common Files\Oracle\Java\javapath;C:\Program Files (x86)\VMware\VMware Workstation\bin\;C:\Windows\system32;C:\Windows;C:\Windows\System32\Wbem;C:\Windows\System32\WindowsPowerShell\v1.0\;C:\Windows\System32\OpenSSH\;C:\ProgramData\chocolatey\bin;C:\Program Files\dotnet\;C:\apache-maven-3.9.14\bin;C:\php-8.2.5-nts-Win32-vs16-x64;C:\Program Files\MiKTeX\miktex\bin\x64\;C:\apache-tomcat\apache-tomcat-7.0.109\bin;C:\ghc-9.8.3-x86_64-unknown-mingw32\bin;C:\cabal-install-3.12.1.0-x86_64-windows;C:\cabal-install-3.10.2.0-x86_64-windows;C:\Program Files\MongoDB\Server\8.0\bin;C:\mongosh-2.3.3-win32-x64\bin;C:\LINGO64_21\;C:\Program Files\Microsoft SQL Server\150\Tools\Binn\;C:\Users\Asaph\AppData\Roaming\npm;C:\dart-sdk\bin;C:\Users\Asaph\AppData\Local\Android\Sdk\cmdline-tools\latest\bin;C:\Program Files\Pandoc\;C:\TeXcount_3_2_0_41;C:\Strawberry\c\bin;C:\Strawberry\perl\site\bin;C:\Strawberry\perl\bin;C:\ltex-ls-16.0.0\bin;C:\Program Files\Git\cmd;C:\Users\Asaph\AppData\Local\Programs\Python\Python312;C:\Users\Asaph\AppData\Local\Programs\Python\Python312\Scripts;C:\Users\Asaph\AppData\Local\nvm;C:\nvm4w\nodejs;C:\nvm4w\nodejs\node_modules\npm\bin;C:\nvm4w\nodejs;C:\ffmpeg-master-latest-win64-gpl-shared\ffmpeg-master-latest-win64-gpl-shared\bin;C:\Program Files\Positron\bin;C:\MinGW\bin;C:\keycloak-26.2.5\bin;C:\Program Files\DAX Studio;C:\Users\Asaph\AppData\Local\Programs\Python\Python38;C:\Users\Asaph\AppData\Local\Programs\Python\Python38\Scripts;C:\Program Files\Go\bin;C:\Program Files\cursor\resources\app\bin;C:\Program Files\Docker\Docker\resources\bin;C:\Program Files\WinMerge;C:\Program Files\Graphviz\bin;C:\Users\Asaph\AppData\Local\Programs\Ollama\;C:\Program Files\nodejs\;C:\elasticsearch-9.3.1\bin;C:\Program Files (x86)\Windows Kits\10\Windows Performance Toolkit\;C:\Users\Asaph\AppData\Local\Muse Hub\lib;C:\Users\Asaph\AppData\Local\flutter\bin;C:\Java\jdk-17\bin;C:\Users\Asaph\AppData\Roaming\Code\User\globalStorage\pleiades.java-extension-pack-jdk\java\21\bin;C:\Program Files (x86)\Common Files\Oracle\Java\java8path;C:\Program Files (x86)\Common Files\Oracle\Java\javapath;C:\Program Files (x86)\VMware\VMware Workstation\bin\;C:\Windows\system32;C:\Windows;C:\Windows\System32\Wbem;C:\Windows\System32\WindowsPowerShell\v1.0\;C:\Windows\System32\OpenSSH\;C:\ProgramData\chocolatey\bin;C:\Program Files\dotnet\;C:\apache-maven-3.9.14\bin;C:\php-8.2.5-nts-Win32-vs16-x64;C:\Program Files\MiKTeX\miktex\bin\x64\;C:\apache-tomcat\apache-tomcat-7.0.109\bin;C:\ghc-9.8.3-x86_64-unknown-mingw32\bin;C:\cabal-install-3.12.1.0-x86_64-windows;C:\cabal-install-3.10.2.0-x86_64-windows;C:\Program Files\MongoDB\Server\8.0\bin;C:\mongosh-2.3.3-win32-x64\bin;C:\LINGO64_21\;C:\Program Files\Microsoft SQL Server\150\Tools\Binn\;C:\Users\Asaph\AppData\Roaming\npm;C:\dart-sdk\bin;C:\Users\Asaph\AppData\Local\Android\Sdk\cmdline-tools\l;C:\Users\Asaph\AppData\Local\Programs\cursor\resources\app\bin;C:\Users\Asaph\AppData\Local\Programs\Ollama;C:\Users\Asaph\AppData\Local\Muse Hub\lib;C:\Users\Asaph\AppData\Local\Programs\Microsoft VS Code\bin
+USERNAME=Asaph
+LANG=en_US.UTF-8
+OS=Windows_NT
+PROCESSOR_IDENTIFIER=Intel64 Family 6 Model 142 Stepping 12, GenuineIntel
+TMP=C:\Users\Asaph\AppData\Local\Temp
+TEMP=C:\Users\Asaph\AppData\Local\Temp
+
+
+
+
+Periodic native trim disabled
+
+---------------  S Y S T E M  ---------------
+
+OS:
+ Windows 11 , 64 bit Build 22000 (10.0.22000.2538)
+OS uptime: 0 days 9:12 hours
+Hyper-V role detected
+
+CPU: total 8 (initial active 8) (4 cores per cpu, 2 threads per core) family 6 model 142 stepping 12 microcode 0xf8, cx8, cmov, fxsr, ht, mmx, 3dnowpref, sse, sse2, sse3, ssse3, sse4.1, sse4.2, popcnt, lzcnt, tsc, tscinvbit, avx, avx2, aes, erms, clmul, bmi1, bmi2, adx, fma, vzeroupper, clflush, clflushopt, hv, rdtscp, f16c
+Processor Information for processor 0
+  Max Mhz: 2112, Current Mhz: 1508, Mhz Limit: 1900
+Processor Information for processor 1
+  Max Mhz: 2112, Current Mhz: 1508, Mhz Limit: 1900
+Processor Information for processor 2
+  Max Mhz: 2112, Current Mhz: 1910, Mhz Limit: 1900
+Processor Information for processor 3
+  Max Mhz: 2112, Current Mhz: 1508, Mhz Limit: 1900
+Processor Information for processor 4
+  Max Mhz: 2112, Current Mhz: 1508, Mhz Limit: 1900
+Processor Information for processor 5
+  Max Mhz: 2112, Current Mhz: 1508, Mhz Limit: 1900
+Processor Information for processor 6
+  Max Mhz: 2112, Current Mhz: 1508, Mhz Limit: 1900
+Processor Information for processor 7
+  Max Mhz: 2112, Current Mhz: 1910, Mhz Limit: 1900
+
+Memory: 4k page, system-wide physical 16198M (1179M free)
+TotalPageFile size 24224M (AvailPageFile size 113M)
+current process WorkingSet (physical memory assigned to process): 10M, peak: 10M
+current process commit charge ("private bytes"): 60M, peak: 314M
+
+vm_info: OpenJDK 64-Bit Server VM (21.0.10+7-LTS) for windows-amd64 JRE (21.0.10+7-LTS), built on 2026-01-20T00:00:00Z by "admin" with MS VC++ 17.12 (VS2022)
+
+END.

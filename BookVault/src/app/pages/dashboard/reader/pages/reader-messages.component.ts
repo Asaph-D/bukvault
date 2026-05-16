@@ -1,4 +1,5 @@
-import { Component, OnInit } from '@angular/core';
+// reader-messages.component.ts
+import { Component, OnInit, AfterViewChecked, ElementRef, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterModule } from '@angular/router';
@@ -13,7 +14,9 @@ import { ChatMessageDto, MessagingConversationDto } from '../../../../models/api
   imports: [CommonModule, FormsModule, RouterModule, DashboardInternalHeaderComponent],
   templateUrl: './reader-messages.component.html',
 })
-export class ReaderMessagesComponent implements OnInit {
+export class ReaderMessagesComponent implements OnInit, AfterViewChecked {
+  @ViewChild('messagesEnd') private messagesEnd!: ElementRef;
+
   conversations: MessagingConversationDto[] = [];
   selected: MessagingConversationDto | null = null;
   messages: ChatMessageDto[] = [];
@@ -23,6 +26,9 @@ export class ReaderMessagesComponent implements OnInit {
   sending = false;
   error: string | null = null;
   currentUserId: string | null = null;
+
+  /** Track whether we need to scroll to bottom after view update */
+  private shouldScroll = false;
 
   constructor(
     private messaging: MessagingService,
@@ -34,16 +40,17 @@ export class ReaderMessagesComponent implements OnInit {
     this.auth.currentUser$.subscribe(u => {
       this.currentUserId = u?.id ?? null;
     });
+
     this.refreshConversations();
 
     this.route.queryParamMap.subscribe(p => {
       const convoId = p.get('conversationId');
       if (!convoId) return;
+
       const match = this.conversations.find(c => c.id === convoId);
       if (match) {
         this.select(match);
       } else {
-        // If list not loaded yet, refresh will select when available
         this.messaging.getConversations().subscribe({
           next: list => {
             this.conversations = list;
@@ -53,6 +60,19 @@ export class ReaderMessagesComponent implements OnInit {
         });
       }
     });
+  }
+
+  ngAfterViewChecked(): void {
+    if (this.shouldScroll) {
+      this.scrollToBottom();
+      this.shouldScroll = false;
+    }
+  }
+
+  private scrollToBottom(): void {
+    try {
+      this.messagesEnd?.nativeElement?.scrollIntoView({ behavior: 'smooth' });
+    } catch (_) {}
   }
 
   refreshConversations(): void {
@@ -88,6 +108,7 @@ export class ReaderMessagesComponent implements OnInit {
       next: page => {
         this.messages = page.content;
         this.loadingMessages = false;
+        this.shouldScroll = true;
       },
       error: () => {
         this.loadingMessages = false;
@@ -99,9 +120,7 @@ export class ReaderMessagesComponent implements OnInit {
 
   send(): void {
     const text = this.draft.trim();
-    if (!this.selected || !text || this.sending) {
-      return;
-    }
+    if (!this.selected || !text || this.sending) return;
     this.sending = true;
     this.error = null;
     this.messaging.sendMessage(this.selected.id, text).subscribe({
@@ -118,11 +137,37 @@ export class ReaderMessagesComponent implements OnInit {
     });
   }
 
+  /** Handle Ctrl+Enter / Cmd+Enter to send */
+  onKeydown(event: KeyboardEvent): void {
+    if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
+      event.preventDefault();
+      this.send();
+    }
+  }
+
   isMine(m: ChatMessageDto): boolean {
     return !!this.currentUserId && m.senderId === this.currentUserId;
   }
 
   peerLabel(c: MessagingConversationDto): string {
     return 'Utilisateur ' + c.peerUserId.slice(0, 8) + '…';
+  }
+
+  /** Initials avatar fallback */
+  peerInitials(c: MessagingConversationDto): string {
+    return c.peerUserId.slice(0, 2).toUpperCase();
+  }
+
+  /** Placeholder colour per peer (deterministic) */
+  peerColor(c: MessagingConversationDto): string {
+    const palette = [
+      'from-sky-500 to-indigo-600',
+      'from-violet-500 to-purple-700',
+      'from-emerald-500 to-teal-600',
+      'from-rose-500 to-pink-600',
+      'from-amber-500 to-orange-600',
+    ];
+    const idx = c.peerUserId.charCodeAt(0) % palette.length;
+    return palette[idx];
   }
 }
