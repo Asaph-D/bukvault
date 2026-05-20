@@ -21,6 +21,18 @@ export const routes: Routes = [
         path: 'forgot-password',
         loadComponent: () =>
           import('./pages/auth/forgot-password/forgot-password.component').then(m => m.ForgotPasswordComponent)
+      },
+      {
+        path: 'verify-email',
+        loadComponent: () =>
+          import('./pages/auth/verify-email/verify-email.component').then(m => m.VerifyEmailComponent)
+      },
+      {
+        path: 'verify-email-pending',
+        loadComponent: () =>
+          import('./pages/auth/verify-email-pending/verify-email-pending.component').then(
+            m => m.VerifyEmailPendingComponent
+          )
       }
     ]
   },

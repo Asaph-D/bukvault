@@ -4,6 +4,7 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
 import { Router, RouterModule } from '@angular/router';
 import { finalize } from 'rxjs/operators';
 import { AuthService } from '../../../services/auth.service';
+import { GoogleAuthService } from '../../../services/google-auth.service';
 import { HeaderComponent } from '../../../components/header/header.component';
 import { FooterComponent } from '../../../components/footer/footer.component';
 import { HttpClient } from '@angular/common/http';
@@ -165,7 +166,8 @@ export class RegisterComponent {
     private formBuilder: FormBuilder,
     private authService: AuthService,
     private http: HttpClient,
-    private router: Router
+    private router: Router,
+    public googleAuth: GoogleAuthService,
   ) {
     this.registerForm = this.formBuilder.group({
       firstName: ['', Validators.required],
@@ -212,10 +214,22 @@ export class RegisterComponent {
     const objective = this.registerForm.controls['objective'].value as 'USER' | 'AUTHOR';
 
     this.authService
-      .register(user, this.registerForm.controls['password'].value, objective)
+      .register(
+        user,
+        this.registerForm.controls['password'].value,
+        objective,
+        !!this.registerForm.controls['terms'].value,
+      )
       .pipe(finalize(() => (this.loading = false)))
       .subscribe({
-        next: u => {
+        next: result => {
+          if (result.emailVerificationRequired) {
+            this.router.navigate(['/auth/verify-email-pending'], {
+              queryParams: { email: result.user.email },
+            });
+            return;
+          }
+          const u = result.user;
           // Transition: préparation environnement (création profil user-service via /users/bootstrap).
           this.preparing = true;
           this.prepareHint =
@@ -244,17 +258,50 @@ export class RegisterComponent {
   }
 
   registerWithGoogle(): void {
+    if (!this.googleAuth.isAvailable()) {
+      this.error = 'Inscription Google non configurée (GOOGLE_CLIENT_ID).';
+      return;
+    }
+    this.submitted = true;
+    if (!this.registerForm.controls['terms'].value) {
+      this.error = 'Vous devez accepter les conditions d’utilisation avant de continuer avec Google.';
+      return;
+    }
     this.loading = true;
     this.error = '';
-    
-    this.authService.googleLogin().subscribe({
-      next: () => {
-        this.router.navigate(['/dashboard']);
-      },
-      error: error => {
-        this.error = error.message || 'Une erreur est survenue lors de l\'inscription avec Google.';
-        this.loading = false;
-      }
-    });
+    const objective = this.registerForm.controls['objective'].value as 'USER' | 'AUTHOR';
+    this.authService
+      .googleSignIn({
+        mode: 'register',
+        objective,
+        termsAccepted: true,
+        rememberMe: true,
+      })
+      .subscribe({
+        next: result => {
+          this.preparing = true;
+          this.prepareHint =
+            result.user.role === 'author'
+              ? 'Préparation de votre espace auteur…'
+              : 'Préparation de votre espace lecteur…';
+          this.http
+            .post(`${environment.apiUrl}/users/bootstrap`, {})
+            .pipe(finalize(() => (this.preparing = false)))
+            .subscribe({
+              next: () => {
+                const seg = roleDashboardSegment(result.user.role);
+                this.router.navigate([`/dashboard/${seg}/home`]);
+              },
+              error: () => {
+                const seg = roleDashboardSegment(result.user.role);
+                this.router.navigate([`/dashboard/${seg}/home`]);
+              },
+            });
+        },
+        error: error => {
+          this.error = error.message || 'Une erreur est survenue lors de l’inscription avec Google.';
+          this.loading = false;
+        },
+      });
   }
 }

@@ -3,6 +3,7 @@ package com.intergiciel.notification_service.web;
 import com.intergiciel.notification_service.service.NotificationDispatchService;
 import com.intergiciel.notification_service.web.dto.BookPendingValidationRequest;
 import com.intergiciel.notification_service.web.dto.BookPublishedNotificationRequest;
+import com.intergiciel.notification_service.web.dto.EmailVerificationRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -49,6 +50,16 @@ public class InternalNotificationController {
 			@Valid @RequestBody BookPublishedNotificationRequest request) {
 		assertInternalKey(internalKey);
 		dispatchService.notifyBookPublishedByAdmin(request);
+	}
+
+	@PostMapping("/email-verification")
+	@ResponseStatus(HttpStatus.ACCEPTED)
+	@Operation(summary = "E-mail de confirmation d’adresse (auth-service)")
+	public void emailVerification(
+			@RequestHeader(name = "X-BookVault-Internal-Key") String internalKey,
+			@Valid @RequestBody EmailVerificationRequest request) {
+		assertInternalKey(internalKey);
+		dispatchService.sendEmailVerification(request);
 	}
 
 	private void assertInternalKey(String provided) {

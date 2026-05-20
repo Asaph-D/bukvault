@@ -62,6 +62,39 @@ public class EmailService {
 		}
 	}
 
+	public void sendEmailVerification(String to, String firstName, String verifyUrl) {
+		if (!enabled) {
+			log.debug("E-mail désactivé — vérification non envoyée à {}", to);
+			return;
+		}
+		if (to == null || to.isBlank()) {
+			return;
+		}
+		try {
+			String greeting = (firstName != null && !firstName.isBlank()) ? "Bonjour " + firstName.trim() + "," : "Bonjour,";
+			SimpleMailMessage msg = new SimpleMailMessage();
+			msg.setFrom(fromAddress);
+			msg.setTo(to);
+			msg.setSubject("BookVault — Confirmez votre adresse e-mail");
+			msg.setText("""
+					%s
+
+					Bienvenue sur BookVault. Pour activer votre compte, confirmez votre adresse en cliquant sur le lien ci-dessous (valable 24 h) :
+
+					%s
+
+					Si vous n’avez pas créé de compte, ignorez ce message.
+
+					L’équipe BookVault
+					""".formatted(greeting, verifyUrl));
+			mailSender.send(msg);
+			log.info("E-mail de vérification envoyé à {}", to);
+		}
+		catch (Exception ex) {
+			log.error("Échec envoi e-mail vérification à {} : {}", to, ex.getMessage());
+		}
+	}
+
 	public void sendBookPublished(String to, String bookTitle, String publicationSheetUrl) {
 		if (!enabled) {
 			log.debug("E-mail désactivé — publication « {} » non envoyée à {}", bookTitle, to);

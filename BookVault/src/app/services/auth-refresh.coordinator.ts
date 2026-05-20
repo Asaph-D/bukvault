@@ -36,7 +36,12 @@ export class AuthRefreshCoordinator {
             window.dispatchEvent(new CustomEvent(AUTH_TOKENS_REFRESHED_EVENT, { detail: res }));
           }
         }),
-        map(res => res.accessToken),
+        map(res => {
+          if (!res.accessToken) {
+            throw new Error('Refresh sans jeton d’accès.');
+          }
+          return res.accessToken;
+        }),
         catchError(err => {
           this.inflight = null;
           return throwError(() => err);

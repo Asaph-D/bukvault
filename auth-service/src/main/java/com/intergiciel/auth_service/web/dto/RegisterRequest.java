@@ -10,6 +10,8 @@ public record RegisterRequest(
 		@NotBlank @Size(max = 120) String firstName,
 		@NotBlank @Size(max = 120) String lastName,
 		/** Objectif sur la plateforme : USER (lecture) ou AUTHOR (publication). ADMIN interdit ici. */
-		@NotBlank @Size(max = 16) String objective
+		@NotBlank @Size(max = 16) String objective,
+		/** Acceptation des conditions d’utilisation (obligatoire). */
+		boolean termsAccepted
 ) {
 }

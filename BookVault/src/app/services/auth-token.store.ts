@@ -24,11 +24,18 @@ export function storeAuthResponse(res: AuthResponseDto): void {
   const other = store === localStorage ? sessionStorage : localStorage;
   other.removeItem(ACCESS_TOKEN_KEY);
   other.removeItem(REFRESH_TOKEN_KEY);
-  store.setItem(ACCESS_TOKEN_KEY, res.accessToken);
-  store.setItem(REFRESH_TOKEN_KEY, res.refreshToken);
+  if (res.accessToken) {
+    store.setItem(ACCESS_TOKEN_KEY, res.accessToken);
+  }
+  if (res.refreshToken) {
+    store.setItem(REFRESH_TOKEN_KEY, res.refreshToken);
+  }
 }
 
 export function storeTokensAfterLogin(res: AuthResponseDto, rememberMe: boolean): void {
+  if (!res.accessToken || !res.refreshToken) {
+    return;
+  }
   const store = rememberMe ? localStorage : sessionStorage;
   const other = store === localStorage ? sessionStorage : localStorage;
   other.removeItem(ACCESS_TOKEN_KEY);

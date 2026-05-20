@@ -7,6 +7,7 @@ import com.intergiciel.notification_service.repository.NotificationPreferencesRe
 import com.intergiciel.notification_service.repository.NotificationRepository;
 import com.intergiciel.notification_service.web.dto.BookPendingValidationRequest;
 import com.intergiciel.notification_service.web.dto.BookPublishedNotificationRequest;
+import com.intergiciel.notification_service.web.dto.EmailVerificationRequest;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,6 +37,10 @@ public class NotificationDispatchService {
 		this.frontendBaseUrl = trimTrailingSlash(frontendBaseUrl);
 		this.primaryAdminUserId = primaryAdminUserId;
 		this.primaryAdminEmail = primaryAdminEmail;
+	}
+
+	public void sendEmailVerification(EmailVerificationRequest req) {
+		emailService.sendEmailVerification(req.recipientEmail(), req.firstName(), req.verifyUrl());
 	}
 
 	@Transactional

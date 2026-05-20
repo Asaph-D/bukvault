@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../../services/auth.service';
+import { GoogleAuthService } from '../../../services/google-auth.service';
+import { roleDashboardSegment } from '../../../guards/dashboard-role.guard';
 import { AuthIntentService } from '../../../services/auth-intent.service';
 import { HeaderComponent } from '../../../components/header/header.component';
 import { FooterComponent } from '../../../components/footer/footer.component';
@@ -96,7 +98,8 @@ export class LoginComponent {
     private authService: AuthService,
     private router: Router,
     private route: ActivatedRoute,
-    private authIntent: AuthIntentService
+    private authIntent: AuthIntentService,
+    public googleAuth: GoogleAuthService,
   ) {
     this.loginForm = this.formBuilder.group({
       email: ['', [Validators.required, Validators.email]],
@@ -121,10 +124,17 @@ export class LoginComponent {
       this.loginForm.controls['password'].value,
       !!this.loginForm.controls['rememberMe'].value
     ).subscribe({
-      next: () => {
+      next: result => {
+        if (result.emailVerificationRequired) {
+          this.router.navigate(['/auth/verify-email-pending'], {
+            queryParams: { email: result.user.email },
+          });
+          this.loading = false;
+          return;
+        }
         const qpReturn = this.route.snapshot.queryParamMap.get('returnUrl');
         const cached = this.authIntent.consume()?.returnUrl;
-        const target = qpReturn || cached || '/dashboard';
+        const target = qpReturn || cached || `/dashboard/${roleDashboardSegment(result.user.role)}/home`;
         this.router.navigateByUrl(target);
       },
       error: error => {
@@ -135,20 +145,28 @@ export class LoginComponent {
   }
 
   loginWithGoogle(): void {
+    if (!this.googleAuth.isAvailable()) {
+      this.error = 'Connexion Google non configurée (GOOGLE_CLIENT_ID).';
+      return;
+    }
     this.loading = true;
     this.error = '';
-    
-    this.authService.googleLogin().subscribe({
-      next: () => {
-        const qpReturn = this.route.snapshot.queryParamMap.get('returnUrl');
-        const cached = this.authIntent.consume()?.returnUrl;
-        const target = qpReturn || cached || '/dashboard';
-        this.router.navigateByUrl(target);
-      },
-      error: error => {
-        this.error = error.message || 'Une erreur est survenue lors de la connexion avec Google.';
-        this.loading = false;
-      }
-    });
+    this.authService
+      .googleSignIn({
+        mode: 'login',
+        rememberMe: !!this.loginForm.controls['rememberMe'].value,
+      })
+      .subscribe({
+        next: result => {
+          const qpReturn = this.route.snapshot.queryParamMap.get('returnUrl');
+          const cached = this.authIntent.consume()?.returnUrl;
+          const target = qpReturn || cached || `/dashboard/${roleDashboardSegment(result.user.role)}/home`;
+          this.router.navigateByUrl(target);
+        },
+        error: error => {
+          this.error = error.message || 'Une erreur est survenue lors de la connexion avec Google.';
+          this.loading = false;
+        },
+      });
   }
 }

@@ -33,8 +33,27 @@ public class AuthUser {
 	@Column(nullable = false, unique = true, length = 320)
 	private String email;
 
-	@Column(name = "password_hash", nullable = false)
+	@Column(name = "password_hash")
 	private String passwordHash;
+
+	@Enumerated(EnumType.STRING)
+	@Column(name = "auth_provider", nullable = false, length = 16)
+	private AuthProvider authProvider;
+
+	@Column(name = "google_sub", unique = true, length = 64)
+	private String googleSub;
+
+	@Column(name = "email_verified", nullable = false)
+	private boolean emailVerified;
+
+	@Column(name = "email_verification_token", length = 64)
+	private String emailVerificationToken;
+
+	@Column(name = "email_verification_expires_at")
+	private Instant emailVerificationExpiresAt;
+
+	@Column(name = "terms_accepted_at")
+	private Instant termsAcceptedAt;
 
 	@Column(name = "first_name", nullable = false, length = 120)
 	private String firstName;

@@ -1,17 +1,24 @@
 package com.intergiciel.auth_service.service;
 
+import com.intergiciel.auth_service.config.AppProperties;
 import com.intergiciel.auth_service.config.AuthProperties;
+import com.intergiciel.auth_service.domain.AuthProvider;
 import com.intergiciel.auth_service.domain.AuthUser;
 import com.intergiciel.auth_service.domain.BlacklistedJti;
 import com.intergiciel.auth_service.domain.RefreshToken;
 import com.intergiciel.auth_service.domain.Role;
+import com.intergiciel.auth_service.integration.AuthNotificationClient;
 import com.intergiciel.auth_service.repository.AuthUserRepository;
 import com.intergiciel.auth_service.repository.BlacklistedJtiRepository;
 import com.intergiciel.auth_service.repository.RefreshTokenRepository;
+import com.intergiciel.auth_service.service.GoogleTokenVerifierService.GoogleProfile;
 import com.intergiciel.auth_service.web.dto.AuthResponse;
 import com.intergiciel.auth_service.web.dto.ChangePasswordRequest;
+import com.intergiciel.auth_service.web.dto.GoogleAuthRequest;
 import com.intergiciel.auth_service.web.dto.LoginRequest;
+import com.intergiciel.auth_service.web.dto.MessageResponse;
 import com.intergiciel.auth_service.web.dto.RegisterRequest;
+import com.intergiciel.auth_service.web.dto.ResendVerificationRequest;
 import com.intergiciel.auth_service.web.dto.UserResponse;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
@@ -26,34 +33,50 @@ import java.util.UUID;
 @Service
 public class AuthService {
 
+	private static final int VERIFICATION_TOKEN_HOURS = 24;
+	private static final long VERIFICATION_TOKEN_SECONDS = VERIFICATION_TOKEN_HOURS * 60L * 60L;
+
 	private final AuthUserRepository authUserRepository;
 	private final RefreshTokenRepository refreshTokenRepository;
 	private final BlacklistedJtiRepository blacklistedJtiRepository;
 	private final JwtService jwtService;
 	private final PasswordEncoder passwordEncoder;
 	private final AuthProperties authProperties;
+	private final AppProperties appProperties;
+	private final GoogleTokenVerifierService googleTokenVerifier;
+	private final AuthNotificationClient authNotificationClient;
 
 	public AuthService(AuthUserRepository authUserRepository,
 			RefreshTokenRepository refreshTokenRepository,
 			BlacklistedJtiRepository blacklistedJtiRepository,
 			JwtService jwtService,
 			PasswordEncoder passwordEncoder,
-			AuthProperties authProperties) {
+			AuthProperties authProperties,
+			AppProperties appProperties,
+			GoogleTokenVerifierService googleTokenVerifier,
+			AuthNotificationClient authNotificationClient) {
 		this.authUserRepository = authUserRepository;
 		this.refreshTokenRepository = refreshTokenRepository;
 		this.blacklistedJtiRepository = blacklistedJtiRepository;
 		this.jwtService = jwtService;
 		this.passwordEncoder = passwordEncoder;
 		this.authProperties = authProperties;
+		this.appProperties = appProperties;
+		this.googleTokenVerifier = googleTokenVerifier;
+		this.authNotificationClient = authNotificationClient;
 	}
 
 	@Transactional
 	public AuthResponse register(RegisterRequest request) {
+		if (!request.termsAccepted()) {
+			throw new IllegalArgumentException("Vous devez accepter les conditions d’utilisation.");
+		}
 		String email = normalizeEmail(request.email());
 		if (authUserRepository.existsByEmailIgnoreCase(email)) {
 			throw new DuplicateEmailException("Cette adresse e-mail est déjà utilisée.");
 		}
 		Role desired = parseObjective(request.objective());
+		Instant now = Instant.now();
 		AuthUser user = AuthUser.builder()
 				.email(email)
 				.passwordHash(passwordEncoder.encode(request.password()))
@@ -61,10 +84,16 @@ public class AuthService {
 				.lastName(request.lastName().trim())
 				.role(desired)
 				.active(true)
-				.createdAt(Instant.now())
+				.authProvider(AuthProvider.LOCAL)
+				.emailVerified(false)
+				.emailVerificationToken(null)
+				.emailVerificationExpiresAt(null)
+				.termsAcceptedAt(now)
+				.createdAt(now)
 				.build();
 		authUserRepository.save(user);
-		return issueTokens(user, true);
+		sendVerificationEmail(user);
+		return AuthResponse.pendingEmailVerification(toUserResponse(user));
 	}
 
 	@Transactional
@@ -75,11 +104,105 @@ public class AuthService {
 		if (!user.isActive()) {
 			throw new InvalidCredentialsException("Compte désactivé.");
 		}
+		if (user.getAuthProvider() == AuthProvider.GOOGLE) {
+			throw new InvalidCredentialsException("Ce compte utilise la connexion Google.");
+		}
 		if (!passwordEncoder.matches(request.password(), user.getPasswordHash())) {
 			throw new InvalidCredentialsException("Identifiants invalides.");
 		}
+		ensureEmailVerifiedForLocal(user);
 		boolean rememberMe = request.rememberMe() != null && request.rememberMe();
 		return issueTokens(user, rememberMe);
+	}
+
+	@Transactional
+	public AuthResponse googleAuth(GoogleAuthRequest request) {
+		GoogleProfile profile = googleTokenVerifier.verify(request.idToken());
+		boolean rememberMe = request.rememberMe() != null && request.rememberMe();
+
+		var byGoogle = authUserRepository.findByGoogleSub(profile.sub());
+		if (byGoogle.isPresent()) {
+			AuthUser user = byGoogle.get();
+			ensureActive(user);
+			return issueTokens(user, rememberMe);
+		}
+
+		var byEmail = authUserRepository.findByEmailIgnoreCase(profile.email());
+		if (byEmail.isPresent()) {
+			AuthUser user = byEmail.get();
+			ensureActive(user);
+			if (user.getGoogleSub() == null) {
+				user.setGoogleSub(profile.sub());
+				user.setAuthProvider(AuthProvider.GOOGLE);
+				user.setEmailVerified(true);
+				user.setEmailVerificationToken(null);
+				user.setEmailVerificationExpiresAt(null);
+				authUserRepository.save(user);
+			}
+			else if (!profile.sub().equals(user.getGoogleSub())) {
+				throw new GoogleAuthException("Ce compte Google ne correspond pas à l’e-mail enregistré.");
+			}
+			return issueTokens(user, rememberMe);
+		}
+
+		if (request.termsAccepted() == null || !request.termsAccepted()) {
+			throw new IllegalArgumentException("Vous devez accepter les conditions d’utilisation.");
+		}
+		Role desired = parseObjective(request.objective());
+		Instant now = Instant.now();
+		AuthUser user = AuthUser.builder()
+				.email(profile.email())
+				// NOTE: en seed / DB existante, password_hash peut être NOT NULL.
+				// On stocke un hash aléatoire et on empêche la connexion locale si provider=GOOGLE.
+				.passwordHash(passwordEncoder.encode(UUID.randomUUID().toString()))
+				.firstName(profile.firstName())
+				.lastName(profile.lastName())
+				.role(desired)
+				.active(true)
+				.authProvider(AuthProvider.GOOGLE)
+				.googleSub(profile.sub())
+				.emailVerified(true)
+				.termsAcceptedAt(now)
+				.createdAt(now)
+				.build();
+		authUserRepository.save(user);
+		return issueTokens(user, rememberMe);
+	}
+
+	@Transactional
+	public MessageResponse verifyEmail(String token) {
+		var claims = jwtService.parseEmailVerificationToken(token);
+		UUID userId = UUID.fromString(claims.getSubject());
+		String email = (claims.get("email", String.class) != null) ? claims.get("email", String.class) : "";
+		AuthUser user = authUserRepository.findById(userId)
+				.orElseThrow(() -> new InvalidTokenException("Lien de vérification invalide."));
+		if (!normalizeEmail(user.getEmail()).equals(normalizeEmail(email))) {
+			throw new InvalidTokenException("Lien de vérification invalide.");
+		}
+		user.setEmailVerified(true);
+		user.setEmailVerificationToken(null);
+		user.setEmailVerificationExpiresAt(null);
+		authUserRepository.save(user);
+		return new MessageResponse("Votre adresse e-mail est confirmée. Vous pouvez vous connecter.");
+	}
+
+	@Transactional
+	public MessageResponse resendVerification(ResendVerificationRequest request) {
+		String email = normalizeEmail(request.email());
+		authUserRepository.findByEmailIgnoreCase(email).ifPresent(user -> {
+			if (user.isEmailVerified()) {
+				return;
+			}
+			if (user.getAuthProvider() == AuthProvider.GOOGLE) {
+				return;
+			}
+			user.setEmailVerificationToken(null);
+			user.setEmailVerificationExpiresAt(null);
+			authUserRepository.save(user);
+			sendVerificationEmail(user);
+		});
+		return new MessageResponse(
+				"Si un compte existe avec cette adresse et n’est pas encore vérifié, un e-mail a été envoyé.");
 	}
 
 	@Transactional
@@ -95,10 +218,9 @@ public class AuthService {
 		if (!user.isActive()) {
 			throw new InvalidTokenException("Compte désactivé.");
 		}
+		ensureEmailVerifiedForLocal(user);
 		rt.setRevoked(true);
 		refreshTokenRepository.save(rt);
-		// refresh() reste basé sur la durée du token stockée en DB, donc la stratégie “remember me”
-		// est déjà portée par le refresh token lui-même.
 		return issueTokens(user, false);
 	}
 
@@ -126,14 +248,15 @@ public class AuthService {
 		if (!user.isActive()) {
 			throw new InvalidCredentialsException("Compte désactivé.");
 		}
+		if (user.getAuthProvider() == AuthProvider.GOOGLE) {
+			throw new InvalidCredentialsException("Ce compte utilise la connexion Google.");
+		}
 		if (!passwordEncoder.matches(request.currentPassword(), user.getPasswordHash())) {
 			throw new InvalidCredentialsException("Mot de passe actuel incorrect.");
 		}
 		user.setPasswordHash(passwordEncoder.encode(request.newPassword()));
 		authUserRepository.save(user);
-		// Après changement, toutes les sessions refresh sont révoquées.
 		refreshTokenRepository.revokeAllForUser(userId);
-		// Et l'access courant est blacklisté si présent.
 		blacklistAccessIfPresent(accessTokenRaw);
 	}
 
@@ -171,7 +294,30 @@ public class AuthService {
 				.createdAt(Instant.now())
 				.build());
 		long expiresIn = authProperties.getJwt().getAccessTokenMinutes() * 60;
-		return AuthResponse.of(toUserResponse(user), access, refreshRaw, expiresIn);
+		return AuthResponse.withTokens(toUserResponse(user), access, refreshRaw, expiresIn);
+	}
+
+	private void sendVerificationEmail(AuthUser user) {
+		String base = appProperties.getFrontend().getBaseUrl();
+		if (base.endsWith("/")) {
+			base = base.substring(0, base.length() - 1);
+		}
+		String token = jwtService.createEmailVerificationToken(user.getId(), user.getEmail(), VERIFICATION_TOKEN_SECONDS);
+		String url = base + "/auth/verify-email?token=" + token;
+		authNotificationClient.sendEmailVerification(user.getEmail(), user.getFirstName(), url);
+	}
+
+	private void ensureEmailVerifiedForLocal(AuthUser user) {
+		if (user.getAuthProvider() == AuthProvider.LOCAL && !user.isEmailVerified()) {
+			throw new EmailNotVerifiedException(
+					"Confirmez votre adresse e-mail avant de vous connecter. Consultez votre boîte de réception.");
+		}
+	}
+
+	private static void ensureActive(AuthUser user) {
+		if (!user.isActive()) {
+			throw new InvalidCredentialsException("Compte désactivé.");
+		}
 	}
 
 	private UserResponse toUserResponse(AuthUser user) {
@@ -182,6 +328,7 @@ public class AuthService {
 				user.getLastName(),
 				user.getRole(),
 				user.isActive(),
+				user.isEmailVerified(),
 				user.getCreatedAt());
 	}
 
@@ -200,7 +347,7 @@ public class AuthService {
 			}
 		}
 		catch (JwtException | IllegalArgumentException ignored) {
-			// token déjà invalide : blacklist inutile
+			// token déjà invalide
 		}
 	}
 
@@ -209,14 +356,13 @@ public class AuthService {
 	}
 
 	private static Role parseObjective(String objective) {
-		if (objective == null) {
+		if (objective == null || objective.isBlank()) {
 			return Role.USER;
 		}
 		String o = objective.trim().toUpperCase();
 		if ("AUTHOR".equals(o)) {
 			return Role.AUTHOR;
 		}
-		// NB: ADMIN non attribuable via register
 		return Role.USER;
 	}
 }

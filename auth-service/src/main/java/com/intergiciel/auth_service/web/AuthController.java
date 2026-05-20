@@ -8,7 +8,10 @@ import com.intergiciel.auth_service.web.dto.LoginRequest;
 import com.intergiciel.auth_service.web.dto.LogoutRequest;
 import com.intergiciel.auth_service.web.dto.RefreshRequest;
 import com.intergiciel.auth_service.web.dto.RevokeAllSessionsResponse;
+import com.intergiciel.auth_service.web.dto.GoogleAuthRequest;
+import com.intergiciel.auth_service.web.dto.MessageResponse;
 import com.intergiciel.auth_service.web.dto.RegisterRequest;
+import com.intergiciel.auth_service.web.dto.ResendVerificationRequest;
 import com.intergiciel.auth_service.web.dto.UserResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -23,6 +26,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -49,6 +53,24 @@ public class AuthController {
 	@Operation(summary = "Connexion e-mail / mot de passe")
 	public AuthResponse login(@Valid @RequestBody LoginRequest request) {
 		return authService.login(request);
+	}
+
+	@PostMapping("/google")
+	@Operation(summary = "Connexion ou inscription via Google (id_token GIS)")
+	public AuthResponse google(@Valid @RequestBody GoogleAuthRequest request) {
+		return authService.googleAuth(request);
+	}
+
+	@GetMapping("/verify-email")
+	@Operation(summary = "Confirme l’adresse e-mail (lien reçu par mail)")
+	public MessageResponse verifyEmail(@RequestParam String token) {
+		return authService.verifyEmail(token);
+	}
+
+	@PostMapping("/resend-verification")
+	@Operation(summary = "Renvoie l’e-mail de vérification")
+	public MessageResponse resendVerification(@Valid @RequestBody ResendVerificationRequest request) {
+		return authService.resendVerification(request);
 	}
 
 	@PostMapping("/refresh")

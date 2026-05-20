@@ -10,5 +10,9 @@ public interface AuthUserRepository extends JpaRepository<AuthUser, UUID> {
 
 	Optional<AuthUser> findByEmailIgnoreCase(String email);
 
+	Optional<AuthUser> findByGoogleSub(String googleSub);
+
+	Optional<AuthUser> findByEmailVerificationToken(String token);
+
 	boolean existsByEmailIgnoreCase(String email);
 }

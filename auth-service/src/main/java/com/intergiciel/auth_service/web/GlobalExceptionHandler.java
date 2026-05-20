@@ -1,6 +1,8 @@
 package com.intergiciel.auth_service.web;
 
 import com.intergiciel.auth_service.service.DuplicateEmailException;
+import com.intergiciel.auth_service.service.EmailNotVerifiedException;
+import com.intergiciel.auth_service.service.GoogleAuthException;
 import com.intergiciel.auth_service.service.InvalidCredentialsException;
 import com.intergiciel.auth_service.service.InvalidTokenException;
 import com.intergiciel.auth_service.service.UserNotFoundException;
@@ -28,6 +30,27 @@ public class GlobalExceptionHandler {
 	ProblemDetail invalidCredentials(RuntimeException ex) {
 		ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, ex.getMessage());
 		pd.setType(URI.create("https://bookvault.local/errors/invalid-credentials"));
+		return pd;
+	}
+
+	@ExceptionHandler(EmailNotVerifiedException.class)
+	ProblemDetail emailNotVerified(EmailNotVerifiedException ex) {
+		ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, ex.getMessage());
+		pd.setType(URI.create("https://bookvault.local/errors/email-not-verified"));
+		return pd;
+	}
+
+	@ExceptionHandler(GoogleAuthException.class)
+	ProblemDetail googleAuth(GoogleAuthException ex) {
+		ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
+		pd.setType(URI.create("https://bookvault.local/errors/google-auth"));
+		return pd;
+	}
+
+	@ExceptionHandler(IllegalArgumentException.class)
+	ProblemDetail illegalArgument(IllegalArgumentException ex) {
+		ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
+		pd.setType(URI.create("https://bookvault.local/errors/validation"));
 		return pd;
 	}
 

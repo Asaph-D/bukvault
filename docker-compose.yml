@@ -83,6 +83,10 @@ services:
       AUTH_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-1234}
       JWT_SECRET: ${JWT_SECRET:-0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef}
       AUTH_SERVICE_PORT: "8081"
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:4200}
+      BOOKVAULT_INTERNAL_SERVICE_KEY: ${BOOKVAULT_INTERNAL_SERVICE_KEY:-bookvault-internal-dev}
+      NOTIFICATION_SERVICE_URI: ${NOTIFICATION_SERVICE_URI:-http://notification-service:8088}
     depends_on:
       postgres:
         condition: service_healthy

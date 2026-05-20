@@ -4,7 +4,8 @@ import { JwtHelperService } from '@auth0/angular-jwt';
 import { BehaviorSubject, EMPTY, Observable, throwError } from 'rxjs';
 import { catchError, map, switchMap, tap } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
-import { AuthResponseDto, UserResponseDto } from '../models/api.types';
+import { AuthResponseDto, GoogleAuthRequestDto, UserResponseDto } from '../models/api.types';
+import { GoogleAuthService } from './google-auth.service';
 import { User } from '../models/user.model';
 import {
     ACCESS_TOKEN_KEY,
@@ -27,6 +28,11 @@ export { ACCESS_TOKEN_KEY, REFRESH_TOKEN_KEY } from './auth-token.store';
 /** Émis par l’intercepteur HTTP si les jetons sont retirés (sync. avec currentUser$). */
 export const AUTH_TOKENS_PURGED_EVENT = 'bookvault-auth-tokens-purged';
 
+export interface AuthSessionResult {
+  user: User;
+  emailVerificationRequired: boolean;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -41,7 +47,8 @@ export class AuthService {
 
   constructor(
     private http: HttpClient,
-    httpBackend: HttpBackend
+    httpBackend: HttpBackend,
+    private googleAuth: GoogleAuthService,
   ) {
     this.httpPlain = new HttpClient(httpBackend);
     this.restoreSession();
@@ -169,61 +176,120 @@ export class AuthService {
   private mapHttpError(err: HttpErrorResponse): string {
     const body = err.error;
     if (body && typeof body === 'object') {
+      const detail = (body as { detail?: string }).detail;
+      if (typeof detail === 'string' && detail.trim()) return detail;
       const msg = (body as { message?: string }).message;
-      if (typeof msg === 'string') return msg;
+      if (typeof msg === 'string' && msg.trim()) return msg;
     }
     if (typeof body === 'string' && body.length < 500) return body;
     if (err.status === 401) return 'Identifiants invalides.';
+    if (err.status === 403) return 'Action non autorisée.';
     if (err.status === 409) return 'Cette adresse e-mail est déjà utilisée.';
     return err.statusText || 'Une erreur est survenue.';
   }
 
-  login(email: string, password: string, rememberMe = true): Observable<User> {
+  private applyAuthResponse(res: AuthResponseDto, rememberMe: boolean): AuthSessionResult {
+    const emailVerificationRequired =
+      !!res.emailVerificationRequired || !res.accessToken || !res.refreshToken;
+    if (!emailVerificationRequired) {
+      storeTokensAfterLogin(res, rememberMe);
+      this.currentUserSubject.next(this.mapUser(res.user));
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent(AUTH_SESSION_RESTORED_UI_EVENT));
+      }
+    }
+    return {
+      user: this.mapUser(res.user),
+      emailVerificationRequired,
+    };
+  }
+
+  login(email: string, password: string, rememberMe = true): Observable<AuthSessionResult> {
     return this.http
       .post<AuthResponseDto>(`${this.apiBase}/auth/login`, { email, password, rememberMe })
       .pipe(
-        tap(res => {
-          storeTokensAfterLogin(res, rememberMe);
-          this.currentUserSubject.next(this.mapUser(res.user));
-          if (typeof window !== 'undefined') {
-            window.dispatchEvent(new CustomEvent(AUTH_SESSION_RESTORED_UI_EVENT));
-          }
-        }),
-        map(res => this.mapUser(res.user)),
+        map(res => this.applyAuthResponse(res, rememberMe)),
         catchError((err: HttpErrorResponse) =>
-          throwError(() => new Error(this.mapHttpError(err)))
-        )
+          throwError(() => new Error(this.mapHttpError(err))),
+        ),
       );
   }
 
-  register(user: Partial<User>, password: string, objective: 'USER' | 'AUTHOR'): Observable<User> {
+  register(
+    user: Partial<User>,
+    password: string,
+    objective: 'USER' | 'AUTHOR',
+    termsAccepted: boolean,
+  ): Observable<AuthSessionResult> {
     return this.http
       .post<AuthResponseDto>(`${this.apiBase}/auth/register`, {
         email: user.email,
         password,
         firstName: user.firstName,
         lastName: user.lastName,
-        objective
+        objective,
+        termsAccepted,
       })
       .pipe(
-        tap(res => {
-          storeTokensAfterLogin(res, true);
-          this.currentUserSubject.next(this.mapUser(res.user));
-          if (typeof window !== 'undefined') {
-            window.dispatchEvent(new CustomEvent(AUTH_SESSION_RESTORED_UI_EVENT));
-          }
-        }),
-        map(res => this.mapUser(res.user)),
+        map(res => this.applyAuthResponse(res, true)),
         catchError((err: HttpErrorResponse) =>
-          throwError(() => new Error(this.mapHttpError(err)))
-        )
+          throwError(() => new Error(this.mapHttpError(err))),
+        ),
       );
   }
 
-  googleLogin(): Observable<User> {
-    return throwError(
-      () => new Error('La connexion Google n’est pas encore disponible.')
-    );
+  googleSignIn(options: {
+    mode: 'login' | 'register';
+    objective?: 'USER' | 'AUTHOR';
+    termsAccepted?: boolean;
+    rememberMe?: boolean;
+  }): Observable<AuthSessionResult> {
+    return new Observable<AuthSessionResult>(observer => {
+      this.googleAuth
+        .requestIdToken()
+        .then(idToken => {
+          const body: GoogleAuthRequestDto = {
+            idToken,
+            rememberMe: options.rememberMe ?? true,
+          };
+          if (options.mode === 'register') {
+            body.objective = options.objective ?? 'USER';
+            body.termsAccepted = options.termsAccepted === true;
+          }
+          this.http.post<AuthResponseDto>(`${this.apiBase}/auth/google`, body).subscribe({
+            next: res =>
+              observer.next(this.applyAuthResponse(res, options.rememberMe ?? true)),
+            error: (err: HttpErrorResponse) =>
+              observer.error(new Error(this.mapHttpError(err))),
+            complete: () => observer.complete(),
+          });
+        })
+        .catch(err => observer.error(err instanceof Error ? err : new Error(String(err))));
+    });
+  }
+
+  verifyEmail(token: string): Observable<string> {
+    return this.http
+      .get<{ message: string }>(`${this.apiBase}/auth/verify-email`, {
+        params: { token },
+      })
+      .pipe(
+        map(r => r.message),
+        catchError((err: HttpErrorResponse) =>
+          throwError(() => new Error(this.mapHttpError(err))),
+        ),
+      );
+  }
+
+  resendVerificationEmail(email: string): Observable<string> {
+    return this.http
+      .post<{ message: string }>(`${this.apiBase}/auth/resend-verification`, { email })
+      .pipe(
+        map(r => r.message),
+        catchError((err: HttpErrorResponse) =>
+          throwError(() => new Error(this.mapHttpError(err))),
+        ),
+      );
   }
 
   logout(): void {

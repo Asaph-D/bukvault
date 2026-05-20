@@ -27,6 +27,7 @@ export interface UserResponseDto {
   lastName: string;
   role: 'USER' | 'AUTHOR' | 'ADMIN';
   active: boolean;
+  emailVerified: boolean;
   createdAt: string;
 }
 
@@ -102,10 +103,18 @@ export interface UpdateReaderSettingsRequest {
 
 export interface AuthResponseDto {
   user: UserResponseDto;
-  accessToken: string;
-  refreshToken: string;
+  accessToken: string | null;
+  refreshToken: string | null;
   expiresIn: number;
   tokenType: string;
+  emailVerificationRequired?: boolean;
+}
+
+export interface GoogleAuthRequestDto {
+  idToken: string;
+  objective?: 'USER' | 'AUTHOR';
+  termsAccepted?: boolean;
+  rememberMe?: boolean;
 }
 
 /** POST /auth/change-password */

@@ -71,3 +71,25 @@ Le fichier `12_bookvault_admin_dashboard.sql` enrichit **sans base dédiée** (a
 Les livres utilisent les UUID `f0000001-…` à `f000000c` (publiés), plus `f000000d`–`e` (histoire/littérature), `f000000f`–`11` (brouillons admin).
 
 Pour réinitialiser : ré-exécuter chaque script (ils commencent par des `DELETE` / `TRUNCATE` ciblés là où c’est sûr).
+
+## Fichiers (covers / ebooks) — important
+
+Le seed `10_bookvault_files.sql` ne contient **que des métadonnées** (`storage_key`). Les binaires (PDF/EPUB + `cover.jpg`) doivent exister sur le stockage du **file-service**.
+
+### Hors Docker (Windows)
+
+```powershell
+$env:FILE_STORAGE_ROOT="$env:USERPROFILE\bookvault-files"
+python .\scripts\generate_covers_from_books.py
+```
+
+### Docker
+
+Le `file-service` utilise un volume Docker : place les fichiers sur le host dans le dossier mappé au volume (bind-mount) **ou** copie-les dans le volume.
+
+Exemple (si tu as un bind-mount du volume file storage vers `./docker/file-storage`) :
+
+```powershell
+$env:FILE_STORAGE_ROOT="$PWD\docker\file-storage"
+python .\scripts\generate_covers_from_books.py
+```

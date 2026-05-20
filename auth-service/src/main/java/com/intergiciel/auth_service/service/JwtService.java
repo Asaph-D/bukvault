@@ -19,6 +19,8 @@ public class JwtService {
 
 	private final AuthProperties authProperties;
 	private final SecretKey secretKey;
+	private static final String CLAIM_PURPOSE = "purpose";
+	private static final String PURPOSE_EMAIL_VERIFY = "email_verify";
 
 	public JwtService(AuthProperties authProperties) {
 		this.authProperties = authProperties;
@@ -51,6 +53,39 @@ public class JwtService {
 				.build()
 				.parseSignedClaims(token)
 				.getPayload();
+	}
+
+	public String createEmailVerificationToken(UUID userId, String email, long expiresInSeconds) {
+		Instant now = Instant.now();
+		Instant exp = now.plusSeconds(expiresInSeconds);
+		String jti = UUID.randomUUID().toString();
+		return Jwts.builder()
+				.id(jti)
+				.subject(userId.toString())
+				.claim("email", email)
+				.claim(CLAIM_PURPOSE, PURPOSE_EMAIL_VERIFY)
+				.issuedAt(Date.from(now))
+				.expiration(Date.from(exp))
+				.signWith(secretKey, Jwts.SIG.HS256)
+				.compact();
+	}
+
+	public Claims parseEmailVerificationToken(String token) {
+		try {
+			Claims c = Jwts.parser()
+					.verifyWith(secretKey)
+					.build()
+					.parseSignedClaims(token)
+					.getPayload();
+			String purpose = c.get(CLAIM_PURPOSE, String.class);
+			if (!PURPOSE_EMAIL_VERIFY.equals(purpose)) {
+				throw new InvalidTokenException("Lien de vérification invalide.");
+			}
+			return c;
+		}
+		catch (JwtException | IllegalArgumentException e) {
+			throw new InvalidTokenException("Lien de vérification invalide ou expiré.");
+		}
 	}
 
 	public void validateAccessToken(String token) {
