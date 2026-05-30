@@ -47,15 +47,17 @@ export class DashboardComponent implements OnInit {
   constructor(private authService: AuthService) {}
 
   ngOnInit(): void {
-    this.authService.currentUser$.subscribe(u => {
-      this.user = u;
-      if (u) {
-        this.loading = false;
-        return;
-      }
-      if (!this.authService.isAuthenticated()) {
-        this.loading = false;
-      }
+    this.authService.waitForSession().subscribe(() => {
+      this.authService.currentUser$.subscribe(u => {
+        this.user = u;
+        if (u) {
+          this.loading = false;
+          return;
+        }
+        if (!this.authService.isAuthenticated()) {
+          this.loading = false;
+        }
+      });
     });
   }
 }

@@ -1,8 +1,8 @@
 import { HttpBackend, HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { JwtHelperService } from '@auth0/angular-jwt';
-import { BehaviorSubject, EMPTY, Observable, throwError } from 'rxjs';
-import { catchError, map, switchMap, tap } from 'rxjs/operators';
+import { BehaviorSubject, EMPTY, Observable, of, throwError } from 'rxjs';
+import { catchError, filter, map, take, tap } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 import { AuthResponseDto, GoogleAuthRequestDto, UserResponseDto } from '../models/api.types';
 import { GoogleAuthService } from './google-auth.service';
@@ -39,6 +39,7 @@ export interface AuthSessionResult {
 export class AuthService {
   private currentUserSubject = new BehaviorSubject<User | null>(null);
   public currentUser$ = this.currentUserSubject.asObservable();
+  private sessionRestoreComplete = new BehaviorSubject(false);
 
   private jwtHelper = new JwtHelperService();
   private readonly apiBase = environment.apiUrl;
@@ -124,35 +125,75 @@ export class AuthService {
 
     if (!refresh && accessExpired) {
       this.clearLocalSession();
+      this.finishSessionRestore();
       return;
     }
+
+    const loadProfile = (token: string) => {
+      this.hydrateMinimalUserFromAccessToken(token);
+      this.fetchMePlain(token).subscribe({
+        next: u => this.currentUserSubject.next(this.mapUser(u)),
+        error: (err: HttpErrorResponse) => {
+          if (err.status === 401 || err.status === 403) {
+            this.clearLocalSession();
+          }
+        },
+        complete: () => this.finishSessionRestore(),
+      });
+    };
 
     if (refresh && accessExpired) {
       this.httpPlain
         .post<AuthResponseDto>(`${this.apiBase}/auth/refresh`, { refreshToken: refresh })
         .pipe(
           tap(res => storeAuthResponse(res)),
-          tap(() => {
-            const t = readAccessToken();
-            if (t) this.hydrateMinimalUserFromAccessToken(t);
-          }),
-          switchMap(() => this.http.get<UserResponseDto>(`${this.apiBase}/auth/me`)),
           catchError(() => {
             this.clearLocalSession();
+            this.finishSessionRestore();
             return EMPTY;
-          })
+          }),
         )
-        .subscribe(u => this.currentUserSubject.next(this.mapUser(u)));
+        .subscribe(res => {
+          const token = res.accessToken || readAccessToken();
+          if (token) {
+            loadProfile(token);
+          } else {
+            this.clearLocalSession();
+            this.finishSessionRestore();
+          }
+        });
       return;
     }
 
     if (access) {
-      this.hydrateMinimalUserFromAccessToken(access);
+      loadProfile(access);
+      return;
     }
 
-    this.http.get<UserResponseDto>(`${this.apiBase}/auth/me`).subscribe({
-      next: u => this.currentUserSubject.next(this.mapUser(u)),
-      error: () => this.clearLocalSession()
+    this.finishSessionRestore();
+  }
+
+  /** Attend la fin de restoreSession() avant de juger l’auth (évite déconnexion au F5). */
+  waitForSession(): Observable<boolean> {
+    if (this.sessionRestoreComplete.value) {
+      return of(this.isAuthenticated());
+    }
+    return this.sessionRestoreComplete.pipe(
+      filter(complete => complete),
+      take(1),
+      map(() => this.isAuthenticated()),
+    );
+  }
+
+  private finishSessionRestore(): void {
+    if (!this.sessionRestoreComplete.value) {
+      this.sessionRestoreComplete.next(true);
+    }
+  }
+
+  private fetchMePlain(accessToken: string): Observable<UserResponseDto> {
+    return this.httpPlain.get<UserResponseDto>(`${this.apiBase}/auth/me`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
     });
   }
 

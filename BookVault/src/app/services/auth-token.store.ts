@@ -7,11 +7,21 @@ export const REFRESH_TOKEN_KEY = 'bookvault_refresh';
 export const AUTH_TOKENS_REFRESHED_EVENT = 'bookvault-auth-tokens-refreshed';
 
 export function readAccessToken(): string | null {
+  const sessionRefresh = sessionStorage.getItem(REFRESH_TOKEN_KEY);
+  const localRefresh = localStorage.getItem(REFRESH_TOKEN_KEY);
+  if (sessionRefresh) {
+    return sessionStorage.getItem(ACCESS_TOKEN_KEY);
+  }
+  if (localRefresh) {
+    return localStorage.getItem(ACCESS_TOKEN_KEY);
+  }
   return sessionStorage.getItem(ACCESS_TOKEN_KEY) || localStorage.getItem(ACCESS_TOKEN_KEY);
 }
 
 export function readRefreshToken(): string | null {
-  return sessionStorage.getItem(REFRESH_TOKEN_KEY) || localStorage.getItem(REFRESH_TOKEN_KEY);
+  return (
+    sessionStorage.getItem(REFRESH_TOKEN_KEY) || localStorage.getItem(REFRESH_TOKEN_KEY)
+  );
 }
 
 export function activeTokenStorage(): Storage {
