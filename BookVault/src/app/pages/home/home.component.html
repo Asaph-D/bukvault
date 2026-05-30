@@ -1,4 +1,4 @@
-<app-header></app-header>
+﻿<app-header></app-header>
 
 <div class="pt-app-header">
   <!-- Hero Section -->
@@ -91,7 +91,7 @@
               <span class="text-xs text-gray-500 dark:text-slate-400 ml-1">({{ book.reviewCount }})</span>
             </div>
             <div class="flex justify-between items-center">
-              <span class="text-lg font-bold text-blue-800">{{ book.price | currency: 'EUR' }}</span>
+              <span class="text-lg font-bold text-blue-800">{{ book.price | currency:'XAF':'symbol-narrow':'1.0-0' }}</span>
               <div class="flex items-center gap-2">
                 <a
                   [routerLink]="['/books', book.id]"
@@ -167,7 +167,7 @@
               </div>
               <span class="text-xs text-gray-500 dark:text-slate-400 ml-1">({{ book.reviewCount }})</span>
             </div>
-            <span class="text-blue-800 dark:text-sky-400 font-bold">{{ book.price | currency: 'EUR' }}</span>
+            <span class="text-blue-800 dark:text-sky-400 font-bold">{{ book.price | currency:'XAF':'symbol-narrow':'1.0-0' }}</span>
           </div>
         </div>
       </div>

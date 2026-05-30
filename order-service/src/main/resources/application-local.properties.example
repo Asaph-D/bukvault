@@ -1,0 +1,11 @@
+# Copiez en application-local.properties (gitignored) ou lancez :
+#   .\scripts\sync-g2tpay-local-props.ps1
+order.g2tpay.enabled=true
+order.g2tpay.api-key=votre-cle-g2tpay
+order.g2tpay.base-url=https://g2tpay.net
+order.g2tpay.gateway-public-url=https://VOTRE-TUNNEL.ngrok-free.dev
+order.g2tpay.webhook-url=https://VOTRE-TUNNEL.ngrok-free.dev/api/v1/orders/webhook/g2tpay
+order.g2tpay.eur-to-xaf-rate=655.957
+order.g2tpay.operator-mtn=MTN_CMR
+order.g2tpay.operator-orange=ORANGE_CMR
+order.frontend.base-url=https://bukvault.vercel.app

@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+﻿import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { BookService } from '../../../services/book.service';
@@ -27,7 +27,7 @@ import { FooterComponent } from '../../../components/footer/footer.component';
               <h2 class="font-semibold text-lg text-slate-900 dark:text-white">{{ book.title }}</h2>
               <p class="text-zinc-500 dark:text-zinc-400 text-sm mb-2">{{ book.author }}</p>
               <div class="flex justify-between items-center mt-2">
-                <span class="font-semibold text-indigo-600 dark:text-indigo-400">{{ book.price | currency: 'EUR' }}</span>
+                <span class="font-semibold text-indigo-600 dark:text-indigo-400">{{ book.price | currency:'XAF':'symbol-narrow':'1.0-0' }}</span>
                 <a
                   [routerLink]="['/books', book.id]"
                   class="text-sm bg-indigo-600 text-white px-3 py-1.5 rounded-lg hover:brightness-110"

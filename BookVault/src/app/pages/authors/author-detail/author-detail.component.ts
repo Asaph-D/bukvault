@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+﻿import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { AuthorService } from '../../../services/author.service';
@@ -30,7 +30,7 @@ import { FooterComponent } from '../../../components/footer/footer.component';
             <img [src]="book.coverImage" class="w-full h-48 object-cover" [alt]="book.title" />
             <div class="p-4">
               <a [routerLink]="['/books', book.id]" class="font-semibold text-slate-900 dark:text-white hover:underline">{{ book.title }}</a>
-              <p class="text-indigo-600 dark:text-indigo-400 font-semibold mt-2">{{ book.price | currency: 'EUR' }}</p>
+              <p class="text-indigo-600 dark:text-indigo-400 font-semibold mt-2">{{ book.price | currency:'XAF':'symbol-narrow':'1.0-0' }}</p>
             </div>
           </div>
         </div>

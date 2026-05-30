@@ -1,4 +1,4 @@
-<app-dashboard-internal-header
+﻿<app-dashboard-internal-header
   title="Auteurs"
   eyebrow="Administration"
   subtitle="Comptes auteurs : profil, suspension et catalogue d'œuvres."
@@ -249,7 +249,7 @@
               />
               <span class="min-w-0 flex-1">
                 <span class="font-medium text-slate-900 dark:text-white block truncate">{{ book.title }}</span>
-                <span class="text-xs text-slate-500 dark:text-zinc-400">{{ book.isbn }} · {{ book.price | currency: 'EUR' }}</span>
+                <span class="text-xs text-slate-500 dark:text-zinc-400">{{ book.isbn }} · {{ book.price | currency:'XAF':'symbol-narrow':'1.0-0' }}</span>
               </span>
               <span class="shrink-0 text-[10px] font-semibold uppercase px-2 py-1 rounded-full self-start" [ngClass]="statusClass(book.status)">
                 {{ statusLabel(book.status) }}

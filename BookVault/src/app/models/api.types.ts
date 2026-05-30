@@ -309,6 +309,9 @@ export interface G2tpayConfigDto {
   enabled: boolean;
   currency: string;
   instruction: string;
+  apiKeyConfigured?: boolean;
+  gatewayConfigured?: boolean;
+  ready?: boolean;
 }
 
 export interface G2tpayInitiateRequestDto {

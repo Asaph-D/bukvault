@@ -88,7 +88,7 @@ export class PaymentService {
     // return this.http.post<boolean>(`${environment.apiUrl}/payment-methods/${id}/default`, {});
   }
 
-  createPaymentIntent(amount: number, currency: string = 'EUR'): Observable<PaymentIntent> {
+  createPaymentIntent(amount: number, currency: string = 'XAF'): Observable<PaymentIntent> {
     // Mock payment intent
     const intent: PaymentIntent = {
       id: `pi_${Date.now()}`,

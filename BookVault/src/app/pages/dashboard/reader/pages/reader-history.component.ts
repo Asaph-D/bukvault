@@ -10,6 +10,7 @@ import { BookService, PLACEHOLDER_COVER } from '../../../../services/book.servic
 import { OrderResponseDto, ReadingProgressDto } from '../../../../models/api.types';
 import { Book } from '../../../../models/book.model';
 import { parseProgressPercent, readingMediaLabel } from '../utils/reading-progress.util';
+import { APP_CURRENCY, formatXaf } from '../../../../core/money';
 
 type HistoryTab = 'orders' | 'reading';
 
@@ -95,8 +96,16 @@ export class ReaderHistoryComponent implements OnInit {
   }
 
   formatMoney(n: number, currency: string): string {
+    const code = (currency || APP_CURRENCY).toUpperCase();
+    if (code === APP_CURRENCY) {
+      return formatXaf(n);
+    }
     try {
-      return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: currency || 'EUR' }).format(n);
+      return new Intl.NumberFormat('fr-FR', {
+        style: 'currency',
+        currency: code,
+        maximumFractionDigits: code === APP_CURRENCY ? 0 : 2,
+      }).format(n);
     } catch {
       return `${n} ${currency}`;
     }

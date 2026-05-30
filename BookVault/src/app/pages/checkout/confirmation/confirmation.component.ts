@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+﻿import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { forkJoin, of } from 'rxjs';
@@ -63,7 +63,7 @@ interface ConfirmationItem {
               
               <div class="flex justify-between mb-2">
                 <span class="text-zinc-600 dark:text-zinc-400">Montant :</span>
-                <span class="font-semibold text-slate-900 dark:text-white">{{ total | currency:'EUR' }}</span>
+                <span class="font-semibold text-slate-900 dark:text-white">{{ total | currency:'XAF':'symbol-narrow':'1.0-0' }}</span>
               </div>
               
               <div class="flex justify-between">
@@ -80,8 +80,8 @@ interface ConfirmationItem {
                   <div class="flex-1 text-left min-w-0">
                     <h4 class="font-medium text-slate-900 dark:text-white">{{ item.title }}</h4>
                     <div class="flex justify-between text-sm mt-1">
-                      <span class="text-zinc-500 dark:text-zinc-400">{{ item.quantity }} × {{ item.price | currency:'EUR' }}</span>
-                      <span class="font-medium text-slate-900 dark:text-white">{{ item.quantity * item.price | currency:'EUR' }}</span>
+                      <span class="text-zinc-500 dark:text-zinc-400">{{ item.quantity }} × {{ item.price | currency:'XAF':'symbol-narrow':'1.0-0' }}</span>
+                      <span class="font-medium text-slate-900 dark:text-white">{{ item.quantity * item.price | currency:'XAF':'symbol-narrow':'1.0-0' }}</span>
                     </div>
                     <div class="flex flex-wrap gap-2 mt-3">
                       <a

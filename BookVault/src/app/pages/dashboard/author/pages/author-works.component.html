@@ -1,4 +1,4 @@
-<app-dashboard-internal-header
+﻿<app-dashboard-internal-header
   title="Mes œuvres"
   eyebrow="Espace auteur"
   subtitle="Tous vos titres rattachés au catalogue BookVault : statut, métriques et accès à la fiche de publication ou au livre public."
@@ -128,7 +128,7 @@
         </div>
         <div class="p-4 flex-1 flex flex-col">
           <h3 class="font-semibold text-slate-900 dark:text-white line-clamp-2">{{ book.title }}</h3>
-          <p class="text-xs text-zinc-500 mt-1">{{ book.price | currency : 'EUR' }} · {{ book.reviewCount }} avis · {{ book.sales ?? 0 }} vues</p>
+          <p class="text-xs text-zinc-500 mt-1">{{ book.price | currency:'XAF':'symbol-narrow':'1.0-0' }} · {{ book.reviewCount }} avis · {{ book.sales ?? 0 }} vues</p>
           <p class="text-xs text-zinc-400 mt-1 line-clamp-2" *ngIf="book.category">{{ book.category }}</p>
           <div class="mt-auto pt-4 space-y-2">
             <div class="flex flex-wrap gap-2">

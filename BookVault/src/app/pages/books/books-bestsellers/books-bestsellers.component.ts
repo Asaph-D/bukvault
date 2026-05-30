@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+﻿import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { BookService } from '../../../services/book.service';
@@ -29,7 +29,7 @@ import { FooterComponent } from '../../../components/footer/footer.component';
               />
               <a [routerLink]="['/books', book.id]" class="font-semibold text-slate-900 dark:text-white hover:underline">{{ book.title }}</a>
               <p class="text-zinc-500 dark:text-zinc-400 text-sm">{{ book.author }}</p>
-              <p class="text-indigo-600 dark:text-indigo-400 font-semibold mt-1">{{ book.price | currency: 'EUR' }}</p>
+              <p class="text-indigo-600 dark:text-indigo-400 font-semibold mt-1">{{ book.price | currency:'XAF':'symbol-narrow':'1.0-0' }}</p>
             </div>
           </div>
         </div>

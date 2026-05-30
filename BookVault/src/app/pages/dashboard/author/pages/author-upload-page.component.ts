@@ -76,8 +76,8 @@ export class AuthorUploadPageComponent implements OnInit {
 
   priceTierOptions = [
     { label: 'Gratuit', value: 'free' },
-    { label: 'Standard (4,99 €)', value: 'standard' },
-    { label: 'Premium (9,99 €)', value: 'premium' },
+    { label: 'Standard (3 000 XAF)', value: 'standard' },
+    { label: 'Premium (6 500 XAF)', value: 'premium' },
   ];
 
   categories: BookCategory[] = [];

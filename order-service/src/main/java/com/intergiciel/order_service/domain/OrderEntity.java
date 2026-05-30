@@ -37,7 +37,7 @@ public class OrderEntity {
 	private BigDecimal totalAmount = BigDecimal.ZERO;
 
 	@Column(nullable = false, length = 8)
-	private String currency = "EUR";
+	private String currency = "XAF";
 
 	@Column(length = 255)
 	private String paymentReference;

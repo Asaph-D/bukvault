@@ -5,6 +5,7 @@ import { BookService, PLACEHOLDER_COVER } from '../../../../services/book.servic
 import { AuthService } from '../../../../services/auth.service';
 import { AuthorService } from '../../../../services/author.service';
 import { forkJoin } from 'rxjs';
+import { formatXaf } from '../../../../core/money';
 
 @Component({
   standalone: true,
@@ -111,7 +112,7 @@ export class AuthorHomeComponent implements OnInit {
           },
           {
             label: 'Revenus',
-            value: `${Number(revenue).toFixed(2)} €`,
+            value: formatXaf(Number(revenue)),
             hint: 'Somme des lignes payées (order-service)',
           },
         ];

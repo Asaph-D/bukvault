@@ -76,7 +76,7 @@ public class G2tpayPaymentService {
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Paiement impossible pour ce statut.");
 		}
 
-		int amountXaf = toXafAmount(order.getTotalAmount());
+		int amountXaf = toPaymentAmountXaf(order.getTotalAmount());
 		if (amountXaf < 100) {
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Montant minimum G2TPay : 100 XAF.");
 		}
@@ -220,9 +220,12 @@ public class G2tpayPaymentService {
 		}
 	}
 
-	private int toXafAmount(BigDecimal eurAmount) {
-		BigDecimal xaf = eurAmount.multiply(g2tpayProperties.getEurToXafRate());
-		return xaf.setScale(0, RoundingMode.HALF_UP).intValueExact();
+	private int toPaymentAmountXaf(BigDecimal amount) {
+		if (amount == null) {
+			return 0;
+		}
+		// Montants déjà en XAF (devise plateforme).
+		return amount.setScale(0, RoundingMode.HALF_UP).intValueExact();
 	}
 
 	static String normalizeCameroonPhone(String raw) {

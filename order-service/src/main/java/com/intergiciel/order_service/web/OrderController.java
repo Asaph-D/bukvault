@@ -90,10 +90,16 @@ public class OrderController {
 	@GetMapping("/payments/g2tpay/config")
 	@Operation(summary = "Configuration paiement Mobile Money G2TPay")
 	public G2tpayConfigResponse g2tpayConfig() {
+		boolean apiKeyConfigured = g2tpayProperties.getApiKey() != null
+				&& !g2tpayProperties.getApiKey().isBlank();
+		boolean gatewayConfigured = !g2tpayProperties.effectiveGatewayPublicUrl().isBlank();
 		return new G2tpayConfigResponse(
 				g2tpayProperties.isEnabled(),
 				"XAF",
-				"Paiement Mobile Money (MTN / Orange) via G2TPay.");
+				"Paiement Mobile Money (MTN / Orange) via G2TPay.",
+				apiKeyConfigured,
+				gatewayConfigured,
+				g2tpayProperties.isEnabled() && apiKeyConfigured && gatewayConfigured);
 	}
 
 	@PostMapping("/{id}/payments/g2tpay/redirect-url")

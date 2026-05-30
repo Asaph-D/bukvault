@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+﻿import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
@@ -9,6 +9,7 @@ import { AuthService } from '../../../services/auth.service';
 import { CartService, CartLineUi } from '../../../services/cart.service';
 import { OrderService } from '../../../services/order.service';
 import { OrderResponseDto } from '../../../models/api.types';
+import { shippingFeeXaf } from '../../../core/money';
 import { UiToastService } from '../../../services/ui-toast.service';
 
 type PaymentTab = 'card' | 'paypal' | 'mobile_money';
@@ -249,8 +250,8 @@ type PaymentTab = 'card' | 'paypal' | 'mobile_money';
                           <p class="text-sm text-zinc-500 dark:text-zinc-400">
                             Vous serez redirigé pour saisir votre numéro et confirmer le paiement.
                           </p>
-                          <p *ngIf="estimatedXaf" class="text-sm font-medium text-slate-900 dark:text-white mt-3">
-                            Montant estimé : {{ estimatedXaf | number: '1.0-0' }} XAF
+                          <p *ngIf="getTotal() > 0" class="text-sm font-medium text-slate-900 dark:text-white mt-3">
+                            Montant à payer : {{ getTotal() | currency:'XAF':'symbol-narrow':'1.0-0' }}
                           </p>
                         </div>
                       </div>
@@ -345,25 +346,25 @@ type PaymentTab = 'card' | 'paypal' | 'mobile_money';
                 <div class="border-b border-slate-200 dark:border-slate-700 pb-4 mb-4" *ngIf="!cartLoading">
                   <div class="flex justify-between mb-2">
                     <span class="text-zinc-600 dark:text-zinc-400">Sous-total ({{ getTotalItems() }} articles)</span>
-                    <span>{{ getSubtotal() | currency: 'EUR' }}</span>
+                    <span>{{ getSubtotal() | currency:'XAF':'symbol-narrow':'1.0-0' }}</span>
                   </div>
-                  <div class="flex justify-between mb-2" *ngIf="paymentTab === 'mobile_money' && estimatedXaf">
-                    <span class="text-zinc-600 dark:text-zinc-400">Mobile Money (estim.)</span>
-                    <span>{{ estimatedXaf | number: '1.0-0' }} XAF</span>
+                  <div class="flex justify-between mb-2" *ngIf="paymentTab === 'mobile_money' && getTotal() > 0">
+                    <span class="text-zinc-600 dark:text-zinc-400">Mobile Money</span>
+                    <span>{{ getTotal() | currency:'XAF':'symbol-narrow':'1.0-0' }}</span>
                   </div>
                   <div class="flex justify-between mb-2">
                     <span class="text-zinc-600 dark:text-zinc-400">Livraison</span>
-                    <span>{{ shippingCost | currency: 'EUR' }}</span>
+                    <span>{{ shippingCost | currency:'XAF':'symbol-narrow':'1.0-0' }}</span>
                   </div>
                   <div class="flex justify-between">
                     <span class="text-zinc-600 dark:text-zinc-400">Taxes (estim.)</span>
-                    <span>{{ getTaxes() | currency: 'EUR' }}</span>
+                    <span>{{ getTaxes() | currency:'XAF':'symbol-narrow':'1.0-0' }}</span>
                   </div>
                 </div>
 
                 <div class="flex justify-between font-semibold text-lg text-slate-900 dark:text-white" *ngIf="!cartLoading">
                   <span>Total (indicatif)</span>
-                  <span>{{ getTotal() | currency: 'EUR' }}</span>
+                  <span>{{ getTotal() | currency:'XAF':'symbol-narrow':'1.0-0' }}</span>
                 </div>
               </div>
 
@@ -409,7 +410,6 @@ export class PaymentComponent implements OnInit {
   submitted = false;
   checkoutError: string | null = null;
   cartItems: CartLineUi[] = [];
-  shippingCost = 4.99;
   taxRate = 0.2;
 
   paymentMethods: PaymentMethod[] = [];
@@ -418,10 +418,8 @@ export class PaymentComponent implements OnInit {
 
   g2tpayEnabled = false;
   configLoading = true;
-  estimatedXaf: number | null = null;
   /** Commande PENDING déjà créée (retour G2TPay ou double tentative). */
   pendingOrder: OrderResponseDto | null = null;
-  private readonly xafRate = 655.957;
 
   constructor(
     private formBuilder: FormBuilder,
@@ -493,10 +491,14 @@ export class PaymentComponent implements OnInit {
     this.loadPaymentMethods();
     this.orderService.g2tpayConfig().subscribe({
       next: cfg => {
-        this.g2tpayEnabled = cfg.enabled;
+        this.g2tpayEnabled = cfg.ready ?? cfg.enabled;
         this.configLoading = false;
         if (cfg.enabled) {
           this.paymentTab = 'mobile_money';
+        }
+        if (cfg.enabled && cfg.ready === false) {
+          this.checkoutError =
+            'G2TPay activé mais mal configuré côté serveur — lancez .\\scripts\\sync-g2tpay-local-props.ps1 puis redémarrez order-service.';
         }
       },
       error: () => {
@@ -526,7 +528,6 @@ export class PaymentComponent implements OnInit {
           image: '',
           lineTotal: Number(line.lineTotal),
         }));
-        this.estimatedXaf = Math.round(Number(order.totalAmount) * this.xafRate);
         this.cartLoading = false;
       },
       error: () => {
@@ -541,7 +542,6 @@ export class PaymentComponent implements OnInit {
       next: lines => {
         if (lines.length > 0 || !this.pendingOrder) {
           this.cartItems = lines;
-          this.estimatedXaf = Math.round(this.getSubtotal() * this.xafRate);
         }
         this.cartLoading = false;
       },
@@ -558,6 +558,10 @@ export class PaymentComponent implements OnInit {
 
   getSubtotal(): number {
     return this.cartItems.reduce((t, i) => t + i.lineTotal, 0);
+  }
+
+  get shippingCost(): number {
+    return shippingFeeXaf(this.getTotalItems());
   }
 
   getTaxes(): number {

@@ -38,7 +38,7 @@ export class ReaderSubscriptionsComponent implements OnInit {
       id: 'free',
       name: 'Lecteur',
       blurb: 'Accès au catalogue, achats à l’unité et alertes optionnelles par livre.',
-      priceLabel: '0 €',
+      priceLabel: '0 XAF',
       highlight: false,
       features: [
         'Notifications par livre (cloche)',
@@ -50,7 +50,7 @@ export class ReaderSubscriptionsComponent implements OnInit {
       id: 'plus',
       name: 'Lecteur Plus',
       blurb: 'Pour ceux qui lisent chaque semaine : confort et crédits mensuels (à venir).',
-      priceLabel: '9,90 € / mois',
+      priceLabel: '6 500 XAF / mois',
       highlight: true,
       features: [
         'Crédits numériques mensuels',
@@ -62,7 +62,7 @@ export class ReaderSubscriptionsComponent implements OnInit {
       id: 'family',
       name: 'Famille',
       blurb: 'Plusieurs profils sous un même compte facturation (bientôt).',
-      priceLabel: '19,90 € / mois',
+      priceLabel: '13 000 XAF / mois',
       highlight: false,
       features: ['Jusqu’à 4 profils', 'Contrôle parental simplifié', 'Une facture unique'],
     },

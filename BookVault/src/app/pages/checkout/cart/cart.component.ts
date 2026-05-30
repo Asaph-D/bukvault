@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+﻿import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { of } from 'rxjs';
@@ -6,6 +6,7 @@ import { switchMap } from 'rxjs/operators';
 import { HeaderComponent } from '../../../components/header/header.component';
 import { FooterComponent } from '../../../components/footer/footer.component';
 import { CartService, CartLineUi } from '../../../services/cart.service';
+import { shippingFeeXaf } from '../../../core/money';
 import { AuthService } from '../../../services/auth.service';
 import { BookService } from '../../../services/book.service';
 import { Book } from '../../../models/book.model';
@@ -52,7 +53,7 @@ import { Book } from '../../../models/book.model';
                     <div class="md:ml-6 flex-1">
                       <div class="flex justify-between mb-2">
                         <h3 class="font-semibold text-slate-900 dark:text-white">{{ item.title }}</h3>
-                        <span class="font-bold">{{ item.lineTotal | currency: 'EUR' }}</span>
+                        <span class="font-bold">{{ item.lineTotal | currency:'XAF':'symbol-narrow':'1.0-0' }}</span>
                       </div>
                       <p class="text-zinc-500 dark:text-zinc-400 text-sm mb-2">{{ item.author }}</p>
                       <p class="text-zinc-700 dark:text-zinc-300 text-sm mb-4">
@@ -114,20 +115,20 @@ import { Book } from '../../../models/book.model';
                 <div class="space-y-3 mb-6">
                   <div class="flex justify-between">
                     <span class="text-zinc-600 dark:text-zinc-400 text-sm">Sous-total ({{ getTotalItems() }} articles)</span>
-                    <span>{{ getSubtotal() | currency: 'EUR' }}</span>
+                    <span>{{ getSubtotal() | currency:'XAF':'symbol-narrow':'1.0-0' }}</span>
                   </div>
                   <div class="flex justify-between">
                     <span class="text-zinc-600 dark:text-zinc-400 text-sm">Livraison</span>
-                    <span>{{ shippingCost | currency: 'EUR' }}</span>
+                    <span>{{ shippingCost | currency:'XAF':'symbol-narrow':'1.0-0' }}</span>
                   </div>
                   <div class="flex justify-between">
                     <span class="text-zinc-600 dark:text-zinc-400 text-sm">Taxes</span>
-                    <span>{{ getTaxes() | currency: 'EUR' }}</span>
+                    <span>{{ getTaxes() | currency:'XAF':'symbol-narrow':'1.0-0' }}</span>
                   </div>
                   <div class="border-t border-slate-200 dark:border-slate-700 pt-3 mt-3">
                     <div class="flex justify-between font-semibold text-slate-900 dark:text-white">
                       <span>Total (indicatif)</span>
-                      <span>{{ getTotal() | currency: 'EUR' }}</span>
+                      <span>{{ getTotal() | currency:'XAF':'symbol-narrow':'1.0-0' }}</span>
                     </div>
                   </div>
                 </div>
@@ -154,7 +155,7 @@ import { Book } from '../../../models/book.model';
                         suggestion.title
                       }}</a>
                       <p class="text-zinc-500 dark:text-zinc-400 text-xs">{{ suggestion.author }}</p>
-                      <span class="text-indigo-600 dark:text-indigo-400 font-semibold text-sm">{{ suggestion.price | currency: 'EUR' }}</span>
+                      <span class="text-indigo-600 dark:text-indigo-400 font-semibold text-sm">{{ suggestion.price | currency:'XAF':'symbol-narrow':'1.0-0' }}</span>
                     </div>
                   </div>
                 </div>
@@ -174,7 +175,6 @@ export class CartComponent implements OnInit {
   loading = false;
   loadError: string | null = null;
   busy = false;
-  shippingCost = 4.99;
   taxRate = 0.2;
   placeholder =
     'https://images.pexels.com/photos/2908984/pexels-photo-2908984.jpeg';
@@ -265,6 +265,10 @@ export class CartComponent implements OnInit {
 
   getSubtotal(): number {
     return this.cartItems.reduce((t, i) => t + i.lineTotal, 0);
+  }
+
+  get shippingCost(): number {
+    return shippingFeeXaf(this.getTotalItems());
   }
 
   getTaxes(): number {
