@@ -381,8 +381,11 @@ type PaymentTab = 'card' | 'paypal' | 'mobile_money';
               <p *ngIf="g2tpayEnabled && paymentTab !== 'mobile_money'" class="text-xs text-center text-amber-700 dark:text-amber-300 mt-2">
                 Carte et PayPal : développement plus tard — utilisez Mobile Money pour payer maintenant.
               </p>
-              <p *ngIf="!cartLoading && !cartItems.length" class="text-xs text-center text-zinc-500 mt-2">
+              <p *ngIf="!cartLoading && !cartItems.length && !pendingOrder" class="text-xs text-center text-zinc-500 mt-2">
                 Panier vide — <a routerLink="/cart" class="text-indigo-600 underline">retour au panier</a>.
+              </p>
+              <p *ngIf="pendingOrder" class="text-xs text-center text-indigo-700 dark:text-indigo-300 mt-2">
+                Commande #{{ pendingOrder.id }} en attente — le panier a déjà été converti en commande.
               </p>
             </div>
           </div>
@@ -416,6 +419,8 @@ export class PaymentComponent implements OnInit {
   g2tpayEnabled = false;
   configLoading = true;
   estimatedXaf: number | null = null;
+  /** Commande PENDING déjà créée (retour G2TPay ou double tentative). */
+  pendingOrder: OrderResponseDto | null = null;
   private readonly xafRate = 655.957;
 
   constructor(
@@ -448,6 +453,7 @@ export class PaymentComponent implements OnInit {
   }
 
   get confirmButtonLabel(): string {
+    if (this.pendingOrder) return 'Reprendre le paiement Mobile Money';
     if (this.paymentTab === 'mobile_money') return 'Payer avec Mobile Money';
     if (this.paymentTab === 'paypal') return 'Payer avec PayPal (bientôt)';
     return 'Payer par carte (bientôt)';
@@ -462,7 +468,7 @@ export class PaymentComponent implements OnInit {
       this.g2tpayEnabled &&
       this.paymentTab === 'mobile_money' &&
       !this.cartLoading &&
-      this.cartItems.length > 0
+      (this.cartItems.length > 0 || this.pendingOrder != null)
     );
   }
 
@@ -475,6 +481,13 @@ export class PaymentComponent implements OnInit {
     if (paymentError) {
       this.checkoutError = 'Paiement non confirmé ou annulé. Réessayez.';
       this.toast.error('Paiement', this.checkoutError);
+    }
+    const orderIdParam = this.route.snapshot.queryParamMap.get('orderId');
+    if (orderIdParam) {
+      const orderId = Number(orderIdParam);
+      if (!Number.isNaN(orderId)) {
+        this.loadPendingOrder(orderId);
+      }
     }
     this.loadCart();
     this.loadPaymentMethods();
@@ -494,12 +507,42 @@ export class PaymentComponent implements OnInit {
     });
   }
 
+  private loadPendingOrder(orderId: number): void {
+    this.orderService.getOne(orderId).subscribe({
+      next: order => {
+        if (order.status !== 'PENDING') {
+          return;
+        }
+        this.pendingOrder = order;
+        this.cartItems = order.lines.map(line => ({
+          lineId: line.id,
+          bookId: line.bookId,
+          title: 'Livre',
+          author: '—',
+          price: Number(line.unitPrice),
+          quantity: line.quantity,
+          formatLabel: line.format,
+          formatBackend: line.format,
+          image: '',
+          lineTotal: Number(line.lineTotal),
+        }));
+        this.estimatedXaf = Math.round(Number(order.totalAmount) * this.xafRate);
+        this.cartLoading = false;
+      },
+      error: () => {
+        /* commande introuvable ou expirée — ignorer */
+      },
+    });
+  }
+
   private loadCart(): void {
     this.cartLoading = true;
     this.cartService.getCart().subscribe({
       next: lines => {
-        this.cartItems = lines;
-        this.estimatedXaf = Math.round(this.getSubtotal() * this.xafRate);
+        if (lines.length > 0 || !this.pendingOrder) {
+          this.cartItems = lines;
+          this.estimatedXaf = Math.round(this.getSubtotal() * this.xafRate);
+        }
         this.cartLoading = false;
       },
       error: () => {
@@ -606,9 +649,26 @@ export class PaymentComponent implements OnInit {
     this.loading = true;
     this.checkoutError = null;
 
-    this.orderService.createFromCart().subscribe({
-      next: order => this.redirectToG2tpay(order),
-      error: err => this.handleError(err, 'Création de commande impossible.'),
+    if (this.pendingOrder) {
+      this.redirectToG2tpay(this.pendingOrder);
+      return;
+    }
+
+    this.cartService.getCart().subscribe({
+      next: lines => {
+        if (lines.length === 0) {
+          this.handleError(
+            { status: 400 },
+            'Panier vide côté serveur — ajoutez un livre au panier avant de payer.',
+          );
+          return;
+        }
+        this.orderService.createFromCart().subscribe({
+          next: order => this.redirectToG2tpay(order),
+          error: err => this.handleError(err, 'Création de commande impossible.'),
+        });
+      },
+      error: err => this.handleError(err, 'Impossible de vérifier le panier.'),
     });
   }
 
@@ -643,6 +703,9 @@ export class PaymentComponent implements OnInit {
     }
     if (!detail && err?.status === 503) {
       detail = 'Service G2TPay indisponible — vérifiez GATEWAY_PUBLIC_URL et G2TPAY_API_KEY (redémarrez order-service).';
+    }
+    if (!detail && err?.status === 400) {
+      detail = 'Panier vide ou commande déjà créée — retournez au panier ou reprenez le paiement.';
     }
     this.checkoutError = detail || fallback;
     this.toast.error('Checkout', this.checkoutError);

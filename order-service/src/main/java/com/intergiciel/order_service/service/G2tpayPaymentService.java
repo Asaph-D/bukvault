@@ -194,7 +194,7 @@ public class G2tpayPaymentService {
 		String base = trimTrailingSlash(g2tpayProperties.getBaseUrl());
 		UriComponentsBuilder builder = UriComponentsBuilder.fromUriString(base + "/integrate/pay");
 		params.forEach(builder::queryParam);
-		return builder.build(true).toUriString();
+		return builder.encode(StandardCharsets.UTF_8).build().toUriString();
 	}
 
 	private void markPaid(OrderEntity order, String paymentReference) {
