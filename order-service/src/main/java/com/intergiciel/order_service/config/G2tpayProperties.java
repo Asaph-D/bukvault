@@ -74,6 +74,25 @@ public class G2tpayProperties {
 		return "";
 	}
 
+	/**
+	 * URL publique gateway pour return_url G2TPay.
+	 * Utilise GATEWAY_PUBLIC_URL, sinon dérive depuis G2TPAY_WEBHOOK_URL.
+	 */
+	public String effectiveGatewayPublicUrl() {
+		if (gatewayPublicUrl != null && !gatewayPublicUrl.isBlank()) {
+			String base = gatewayPublicUrl.trim();
+			return base.endsWith("/") ? base.substring(0, base.length() - 1) : base;
+		}
+		String webhook = effectiveWebhookUrl();
+		if (webhook != null && !webhook.isBlank()) {
+			int idx = webhook.indexOf("/api/v1/");
+			if (idx > 0) {
+				return webhook.substring(0, idx);
+			}
+		}
+		return "";
+	}
+
 	public BigDecimal getEurToXafRate() {
 		return eurToXafRate;
 	}

@@ -613,8 +613,16 @@ export class PaymentComponent implements OnInit {
   }
 
   private redirectToG2tpay(order: OrderResponseDto): void {
+    if (order?.id == null) {
+      this.handleError({}, 'Commande créée sans identifiant.');
+      return;
+    }
     this.orderService.g2tpayRedirectUrl(order.id).subscribe({
       next: res => {
+        if (!res?.redirectUrl) {
+          this.handleError({}, 'G2TPay n\'a pas renvoyé d\'URL de redirection.');
+          return;
+        }
         this.toast.info('G2TPay', res.instruction);
         window.location.href = res.redirectUrl;
       },
@@ -622,9 +630,21 @@ export class PaymentComponent implements OnInit {
     });
   }
 
-  private handleError(err: { error?: { detail?: string; message?: string } }, fallback: string): void {
+  private handleError(err: { error?: unknown; status?: number; message?: string }, fallback: string): void {
     this.loading = false;
-    this.checkoutError = err?.error?.detail || err?.error?.message || fallback;
+    const body = err?.error;
+    let detail: string | undefined;
+    if (body && typeof body === 'object') {
+      const o = body as Record<string, unknown>;
+      detail =
+        (typeof o['detail'] === 'string' && o['detail']) ||
+        (typeof o['message'] === 'string' && o['message']) ||
+        undefined;
+    }
+    if (!detail && err?.status === 503) {
+      detail = 'Service G2TPay indisponible — vérifiez GATEWAY_PUBLIC_URL et G2TPAY_API_KEY (redémarrez order-service).';
+    }
+    this.checkoutError = detail || fallback;
     this.toast.error('Checkout', this.checkoutError);
   }
 }

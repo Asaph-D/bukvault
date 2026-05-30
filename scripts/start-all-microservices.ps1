@@ -39,11 +39,20 @@ foreach ($name in $SERVICES) {
     Write-Warning "No pom.xml in $name - skipped."
     continue
   }
+  $mvnCmd = "mvn spring-boot:run"
+  if ($name -eq "order-service") {
+    $loadEnv = Join-Path $PSScriptRoot "load-dotenv.ps1"
+    $mvnCmd = @"
+. '$loadEnv'
+Write-Host 'G2TPAY_ENABLED=' env:G2TPAY_ENABLED ' GATEWAY=' env:GATEWAY_PUBLIC_URL -ForegroundColor DarkGray
+mvn spring-boot:run
+"@
+  }
   Start-Process powershell.exe -WorkingDirectory $dir -ArgumentList @(
     "-NoExit",
     "-NoLogo",
     "-Command",
-    "Write-Host '=== $name ===' -ForegroundColor Cyan; mvn spring-boot:run"
+    "Write-Host '=== $name ===' -ForegroundColor Cyan; $mvnCmd"
   )
   Start-Sleep -Milliseconds 400
 }

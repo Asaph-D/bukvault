@@ -43,7 +43,6 @@ public class G2tpayPaymentService {
 	private final OrderNotificationClient orderNotificationClient;
 	private final CatalogBookClient catalogBookClient;
 	private final String frontendBaseUrl;
-	private final String gatewayPublicUrl;
 
 	public G2tpayPaymentService(
 			OrderRepository orderRepository,
@@ -56,7 +55,6 @@ public class G2tpayPaymentService {
 		this.orderNotificationClient = orderNotificationClient;
 		this.catalogBookClient = catalogBookClient;
 		this.frontendBaseUrl = trimTrailingSlash(orderProperties.getFrontend().getBaseUrl());
-		this.gatewayPublicUrl = trimTrailingSlash(g2tpayProperties.getGatewayPublicUrl());
 	}
 
 	@Transactional
@@ -65,10 +63,11 @@ public class G2tpayPaymentService {
 			Long orderId,
 			G2tpayInitiateRequest request) {
 		ensureEnabled();
-		if (gatewayPublicUrl == null || gatewayPublicUrl.isBlank()) {
+		String gatewayPublicUrl = trimTrailingSlash(g2tpayProperties.effectiveGatewayPublicUrl());
+		if (gatewayPublicUrl.isBlank()) {
 			throw new ResponseStatusException(
 					HttpStatus.SERVICE_UNAVAILABLE,
-					"GATEWAY_PUBLIC_URL non configurée (tunnel ngrok ou API publique).");
+					"GATEWAY_PUBLIC_URL ou G2TPAY_WEBHOOK_URL non configurée (tunnel ngrok).");
 		}
 		UUID userId = com.intergiciel.order_service.support.AuthSupport.userId(authentication);
 		OrderEntity order = orderRepository.findByIdAndUserId(orderId, userId)
