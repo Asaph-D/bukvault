@@ -10,7 +10,7 @@ import { AuthorService } from '../../../../services/author.service';
 import { AuthService } from '../../../../services/auth.service';
 import { BookListItemDto, UserProfileDto } from '../../../../models/api.types';
 import { environment } from '../../../../../environments/environment';
-import { PLACEHOLDER_COVER } from '../../../../services/book.service';
+import { PLACEHOLDER_COVER, resolveCoverImageUrl } from '../../../../services/book.service';
 
 type BannerKind = 'success' | 'danger' | 'info';
 
@@ -302,12 +302,7 @@ export class AdminAuthorsComponent implements OnInit, OnDestroy {
   }
 
   coverUrl(book: BookListItemDto): string {
-    if (book.coverUrl?.trim()) {
-      const url = book.coverUrl.trim();
-      if (url.startsWith('http')) return url;
-      return url.startsWith('/') ? url : `/${url}`;
-    }
-    return `${environment.apiUrl}/files/cover/${book.id}`;
+    return resolveCoverImageUrl(book.coverUrl, book.id, environment.apiUrl);
   }
 
   onCoverErr(ev: Event): void {

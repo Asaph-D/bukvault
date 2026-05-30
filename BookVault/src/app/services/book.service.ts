@@ -13,6 +13,9 @@ import {
   PublishBookRequestDto,
   PageDto
 } from '../models/api.types';
+import { resolveCoverImageUrl } from '../interceptors/cover-image.util';
+
+export { resolveCoverImageUrl } from '../interceptors/cover-image.util';
 
 export const PLACEHOLDER_COVER =
   'https://images.pexels.com/photos/2908984/pexels-photo-2908984.jpeg';
@@ -38,15 +41,8 @@ export class BookService {
     }
   }
 
-  /**
-   * Si `coverUrl` est absent, utilise la couverture servie par file-service (première page générée côté seed / script).
-   */
   private resolveCover(url: string | null, bookId: string): string {
-    if (url && url.trim()) {
-      if (url.startsWith('http')) return url;
-      return url.startsWith('/') ? url : `/${url}`;
-    }
-    return `${this.base}/files/cover/${bookId}`;
+    return resolveCoverImageUrl(url, bookId, this.base);
   }
 
   private mapListItemToBook(b: BookListItemDto, categoryLabel = 'Catalogue'): Book {

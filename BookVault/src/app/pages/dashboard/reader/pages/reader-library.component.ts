@@ -1,7 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, ActivatedRoute } from '@angular/router';
-import { PLACEHOLDER_COVER } from '../../../../services/book.service';
+import { PLACEHOLDER_COVER, resolveCoverImageUrl } from '../../../../services/book.service';
+import { environment } from '../../../../../environments/environment';
 import { OrderService } from '../../../../services/order.service';
 import { PurchasedBookDto } from '../../../../models/api.types';
 import { BookDetailComponent } from '../../../../pages/books/book-detail/book-detail.component';
@@ -50,7 +51,7 @@ import { UiToastService } from '../../../../services/ui-toast.service';
             class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-700 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow"
           >
             <img
-              [src]="book.coverUrl || placeholder"
+              [src]="coverUrl(book)"
               (error)="onCoverErr($event)"
               [alt]="book.title"
               class="w-full h-56 object-cover"
@@ -109,6 +110,10 @@ export class ReaderLibraryComponent implements OnInit {
 
   onCoverErr(ev: Event): void {
     (ev.target as HTMLImageElement).src = this.placeholder;
+  }
+
+  coverUrl(book: PurchasedBookDto): string {
+    return resolveCoverImageUrl(book.coverUrl, book.bookId, environment.apiUrl);
   }
 
   selectBook(bookId: string): void {

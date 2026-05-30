@@ -8,7 +8,7 @@ import { PublicationSheetComponent } from '../../../../shared/publication-sheet/
 import { AdminCatalogService } from '../../../../services/admin-catalog.service';
 import { AdminUsersService } from '../../../../services/admin-users.service';
 import { AuthorService } from '../../../../services/author.service';
-import { PLACEHOLDER_COVER } from '../../../../services/book.service';
+import { PLACEHOLDER_COVER, resolveCoverImageUrl } from '../../../../services/book.service';
 import { environment } from '../../../../../environments/environment';
 import { BookDetailDto, BookListItemDto, UserProfileDto } from '../../../../models/api.types';
 
@@ -174,13 +174,7 @@ export class AdminValidationsComponent implements OnInit {
   }
 
   coverUrl(book: BookListItemDto | BookDetailDto): string {
-    const id = book.id;
-    const url = book.coverUrl?.trim();
-    if (url) {
-      if (url.startsWith('http')) return url;
-      return url.startsWith('/') ? url : `/${url}`;
-    }
-    return `${environment.apiUrl}/files/cover/${id}`;
+    return resolveCoverImageUrl(book.coverUrl, book.id, environment.apiUrl);
   }
 
   onCoverErr(ev: Event): void {
