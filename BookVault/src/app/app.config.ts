@@ -8,6 +8,7 @@ import { authInterceptor } from './interceptors/auth.interceptor';
 import { routes } from './app.routes';
 import { provideClientHydration } from '@angular/platform-browser';
 import { ThemeService } from './services/theme.service';
+import { MessageService } from 'primeng/api';
 
 function themeFactory(_theme: ThemeService): () => void {
   return () => undefined;
@@ -29,6 +30,7 @@ export const appConfig: ApplicationConfig = {
     provideRouter(routes, withComponentInputBinding()),
     provideHttpClient(withInterceptors([authInterceptor])),
     provideClientHydration(),
+    MessageService,
     {
       provide: APP_INITIALIZER,
       useFactory: themeFactory,

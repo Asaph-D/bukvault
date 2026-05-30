@@ -95,6 +95,57 @@ public class EmailService {
 		}
 	}
 
+	public void sendOrderConfirmation(
+			String to,
+			String firstName,
+			long orderId,
+			String totalLabel,
+			String libraryUrl,
+			java.util.List<String> bookLines) {
+		if (!enabled) {
+			log.debug("E-mail désactivé — confirmation commande #{} non envoyée à {}", orderId, to);
+			return;
+		}
+		if (to == null || to.isBlank()) {
+			log.warn("E-mail confirmation commande #{} ignoré : destinataire vide", orderId);
+			return;
+		}
+		try {
+			String greeting = (firstName != null && !firstName.isBlank())
+					? "Bonjour " + firstName.trim() + ","
+					: "Bonjour,";
+			StringBuilder items = new StringBuilder();
+			for (String line : bookLines) {
+				items.append("  • ").append(line).append("\n");
+			}
+			SimpleMailMessage msg = new SimpleMailMessage();
+			msg.setFrom(fromAddress);
+			msg.setTo(to);
+			msg.setSubject("BookVault — Commande confirmée #" + orderId);
+			msg.setText("""
+					%s
+
+					Merci pour votre achat sur BookVault. Votre commande #%d a bien été enregistrée et payée.
+
+					Montant : %s
+
+					Articles :
+					%s
+					Accédez à vos livres dans votre bibliothèque :
+					%s
+
+					Vous pouvez lire ou télécharger chaque ouvrage depuis sa fiche livre (bouton Manuscrit).
+
+					L'équipe BookVault
+					""".formatted(greeting, orderId, totalLabel, items.toString(), libraryUrl));
+			mailSender.send(msg);
+			log.info("E-mail confirmation commande #{} envoyé à {}", orderId, to);
+		}
+		catch (Exception ex) {
+			log.error("Échec envoi e-mail confirmation commande #{} à {} : {}", orderId, to, ex.getMessage());
+		}
+	}
+
 	public void sendBookPublished(String to, String bookTitle, String publicationSheetUrl) {
 		if (!enabled) {
 			log.debug("E-mail désactivé — publication « {} » non envoyée à {}", bookTitle, to);

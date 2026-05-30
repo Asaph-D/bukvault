@@ -184,6 +184,9 @@ export class AuthService {
     if (typeof body === 'string' && body.length < 500) return body;
     if (err.status === 401) return 'Identifiants invalides.';
     if (err.status === 403) return 'Action non autorisée.';
+    if (err.status === 404) {
+      return 'Aucun compte n\'est associé à cette adresse e-mail. Veuillez utiliser une autre adresse ou créer un nouveau compte.';
+    }
     if (err.status === 409) return 'Cette adresse e-mail est déjà utilisée.';
     return err.statusText || 'Une erreur est survenue.';
   }

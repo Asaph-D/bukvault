@@ -61,17 +61,17 @@ import { ThemeId } from '../../services/theme.service';
 
         <nav *ngIf="isDashboardArea" class="hidden lg:flex items-center justify-center gap-4 xl:gap-5 flex-1 min-w-0 mx-2">
           <a
-            [routerLink]="['/']"
+            [routerLink]="dashboardHomePath"
             class="text-sm text-zinc-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white transition shrink-0"
-            >Accueil public</a
+            >Tableau de bord</a
           >
           <a
-            [routerLink]="['/books']"
+            [routerLink]="dashboardCatalogPath"
             class="text-sm text-zinc-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white transition shrink-0"
             >Catalogue</a
           >
           <a
-            [routerLink]="['/categories']"
+            [routerLink]="dashboardCategoriesPath"
             class="text-sm text-zinc-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white transition shrink-0"
             >Catégories</a
           >
@@ -335,6 +335,10 @@ export class HeaderComponent implements OnInit {
   dashboardEntryPath = '/dashboard';
   /** Lien vers le centre de notifications du tableau de bord. */
   notificationsFullPath = '/dashboard/reader/notifications';
+  /** Liens “nav” quand on est dans /dashboard : restent dans le dashboard. */
+  dashboardHomePath = '/dashboard';
+  dashboardCatalogPath = '/dashboard';
+  dashboardCategoriesPath = '/dashboard';
 
   @ViewChild('notifBtn', { static: false }) notifBtn?: ElementRef<HTMLElement>;
   @ViewChild('notifMenu', { static: false }) notifMenu?: ElementRef<HTMLElement>;
@@ -371,17 +375,13 @@ export class HeaderComponent implements OnInit {
     this.notificationService.getNotifications().subscribe();
     // Attendre un utilisateur chargé via /auth/me : le JWT est alors valide côté auth ;
     // évite un GET /cart avec jeton encore non validé ou une course avec restoreSession.
+    this.cartService.cartCount$.subscribe(n => {
+      this.cartCount = n;
+    });
     this.authService.currentUser$.subscribe(user => {
       this.applyDashboardContext();
       if (user) {
-        this.cartService.getCart().subscribe({
-          next: lines => {
-            this.cartCount = lines.reduce((s, l) => s + l.quantity, 0);
-          },
-          error: () => {
-            this.cartCount = 0;
-          }
-        });
+        this.cartService.refreshCount().subscribe({ error: () => this.cartCount = 0 });
       } else {
         this.cartCount = 0;
       }
@@ -395,17 +395,29 @@ export class HeaderComponent implements OnInit {
     if (!u) {
       this.dashboardEntryPath = '/dashboard';
       this.notificationsFullPath = '/dashboard/reader/notifications';
+      this.dashboardHomePath = '/dashboard';
+      this.dashboardCatalogPath = '/dashboard';
+      this.dashboardCategoriesPath = '/dashboard';
       return;
     }
     if (u.role === 'admin') {
       this.dashboardEntryPath = '/dashboard/admin/home';
       this.notificationsFullPath = '/dashboard/admin/notifications';
+      this.dashboardHomePath = '/dashboard/admin/home';
+      this.dashboardCatalogPath = '/dashboard/admin/books';
+      this.dashboardCategoriesPath = '/dashboard/admin/categories';
     } else if (u.role === 'author') {
       this.dashboardEntryPath = '/dashboard/author/home';
       this.notificationsFullPath = '/dashboard/author/notifications';
+      this.dashboardHomePath = '/dashboard/author/home';
+      this.dashboardCatalogPath = '/dashboard/author/works';
+      this.dashboardCategoriesPath = '/dashboard/author/works';
     } else {
       this.dashboardEntryPath = '/dashboard/reader/home';
       this.notificationsFullPath = '/dashboard/reader/notifications';
+      this.dashboardHomePath = '/dashboard/reader/home';
+      this.dashboardCatalogPath = '/dashboard/reader/discover';
+      this.dashboardCategoriesPath = '/dashboard/reader/discover';
     }
   }
 

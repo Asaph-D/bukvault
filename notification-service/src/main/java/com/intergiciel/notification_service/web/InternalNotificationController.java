@@ -4,6 +4,7 @@ import com.intergiciel.notification_service.service.NotificationDispatchService;
 import com.intergiciel.notification_service.web.dto.BookPendingValidationRequest;
 import com.intergiciel.notification_service.web.dto.BookPublishedNotificationRequest;
 import com.intergiciel.notification_service.web.dto.EmailVerificationRequest;
+import com.intergiciel.notification_service.web.dto.OrderConfirmationRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -60,6 +61,16 @@ public class InternalNotificationController {
 			@Valid @RequestBody EmailVerificationRequest request) {
 		assertInternalKey(internalKey);
 		dispatchService.sendEmailVerification(request);
+	}
+
+	@PostMapping("/order-confirmed")
+	@ResponseStatus(HttpStatus.ACCEPTED)
+	@Operation(summary = "Confirmation de commande (order-service)")
+	public void orderConfirmed(
+			@RequestHeader(name = "X-BookVault-Internal-Key") String internalKey,
+			@Valid @RequestBody OrderConfirmationRequest request) {
+		assertInternalKey(internalKey);
+		dispatchService.notifyOrderConfirmed(request);
 	}
 
 	private void assertInternalKey(String provided) {

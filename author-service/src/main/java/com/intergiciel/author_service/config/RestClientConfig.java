@@ -17,4 +17,12 @@ public class RestClientConfig {
 				.baseUrl(authorProperties.getCatalog().getBaseUrl())
 				.build();
 	}
+
+	@Bean
+	@Qualifier("orderRestClient")
+	RestClient orderRestClient(AuthorProperties authorProperties) {
+		return RestClient.builder()
+				.baseUrl(authorProperties.getOrder().getBaseUrl())
+				.build();
+	}
 }

@@ -191,6 +191,19 @@ export interface AuthorPublicProfileDto {
   publishedBooksEstimate: number;
 }
 
+/** author-service */
+export interface AuthorDashboardResponseDto {
+  publishedBooksEstimate: number;
+  draftBooksEstimate: number;
+  hint: string;
+}
+
+export interface AuthorStatsResponseDto {
+  totalSalesEstimate: number;
+  revenueEstimate: number;
+  note: string;
+}
+
 /** Requête `POST /api/v1/books` */
 export interface CreateBookRequestDto {
   isbn: string;
@@ -249,6 +262,13 @@ export interface ReadingProgressDto {
   clientUpdatedAt: string | null;
 }
 
+export interface UpdateReadingProgressRequestDto {
+  mediaType: 'EBOOK' | 'AUDIOBOOK' | string;
+  positionJson: string;
+  deviceId?: string | null;
+  clientUpdatedAt?: string | null;
+}
+
 /** wishlist-service */
 export interface WishlistItemDto {
   id: number;
@@ -281,6 +301,34 @@ export interface OrderResponseDto {
   createdAt: string;
   updatedAt: string;
   lines: OrderLineDto[];
+}
+
+export interface PurchasedBookDto {
+  bookId: string;
+  title: string;
+  coverUrl: string | null;
+  purchasedAt: string;
+  orderId: number;
+}
+
+/** review-service */
+export interface ReviewResponseDto {
+  id: number;
+  bookId: string;
+  userId: string;
+  rating: number;
+  title: string | null;
+  body: string;
+  verifiedPurchase: boolean;
+  helpfulCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateReviewRequestDto {
+  rating: number;
+  title?: string;
+  body: string;
 }
 
 /** community-service */

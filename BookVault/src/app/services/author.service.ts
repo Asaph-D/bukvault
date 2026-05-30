@@ -4,7 +4,12 @@ import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { Author } from '../models/book.model';
 import { environment } from '../../environments/environment';
-import { AuthorPublicProfileDto, PageDto } from '../models/api.types';
+import {
+  AuthorDashboardResponseDto,
+  AuthorPublicProfileDto,
+  AuthorStatsResponseDto,
+  PageDto,
+} from '../models/api.types';
 
 @Injectable({
   providedIn: 'root'
@@ -23,6 +28,14 @@ export class AuthorService {
     return this.http
       .get<PageDto<AuthorPublicProfileDto>>(`${this.base}/authors`, { params })
       .pipe(map(p => p.content));
+  }
+
+  myDashboard(): Observable<AuthorDashboardResponseDto> {
+    return this.http.get<AuthorDashboardResponseDto>(`${this.base}/authors/me/dashboard`);
+  }
+
+  myStats(): Observable<AuthorStatsResponseDto> {
+    return this.http.get<AuthorStatsResponseDto>(`${this.base}/authors/me/stats`);
   }
 
   toAuthorUi(d: AuthorPublicProfileDto, index: number): Author {

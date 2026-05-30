@@ -1,8 +1,10 @@
 package com.intergiciel.order_service.web;
 
 import com.intergiciel.order_service.service.OrderService;
+import com.intergiciel.order_service.service.PurchasedLibraryService;
 import com.intergiciel.order_service.support.AuthSupport;
 import com.intergiciel.order_service.web.dto.OrderResponse;
+import com.intergiciel.order_service.web.dto.PurchasedBookResponse;
 import com.fasterxml.jackson.databind.JsonNode;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -21,15 +23,19 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/v1/orders")
 @Tag(name = "Commandes")
 public class OrderController {
 
 	private final OrderService orderService;
+	private final PurchasedLibraryService purchasedLibraryService;
 
-	public OrderController(OrderService orderService) {
+	public OrderController(OrderService orderService, PurchasedLibraryService purchasedLibraryService) {
 		this.orderService = orderService;
+		this.purchasedLibraryService = purchasedLibraryService;
 	}
 
 	@PostMapping
@@ -46,6 +52,12 @@ public class OrderController {
 		return orderService.listForUser(AuthSupport.userId(authentication), pageable);
 	}
 
+	@GetMapping("/my-library")
+	@Operation(summary = "Mes livres achetés (numériques)")
+	public List<PurchasedBookResponse> myLibrary(Authentication authentication) {
+		return purchasedLibraryService.listForUser(AuthSupport.userId(authentication));
+	}
+
 	@GetMapping("/{id}")
 	@Operation(summary = "Détail commande")
 	public OrderResponse getOne(Authentication authentication, @PathVariable Long id) {
@@ -55,7 +67,7 @@ public class OrderController {
 	@PostMapping("/{id}/pay")
 	@Operation(summary = "Payer (stub — passage en PAID)")
 	public OrderResponse pay(Authentication authentication, @PathVariable Long id) {
-		return orderService.pay(AuthSupport.userId(authentication), id);
+		return orderService.pay(authentication, id);
 	}
 
 	@PostMapping("/{id}/cancel")

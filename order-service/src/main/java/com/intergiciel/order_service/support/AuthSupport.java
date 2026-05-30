@@ -17,4 +17,20 @@ public final class AuthSupport {
 		}
 		throw new AccessDeniedException("Authentification JWT requise.");
 	}
+
+	public static String email(Authentication authentication) {
+		if (authentication instanceof JwtAuthenticationToken jwt) {
+			Object claim = jwt.getToken().getClaim("email");
+			return claim != null ? claim.toString() : null;
+		}
+		throw new AccessDeniedException("Authentification JWT requise.");
+	}
+
+	public static String firstName(Authentication authentication) {
+		if (authentication instanceof JwtAuthenticationToken jwt) {
+			Object claim = jwt.getToken().getClaim("firstName");
+			return claim != null ? claim.toString() : "";
+		}
+		throw new AccessDeniedException("Authentification JWT requise.");
+	}
 }

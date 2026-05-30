@@ -141,6 +141,9 @@ services:
       ORDER_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-1234}
       JWT_SECRET: ${JWT_SECRET:-0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef}
       CATALOG_SERVICE_URL: http://catalog-service:8083
+      NOTIFICATION_SERVICE_URI: http://notification-service:8088
+      BOOKVAULT_INTERNAL_SERVICE_KEY: ${BOOKVAULT_INTERNAL_SERVICE_KEY:-bookvault-internal-dev}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:4200}
       ORDER_SERVICE_PORT: "8084"
     depends_on:
       postgres:
@@ -222,6 +225,15 @@ services:
       NOTIFICATION_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-1234}
       JWT_SECRET: ${JWT_SECRET:-0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef}
       NOTIFICATION_SERVICE_PORT: "8088"
+      EMAIL_HOST: ${EMAIL_HOST:-smtp.gmail.com}
+      EMAIL_PORT: ${EMAIL_PORT:-587}
+      EMAIL_USER: ${EMAIL_USER:-}
+      EMAIL_PASSWORD: ${EMAIL_PASSWORD:-}
+      EMAIL_FROM: ${EMAIL_FROM:-noreply@bukvault.com}
+      EMAIL_ENABLED: ${EMAIL_ENABLED:-true}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:4200}
+      BOOKVAULT_INTERNAL_SERVICE_KEY: ${BOOKVAULT_INTERNAL_SERVICE_KEY:-bookvault-internal-dev}
+      ADMIN_PRIMARY_EMAIL: ${ADMIN_PRIMARY_EMAIL:-}
     depends_on:
       postgres:
         condition: service_healthy
@@ -240,6 +252,7 @@ services:
       AUTHOR_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-1234}
       JWT_SECRET: ${JWT_SECRET:-0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef}
       CATALOG_SERVICE_URL: http://catalog-service:8083
+      ORDER_SERVICE_URL: http://order-service:8084
       AUTHOR_SERVICE_PORT: "8091"
     depends_on:
       postgres:

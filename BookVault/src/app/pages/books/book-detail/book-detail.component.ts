@@ -12,8 +12,8 @@ import {
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { Subscription, forkJoin, of } from 'rxjs';
-import { switchMap, tap, catchError, finalize } from 'rxjs/operators';
+import { Subscription, forkJoin, of, Subject } from 'rxjs';
+import { switchMap, tap, catchError, finalize, debounceTime } from 'rxjs/operators';
 import { BookService } from '../../../services/book.service';
 import { CartService } from '../../../services/cart.service';
 import { AuthService } from '../../../services/auth.service';
@@ -26,6 +26,9 @@ import { CommunityService } from '../../../services/community.service';
 import { NotificationService } from '../../../services/notification.service';
 import { AuthIntentService } from '../../../services/auth-intent.service';
 import { WishlistService } from '../../../services/wishlist.service';
+import { ReviewService } from '../../../services/review.service';
+import { ReviewResponseDto } from '../../../models/api.types';
+import { ReadingService } from '../../../services/reading.service';
 
 @Component({
   selector: 'app-book-detail',
@@ -98,13 +101,23 @@ export class BookDetailComponent implements OnInit, OnDestroy, OnChanges {
   ];
   flipActive = false;
 
-  toolTabs: { id: 'read' | 'notes' | 'marks' | 'quotes'; label: string }[] = [
+  toolTabs: { id: 'read' | 'notes' | 'marks' | 'quotes' | 'reviews'; label: string }[] = [
     { id: 'read', label: 'Lecture' },
+    { id: 'reviews', label: 'Avis' },
     { id: 'notes', label: 'Notes' },
     { id: 'marks', label: 'Surlignages' },
     { id: 'quotes', label: 'Citations' }
   ];
-  activeToolTab: 'read' | 'notes' | 'marks' | 'quotes' = 'read';
+  activeToolTab: 'read' | 'notes' | 'marks' | 'quotes' | 'reviews' = 'read';
+
+  reviews: ReviewResponseDto[] = [];
+  reviewsLoading = false;
+  reviewsError: string | null = null;
+  reviewSubmitBusy = false;
+  reviewSubmitError: string | null = null;
+  newReviewRating = 5;
+  newReviewTitle = '';
+  newReviewBody = '';
 
   dictWord = 'anthologie';
   dictDef =
@@ -135,6 +148,8 @@ export class BookDetailComponent implements OnInit, OnDestroy, OnChanges {
   private routeSub?: Subscription;
   private userSub?: Subscription;
   private userSnapshot: User | null = null;
+  private progressSub?: Subscription;
+  private progressQueue = new Subject<{ bookId: string; positionJson: string }>();
 
   constructor(
     private route: ActivatedRoute,
@@ -147,11 +162,26 @@ export class BookDetailComponent implements OnInit, OnDestroy, OnChanges {
     private communityService: CommunityService,
     private notificationService: NotificationService,
     private authIntent: AuthIntentService,
-    private wishlist: WishlistService
+    private wishlist: WishlistService,
+    private reviewService: ReviewService,
+    private reading: ReadingService
   ) {}
 
   ngOnInit(): void {
     this.userSub = this.authService.currentUser$.subscribe(u => (this.userSnapshot = u));
+    this.progressSub = this.progressQueue
+      .pipe(debounceTime(800))
+      .subscribe(({ bookId, positionJson }) => {
+        if (!this.authService.isAuthenticated()) return;
+        this.reading
+          .upsertProgress(bookId, {
+            mediaType: 'EBOOK',
+            positionJson,
+            deviceId: 'web',
+            clientUpdatedAt: new Date().toISOString(),
+          })
+          .subscribe({ error: () => undefined });
+      });
     
     // Si bookId est fourni en input, l'utiliser; sinon, gérer via route
     if (this.bookId) {
@@ -204,6 +234,7 @@ export class BookDetailComponent implements OnInit, OnDestroy, OnChanges {
           this.buildChapterContent();
           this.preloadManuscript();
           this.loadLikeAndSubscriptionStatus();
+          this.loadReviews();
         }
 
         this.loading = false;
@@ -214,6 +245,7 @@ export class BookDetailComponent implements OnInit, OnDestroy, OnChanges {
   ngOnDestroy(): void {
     this.routeSub?.unsubscribe();
     this.userSub?.unsubscribe();
+    this.progressSub?.unsubscribe();
     this.stopTick();
     this.stopSpeech();
     this.revokeManuscriptUrl();
@@ -262,10 +294,76 @@ export class BookDetailComponent implements OnInit, OnDestroy, OnChanges {
         this.buildChapterContent();
         this.preloadManuscript();
         this.loadLikeAndSubscriptionStatus();
+        this.loadReviews();
+        this.queueProgressSync();
       }
 
       this.loading = false;
     });
+  }
+
+  trackByReview(_index: number, r: ReviewResponseDto): number {
+    return r.id;
+  }
+
+  reviewerLabel(userId: string): string {
+    return `Lecteur ${userId.slice(0, 8)}`;
+  }
+
+  private loadReviews(): void {
+    if (!this.book) return;
+    this.reviewsLoading = true;
+    this.reviewsError = null;
+    this.reviewService.listByBook(this.book.id, 0, 30).subscribe({
+      next: page => {
+        this.reviews = page.content ?? [];
+        this.reviewsLoading = false;
+      },
+      error: () => {
+        this.reviewsError = 'Impossible de charger les avis (review-service).';
+        this.reviewsLoading = false;
+      },
+    });
+  }
+
+  submitReview(): void {
+    if (!this.book || this.reviewSubmitBusy) return;
+    const body = this.newReviewBody.trim();
+    if (body.length < 10) {
+      this.reviewSubmitError = 'Le commentaire doit contenir au moins 10 caractères.';
+      return;
+    }
+    if (!this.authService.isAuthenticated()) {
+      this.authIntent.save(this.router.url, 'review');
+      this.router.navigate(['/auth/login'], { queryParams: { returnUrl: this.router.url } });
+      return;
+    }
+    this.reviewSubmitBusy = true;
+    this.reviewSubmitError = null;
+    this.reviewService
+      .create(this.book.id, {
+        rating: this.newReviewRating,
+        title: this.newReviewTitle.trim() || undefined,
+        body,
+      })
+      .subscribe({
+        next: created => {
+          this.reviews = [created, ...this.reviews.filter(r => r.id !== created.id)];
+          this.newReviewBody = '';
+          this.newReviewTitle = '';
+          this.newReviewRating = 5;
+          this.reviewSubmitBusy = false;
+        },
+        error: (err: { error?: { detail?: string; message?: string }; status?: number }) => {
+          const detail = err?.error?.detail || err?.error?.message;
+          this.reviewSubmitError =
+            detail ||
+            (err?.status === 409
+              ? 'Vous avez déjà publié un avis pour ce livre.'
+              : 'Publication impossible.');
+          this.reviewSubmitBusy = false;
+        },
+      });
   }
 
   trackByBook(index: number, book: Book): string {
@@ -350,6 +448,7 @@ export class BookDetailComponent implements OnInit, OnDestroy, OnChanges {
     this.chapterTitleExtra = this.tocEntries.find(t => t.index === this.chapterIndex)?.title || `Section ${this.chapterIndex}`;
     this.updatePageFromChapter();
     this.refreshChapterAudioDuration();
+    this.queueProgressSync();
   }
 
   private updatePageFromChapter(): void {
@@ -417,6 +516,7 @@ export class BookDetailComponent implements OnInit, OnDestroy, OnChanges {
       this.chapterIndex = approx;
       this.buildChapterContent();
     }
+    this.queueProgressSync();
   }
 
   onFlipStateChange(ev: { startPage: number; totalPages: number; paragraphs: string[] }): void {
@@ -447,6 +547,7 @@ export class BookDetailComponent implements OnInit, OnDestroy, OnChanges {
     this.buildChapterContent();
     this.leftToolPanel = null;
     this.runPageAnim();
+    this.queueProgressSync();
     // Si flipbook actif, navigue vers la page PDF correspondante (approx).
     if (this.flipbookActive) {
       const approxPage = Math.max(
@@ -843,6 +944,7 @@ export class BookDetailComponent implements OnInit, OnDestroy, OnChanges {
     }
     this.runPageAnim();
     this.buildChapterContent();
+    this.queueProgressSync();
   }
 
   prevChapter(): void {
@@ -861,6 +963,22 @@ export class BookDetailComponent implements OnInit, OnDestroy, OnChanges {
     }
     this.runPageAnim();
     this.buildChapterContent();
+    this.queueProgressSync();
+  }
+
+  private queueProgressSync(): void {
+    if (!this.book) return;
+    // N’envoie pas de progression si le manuscrit n’est pas accessible (extrait public).
+    if (!this.authService.isAuthenticated()) return;
+    if (this.readMode !== 'manuscript') return;
+    const payload = JSON.stringify({
+      chapterIndex: this.chapterIndex,
+      pdfStartPage: this.pdfSpreadStartPage,
+      spreadView: this.spreadView,
+      pageFlipMode: this.pageFlipMode,
+      updatedAt: new Date().toISOString(),
+    });
+    this.progressQueue.next({ bookId: this.book.id, positionJson: payload });
   }
 
   private runPageAnim(): void {

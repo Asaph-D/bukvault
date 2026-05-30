@@ -8,6 +8,7 @@ import com.intergiciel.notification_service.repository.NotificationRepository;
 import com.intergiciel.notification_service.web.dto.BookPendingValidationRequest;
 import com.intergiciel.notification_service.web.dto.BookPublishedNotificationRequest;
 import com.intergiciel.notification_service.web.dto.EmailVerificationRequest;
+import com.intergiciel.notification_service.web.dto.OrderConfirmationRequest;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -41,6 +42,39 @@ public class NotificationDispatchService {
 
 	public void sendEmailVerification(EmailVerificationRequest req) {
 		emailService.sendEmailVerification(req.recipientEmail(), req.firstName(), req.verifyUrl());
+	}
+
+	@Transactional
+	public void notifyOrderConfirmed(OrderConfirmationRequest req) {
+		String confirmationUrl = frontendBaseUrl + "/checkout/confirmation?orderId=" + req.orderId();
+		String title = "Commande confirmée";
+		String message = "Votre commande #" + req.orderId() + " a été payée. Retrouvez vos livres dans votre bibliothèque.";
+
+		notificationRepository.save(new NotificationEntity(
+				req.userId(),
+				NotificationKind.ORDER,
+				title,
+				message,
+				confirmationUrl,
+				false));
+
+		NotificationPreferencesEntity prefs = preferencesRepository.findById(req.userId())
+				.orElseGet(() -> new NotificationPreferencesEntity(req.userId()));
+		if (!prefs.isEmailEnabled()) {
+			return;
+		}
+
+		String totalLabel = req.totalAmount().toPlainString() + " " + req.currency();
+		java.util.List<String> bookLines = req.lines().stream()
+				.map(line -> line.bookTitle() + " — " + line.readUrl())
+				.toList();
+		emailService.sendOrderConfirmation(
+				req.recipientEmail(),
+				req.firstName(),
+				req.orderId(),
+				totalLabel,
+				req.libraryUrl(),
+				bookLines);
 	}
 
 	@Transactional

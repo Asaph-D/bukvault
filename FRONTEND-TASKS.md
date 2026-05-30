@@ -12,8 +12,11 @@ Suivi des travaux côté `BookVault/` (Angular) avec la gateway `http://localhos
 | `auth.interceptor.ts` | Ajoute `Authorization: Bearer` sauf sur `login` / `register` / `refresh`. |
 | `auth.service.ts` | Tokens `bookvault_access` / `bookvault_refresh`, appels réels `auth-service`. |
 | `book.service.ts` | Catalogue : liste, détail, recherche, filtres, catégories. |
-| `author.service.ts` | Profils publics + liste paginée. |
-| `cart.service.ts` | Panier `order-service` (JWT requis). |
+| `author.service.ts` | Profils publics + liste paginée + dashboard/stats auteur. |
+| `cart.service.ts` | Panier `order-service` (JWT requis) + `cartCount$`. |
+| `reading.service.ts` | Progression lecture (`reading-service`). |
+| `file.service.ts` | Upload/download ebook/cover (entitlements via `order-service`). |
+| `ui-toast.service.ts` | Toasts PrimeNG homogènes (succès / erreur). |
 
 Pages lazy-loadées, composants **standalone**, navigation alignée sur le header (accueil, catégories, bestsellers, auteurs, à propos, contact, panier).
 
@@ -26,46 +29,48 @@ Pages lazy-loadées, composants **standalone**, navigation alignée sur le heade
 - [x] Mot de passe inscription ≥ 8 caractères (aligné backend).
 - [x] Session restaurée via `GET /auth/me` si access token valide.
 - [x] Déconnexion `POST /auth/logout` avec refresh optionnel.
-- [ ] **Refresh token** : interceptor 401 → `POST /auth/refresh` puis retry (non fait — déconnexion si access expiré).
-- [ ] **Google OAuth** : volontairement désactivé (message d’erreur côté UI).
+- [x] **Refresh token** : interceptor 401 → `POST /auth/refresh` puis retry (`auth.interceptor.ts` + `AuthRefreshCoordinator`).
+- [x] **Google OAuth** : volontairement désactivé si `googleClientId` absent — message d’erreur UI login/register (`GoogleAuthService.isAvailable()`).
 
 ### Catalogue & auteurs
 - [x] Liste catalogue, bestsellers, détail livre (nom d’auteur via `author-service`).
 - [x] Catégories liste + livres par `slug` → `categoryId`.
 - [x] Liste auteurs + fiche auteur + livres `GET /books?authorId=`.
-- [ ] **Avis** : `review-service` (`/books/{id}/reviews`) non branchés sur le détail.
-- [ ] **Création / édition livre** (auteur) : formulaire → `POST/PUT /books` (stub erreur dans `BookService`).
+- [x] **Avis** : `review-service` — liste + création sur l’onglet « Avis » de la fiche livre (`ReviewService`).
+- [x] **Création / édition livre** (auteur) : wizard `author-upload-page` → `POST /books`, `PUT /books/{id}`, upload fichiers, `submit-for-review` ; gestion depuis `author-works` (publier / dépublier / supprimer).
 
 ### Panier & commandes
 - [x] Panier connecté `GET/POST/DELETE /cart**`.
 - [x] Ajustement quantités (workaround delete + re-add pour diminuer).
-- [ ] **Checkout** : paiement / commande réels (`POST /orders`, etc.).
-- [ ] **Badge panier** : mis à jour au chargement / login — pas d’événement global après ajout depuis la fiche livre (rechargement page ou navigation).
+- [x] **Checkout** : `POST /orders` puis `POST /orders/{id}/pay` depuis la page paiement → confirmation avec détail commande.
+- [x] **Badge panier** : `CartService.cartCount$` mis à jour après add/remove et au login.
 
 ### Lecture & fichiers
-- [ ] Lecteur : contenu démo ; brancher `reading-service` / URLs signées `file-service` quand prêt.
-- [ ] Téléchargement e-book sécurisé.
+- [x] **Lecteur** : manuscrit via `file-service` (`GET /files/ebook/{id}/download`, entitlement) ; progression synchronisée via `reading-service` (`PUT /reading/progress/{bookId}`) depuis la fiche livre.
+- [x] **Téléchargement e-book sécurisé** : lien téléchargement sur fiche livre (JWT + droits achat vérifiés côté `file-service`).
 
 ### Utilisateur & admin
-- [ ] Profil utilisateur `user-service` au-delà de `/auth/me`.
-- [ ] Dashboard auteur vs données réelles (`author-service` dashboard, ventes).
-- [ ] **admin-service** : non exposé dans le front grand public.
+- [x] **Profil utilisateur** `user-service` : page dashboard `DashboardAccountProfileComponent` (`GET/PUT /users/{id}`, reader-settings, bootstrap après inscription).
+- [x] **Dashboard auteur** vs API : `GET /authors/me/dashboard` + `/authors/me/stats` — ventes agrégées via `order-service` (`POST /internal/sales/aggregate`).
+- [x] **admin-service** : exposé uniquement sous `/dashboard/admin/*` (guard rôle), pas dans le front grand public.
 
 ### Qualité
-- [ ] Tests unitaires services (mocks HTTP).
-- [ ] Gestion d’erreurs API homogène (toast au lieu d’`alert` / messages inline seuls).
-- [ ] Accessibilité et i18n si demandées.
+- [x] **Tests unitaires services** (mocks HTTP) : `npm test` — specs `cart`, `order`, `review`, `reading`, `author`.
+- [x] **Gestion d’erreurs API homogène** : toasts PrimeNG (`UiToastService` + `<p-toast>`) ; plus d’`alert()` (checkout).
+- [x] **Accessibilité et i18n** : hors périmètre V1 (non demandé) — base HTML sémantique + labels existants ; pas de `@angular/localize` pour l’instant.
 
 ---
 
 ## Prérequis locaux
 
-1. Gateway **8080**, services nécessaires selon parcours (au minimum : **auth**, **catalog**, **order** pour panier, **author** pour noms sur fiche détail).
+1. Gateway **8080**, services nécessaires selon parcours (au minimum : **auth**, **catalog**, **order** pour panier, **author** pour noms sur fiche détail ; **review**, **reading**, **file** pour avis/lecture).
 2. Front : `npm install` puis `ng serve` (proxy déjà configuré dans `angular.json`).
+3. Tests : `npm test` (Karma + ChromeHeadless).
 
 ---
 
 ## Notes
 
 - **author-service** écoute en **8091** par défaut (éviter conflit avec Jenkins sur 8089) — la gateway utilise `AUTHOR_SERVICE_URI` / défaut `8091`.
-- Les routes **upload**, **wishlist**, **notifications** réelles restent à relier aux écrans existants ou placeholder du dashboard.
+- **Navigation dashboard** : depuis `/dashboard/*`, le header et les liens internes restent dans le dashboard (pas de renvoi vers `/books` ou `/categories` publics).
+- Les routes **upload**, **wishlist**, **notifications** réelles sont branchées sur les écrans dashboard existants (auteur upload, favoris, centre notifications).

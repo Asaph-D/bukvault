@@ -27,4 +27,16 @@ public class CatalogBookClient {
 			throw new CatalogUnavailableException("Catalog indisponible ou livre introuvable.", ex);
 		}
 	}
+
+	public CatalogBookDetail fetchBookDetail(UUID bookId) {
+		try {
+			return catalogRestClient.get()
+					.uri("/api/v1/books/{id}", bookId)
+					.retrieve()
+					.body(CatalogBookDetail.class);
+		}
+		catch (RestClientException ex) {
+			return null;
+		}
+	}
 }

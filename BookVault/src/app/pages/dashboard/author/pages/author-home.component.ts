@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { BookService, PLACEHOLDER_COVER } from '../../../../services/book.service';
 import { AuthService } from '../../../../services/auth.service';
+import { AuthorService } from '../../../../services/author.service';
+import { forkJoin } from 'rxjs';
 
 @Component({
   standalone: true,
@@ -14,6 +16,7 @@ export class AuthorHomeComponent implements OnInit {
   constructor(
     private auth: AuthService,
     private bookService: BookService,
+    private authorService: AuthorService,
   ) {}
 
   get displayName(): string {
@@ -69,35 +72,53 @@ export class AuthorHomeComponent implements OnInit {
       this.booksError = 'Compte auteur requis pour les statistiques catalogue.';
       return;
     }
-    this.bookService.getMyBooks(0, 32).subscribe({
-      next: books => {
+    forkJoin({
+      myBooks: this.bookService.getMyBooks(0, 32),
+      dash: this.authorService.myDashboard(),
+      stats: this.authorService.myStats(),
+    }).subscribe({
+      next: ({ myBooks: books, dash, stats }) => {
         const pub = books.filter(b => (b.status || '').toUpperCase() === 'PUBLISHED');
         const inProgress = books.filter(b =>
           ['DRAFT', 'REJECTED'].includes((b.status || '').toUpperCase()),
         );
-        const n = pub.length;
-        const views = pub.reduce((s, b) => s + (b.sales || 0), 0);
-        const reviews = pub.reduce((s, b) => s + (b.reviewCount || 0), 0);
-        const avg =
-          n > 0 ? (pub.reduce((s, b) => s + b.price, 0) / n).toFixed(2) : '—';
-        const progressHint =
-          inProgress.length > 0 ? ` · ${inProgress.length} brouillon(s) ou refus` : '';
+        const nPubUi = pub.length;
+        const nDraftUi = inProgress.length;
+
+        const published = Number.isFinite(dash?.publishedBooksEstimate)
+          ? dash.publishedBooksEstimate
+          : nPubUi;
+        const drafts = Number.isFinite(dash?.draftBooksEstimate) ? dash.draftBooksEstimate : nDraftUi;
+
+        const sales = stats?.totalSalesEstimate ?? 0;
+        const revenue = stats?.revenueEstimate ?? 0;
+
         this.authorStats = [
           {
-            label: 'Titres publiés',
-            value: String(n),
-            hint: 'Visibles sur le catalogue public' + progressHint,
+            label: 'Œuvres publiées',
+            value: String(published),
+            hint: dash?.hint || 'Source catalog-service via author-service',
           },
           {
-            label: 'Vues (catalogue)',
-            value: views >= 1000 ? `${(views / 1000).toFixed(1)}k` : String(views),
-            hint: 'Cumul vues fiches',
+            label: 'Brouillons / refus',
+            value: String(drafts),
+            hint: 'Comptés depuis le catalogue auteur',
           },
-          { label: 'Avis reçus', value: String(reviews), hint: 'Titres publiés' },
-          { label: 'Prix moyen', value: `${avg} €`, hint: 'Sur titres publiés' },
+          {
+            label: 'Ventes (unités)',
+            value: sales >= 1000 ? `${(sales / 1000).toFixed(1)}k` : String(sales),
+            hint: stats?.note || 'Commandes payées (order-service)',
+          },
+          {
+            label: 'Revenus',
+            value: `${Number(revenue).toFixed(2)} €`,
+            hint: 'Somme des lignes payées (order-service)',
+          },
         ];
+
         const focus =
-          books.find(b => ['DRAFT', 'REJECTED'].includes((b.status || '').toUpperCase())) || books[0];
+          books.find(b => ['DRAFT', 'REJECTED'].includes((b.status || '').toUpperCase())) ||
+          books[0];
         if (focus) {
           const progress = Math.min(95, 20 + ((focus.sales ?? 0) % 75));
           const isPub = (focus.status || '').toUpperCase() === 'PUBLISHED';
@@ -120,7 +141,7 @@ export class AuthorHomeComponent implements OnInit {
         }
         this.activities = books.slice(0, 5).map((b, i) => ({
           icon: 'fas fa-book',
-          title: `« ${b.title} » — ${this.statusSnippet(b.status)} · ${b.sales || 0} vues · ${b.reviewCount} avis`,
+          title: `« ${b.title} » — ${this.statusSnippet(b.status)} · ${b.sales || 0} indicateur · ${b.reviewCount} avis`,
           time: i === 0 ? 'Récent' : 'Vos titres',
         }));
         if (this.activities.length === 0) {

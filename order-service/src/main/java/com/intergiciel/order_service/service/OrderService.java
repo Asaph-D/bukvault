@@ -1,5 +1,10 @@
 package com.intergiciel.order_service.service;
 
+import com.intergiciel.order_service.client.CatalogBookClient;
+import com.intergiciel.order_service.client.CatalogBookDetail;
+import com.intergiciel.order_service.client.OrderNotificationClient;
+import com.intergiciel.order_service.client.OrderNotificationClient.OrderLineNotification;
+import com.intergiciel.order_service.config.OrderProperties;
 import com.intergiciel.order_service.domain.CartLineEntity;
 import com.intergiciel.order_service.domain.OrderEntity;
 import com.intergiciel.order_service.domain.OrderLineEntity;
@@ -11,7 +16,9 @@ import com.intergiciel.order_service.web.dto.OrderResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
+import com.intergiciel.order_service.support.AuthSupport;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -24,10 +31,21 @@ public class OrderService {
 
 	private final OrderRepository orderRepository;
 	private final CartLineRepository cartLineRepository;
+	private final CatalogBookClient catalogBookClient;
+	private final OrderNotificationClient orderNotificationClient;
+	private final String frontendBaseUrl;
 
-	public OrderService(OrderRepository orderRepository, CartLineRepository cartLineRepository) {
+	public OrderService(
+			OrderRepository orderRepository,
+			CartLineRepository cartLineRepository,
+			CatalogBookClient catalogBookClient,
+			OrderNotificationClient orderNotificationClient,
+			OrderProperties orderProperties) {
 		this.orderRepository = orderRepository;
 		this.cartLineRepository = cartLineRepository;
+		this.catalogBookClient = catalogBookClient;
+		this.orderNotificationClient = orderNotificationClient;
+		this.frontendBaseUrl = trimTrailingSlash(orderProperties.getFrontend().getBaseUrl());
 	}
 
 	@Transactional(readOnly = true)
@@ -63,7 +81,8 @@ public class OrderService {
 	}
 
 	@Transactional
-	public OrderResponse pay(UUID userId, Long orderId) {
+	public OrderResponse pay(Authentication authentication, Long orderId) {
+		UUID userId = AuthSupport.userId(authentication);
 		OrderEntity order = orderRepository.findByIdAndUserId(orderId, userId)
 				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Commande introuvable."));
 		if (order.getStatus() != OrderStatus.PENDING) {
@@ -71,7 +90,17 @@ public class OrderService {
 		}
 		order.setStatus(OrderStatus.PAID);
 		order.setPaymentReference("MOCK-" + UUID.randomUUID());
-		return toResponse(orderRepository.save(order));
+		OrderEntity saved = orderRepository.save(order);
+		OrderResponse response = toResponse(saved);
+		orderNotificationClient.sendOrderConfirmed(
+				userId,
+				AuthSupport.email(authentication),
+				AuthSupport.firstName(authentication),
+				saved.getId(),
+				saved.getTotalAmount(),
+				saved.getCurrency(),
+				buildNotificationLines(saved));
+		return response;
 	}
 
 	@Transactional
@@ -131,5 +160,25 @@ public class OrderService {
 				line.getUnitPrice(),
 				line.getFormat(),
 				total);
+	}
+
+	private List<OrderLineNotification> buildNotificationLines(OrderEntity order) {
+		return order.getLines().stream()
+				.map(line -> {
+					CatalogBookDetail detail = catalogBookClient.fetchBookDetail(line.getBookId());
+					String title = detail != null && detail.title() != null && !detail.title().isBlank()
+							? detail.title()
+							: "Livre " + line.getBookId().toString().substring(0, 8);
+					String readUrl = frontendBaseUrl + "/books/" + line.getBookId();
+					return new OrderLineNotification(line.getBookId(), title, readUrl);
+				})
+				.toList();
+	}
+
+	private static String trimTrailingSlash(String url) {
+		if (url == null || url.isBlank()) {
+			return "http://localhost:4200";
+		}
+		return url.endsWith("/") ? url.substring(0, url.length() - 1) : url;
 	}
 }

@@ -2,9 +2,15 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
+import { switchMap } from 'rxjs/operators';
 import { HeaderComponent } from '../../../components/header/header.component';
 import { FooterComponent } from '../../../components/footer/footer.component';
 import { PaymentService, PaymentMethod } from '../../../services/payment.service';
+import { AuthService } from '../../../services/auth.service';
+import { CartService, CartLineUi } from '../../../services/cart.service';
+import { OrderService } from '../../../services/order.service';
+import { OrderResponseDto } from '../../../models/api.types';
+import { UiToastService } from '../../../services/ui-toast.service';
 
 @Component({
   selector: 'app-payment',
@@ -179,32 +185,37 @@ import { PaymentService, PaymentMethod } from '../../../services/payment.service
               <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm p-6 mb-6">
                 <h2 class="text-lg font-semibold font-[family-name:var(--font-display)] text-slate-900 dark:text-white mb-4">Résumé de la commande</h2>
                 
-                <div class="border-b border-slate-200 dark:border-slate-700 pb-4 mb-4">
+                <p *ngIf="cartLoading" class="text-sm text-zinc-500 mb-3">Chargement du panier…</p>
+                <p *ngIf="checkoutError" class="text-sm text-red-600 dark:text-red-400 mb-3">{{ checkoutError }}</p>
+                <div class="border-b border-slate-200 dark:border-slate-700 pb-4 mb-4" *ngIf="!cartLoading">
                   <div class="flex justify-between mb-2">
-                    <span class="text-zinc-600 dark:text-zinc-400">Sous-total</span>
-                    <span>55,48 frs</span>
+                    <span class="text-zinc-600 dark:text-zinc-400">Sous-total ({{ getTotalItems() }} articles)</span>
+                    <span>{{ getSubtotal() | currency: 'EUR' }}</span>
                   </div>
                   <div class="flex justify-between mb-2">
                     <span class="text-zinc-600 dark:text-zinc-400">Livraison</span>
-                    <span>4,99 frs</span>
+                    <span>{{ shippingCost | currency: 'EUR' }}</span>
                   </div>
                   <div class="flex justify-between">
-                    <span class="text-zinc-600 dark:text-zinc-400">Taxes</span>
-                    <span>11,10 frs</span>
+                    <span class="text-zinc-600 dark:text-zinc-400">Taxes (estim.)</span>
+                    <span>{{ getTaxes() | currency: 'EUR' }}</span>
                   </div>
                 </div>
                 
-                <div class="flex justify-between font-semibold text-lg text-slate-900 dark:text-white">
-                  <span>Total</span>
-                  <span>71,57 frs</span>
+                <div class="flex justify-between font-semibold text-lg text-slate-900 dark:text-white" *ngIf="!cartLoading">
+                  <span>Total (indicatif)</span>
+                  <span>{{ getTotal() | currency: 'EUR' }}</span>
                 </div>
               </div>
               
-              <button (click)="placeOrder()" [disabled]="!isPaymentSelected || loading" 
+              <button (click)="placeOrder()" [disabled]="loading || cartLoading || !cartItems.length" 
                       class="w-full bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-600 dark:hover:bg-indigo-500 text-white px-6 py-3 rounded-lg transition disabled:bg-zinc-400 dark:disabled:bg-zinc-600 disabled:cursor-not-allowed">
                 <span *ngIf="!loading">Confirmer et payer</span>
-                <span *ngIf="loading"><i class="fas fa-spinner fa-spin mr-2"></i>Traitement du paiement...</span>
+                <span *ngIf="loading"><i class="fas fa-spinner fa-spin mr-2"></i>Traitement du paiement…</span>
               </button>
+              <p *ngIf="!cartLoading && !cartItems.length" class="text-xs text-center text-zinc-500 mt-2">
+                Votre panier est vide — <a routerLink="/cart" class="text-indigo-600 dark:text-indigo-400 underline">retour au panier</a>.
+              </p>
               
               <p class="text-sm text-center text-zinc-500 dark:text-zinc-400 mt-4">
                 En confirmant votre commande, vous acceptez nos <a href="#" class="text-indigo-600 dark:text-indigo-400 hover:underline">Conditions générales de vente</a>.
@@ -227,7 +238,12 @@ export class PaymentComponent implements OnInit {
   cardForm: FormGroup;
   billingForm: FormGroup;
   loading = false;
+  cartLoading = false;
   submitted = false;
+  checkoutError: string | null = null;
+  cartItems: CartLineUi[] = [];
+  shippingCost = 4.99;
+  taxRate = 0.2;
   
   paymentMethods: PaymentMethod[] = [];
   selectedPaymentMethod: string | null = null;
@@ -236,7 +252,11 @@ export class PaymentComponent implements OnInit {
   constructor(
     private formBuilder: FormBuilder,
     private paymentService: PaymentService,
-    private router: Router
+    private router: Router,
+    public auth: AuthService,
+    private cartService: CartService,
+    private orderService: OrderService,
+    private toast: UiToastService,
   ) {
     this.cardForm = this.formBuilder.group({
       cardNumber: ['', Validators.required],
@@ -258,7 +278,43 @@ export class PaymentComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    if (!this.auth.isAuthenticated()) {
+      this.router.navigate(['/auth/login'], { queryParams: { returnUrl: '/checkout/payment' } });
+      return;
+    }
+    this.loadCart();
     this.loadPaymentMethods();
+  }
+
+  private loadCart(): void {
+    this.cartLoading = true;
+    this.checkoutError = null;
+    this.cartService.getCart().subscribe({
+      next: lines => {
+        this.cartItems = lines;
+        this.cartLoading = false;
+      },
+      error: () => {
+        this.checkoutError = 'Panier indisponible (order-service / gateway).';
+        this.cartLoading = false;
+      },
+    });
+  }
+
+  getTotalItems(): number {
+    return this.cartItems.reduce((t, i) => t + i.quantity, 0);
+  }
+
+  getSubtotal(): number {
+    return this.cartItems.reduce((t, i) => t + i.lineTotal, 0);
+  }
+
+  getTaxes(): number {
+    return this.getSubtotal() * this.taxRate;
+  }
+
+  getTotal(): number {
+    return this.getSubtotal() + this.shippingCost + this.getTaxes();
   }
 
   loadPaymentMethods(): void {
@@ -338,7 +394,7 @@ export class PaymentComponent implements OnInit {
 
   payWithPaypal(): void {
     // Simulate PayPal integration
-    alert('Vous allez être redirigé vers PayPal (simulation)');
+    this.toast.info('PayPal', 'Redirection PayPal (simulation)');
     
     setTimeout(() => {
       this.isPaymentSelected = true;
@@ -347,16 +403,36 @@ export class PaymentComponent implements OnInit {
   }
 
   placeOrder(): void {
-    if (!this.isPaymentSelected) {
+    if (!this.cartItems.length || this.loading) {
       return;
     }
-    
+
     this.loading = true;
-    
-    // Simulate payment processing
-    setTimeout(() => {
-      this.loading = false;
-      this.router.navigate(['/checkout/confirmation']);
-    }, 2000);
+    this.checkoutError = null;
+
+    this.orderService
+      .createFromCart()
+      .pipe(switchMap((order: OrderResponseDto) => this.orderService.pay(order.id)))
+      .subscribe({
+        next: paid => {
+          this.loading = false;
+          this.cartService.refreshCount().subscribe();
+          this.toast.success('Paiement validé', `Commande #${paid.id}`);
+          this.router.navigate(['/checkout/confirmation'], {
+            queryParams: { orderId: paid.id },
+            state: { order: paid, cartSnapshot: this.cartItems },
+          });
+        },
+        error: (err: { error?: { detail?: string; message?: string }; status?: number }) => {
+          this.loading = false;
+          const detail = err?.error?.detail || err?.error?.message;
+          this.checkoutError =
+            detail ||
+            (err?.status === 400
+              ? 'Panier vide ou commande invalide.'
+              : 'Paiement impossible (vérifiez order-service).');
+          this.toast.error('Checkout', this.checkoutError);
+        },
+      });
   }
 }

@@ -100,14 +100,13 @@ public class AuthService {
 	public AuthResponse login(LoginRequest request) {
 		String email = normalizeEmail(request.email());
 		AuthUser user = authUserRepository.findByEmailIgnoreCase(email)
-				.orElseThrow(() -> new InvalidCredentialsException("Identifiants invalides."));
+				.orElseThrow(() -> new UserNotFoundException(
+						"Aucun compte n'est associé à cette adresse e-mail. Veuillez utiliser une autre adresse ou créer un nouveau compte."));
 		if (!user.isActive()) {
 			throw new InvalidCredentialsException("Compte désactivé.");
 		}
-		if (user.getAuthProvider() == AuthProvider.GOOGLE) {
-			throw new InvalidCredentialsException("Ce compte utilise la connexion Google.");
-		}
-		if (!passwordEncoder.matches(request.password(), user.getPasswordHash())) {
+		if (user.getPasswordHash() == null
+				|| !passwordEncoder.matches(request.password(), user.getPasswordHash())) {
 			throw new InvalidCredentialsException("Identifiants invalides.");
 		}
 		ensureEmailVerifiedForLocal(user);
@@ -133,7 +132,6 @@ public class AuthService {
 			ensureActive(user);
 			if (user.getGoogleSub() == null) {
 				user.setGoogleSub(profile.sub());
-				user.setAuthProvider(AuthProvider.GOOGLE);
 				user.setEmailVerified(true);
 				user.setEmailVerificationToken(null);
 				user.setEmailVerificationExpiresAt(null);
