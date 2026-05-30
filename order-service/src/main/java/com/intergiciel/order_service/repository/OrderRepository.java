@@ -13,4 +13,6 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Long> {
 	Page<OrderEntity> findByUserIdOrderByCreatedAtDesc(UUID userId, Pageable pageable);
 
 	Optional<OrderEntity> findByIdAndUserId(Long id, UUID userId);
+
+	Optional<OrderEntity> findByPaymentReference(String paymentReference);
 }

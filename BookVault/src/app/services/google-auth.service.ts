@@ -93,9 +93,17 @@ export class GoogleAuthService {
       return this.loadPromise;
     }
     this.loadPromise = new Promise<void>((resolve, reject) => {
+      const done = () => {
+        if (window.google?.accounts?.id) {
+          resolve();
+        } else {
+          reject(new Error('Google Identity Services indisponible.'));
+        }
+      };
+
       const existing = document.querySelector('script[src*="accounts.google.com/gsi/client"]');
       if (existing) {
-        existing.addEventListener('load', () => resolve(), { once: true });
+        existing.addEventListener('load', done, { once: true });
         existing.addEventListener('error', () => reject(new Error('Script Google introuvable.')), {
           once: true,
         });
@@ -104,7 +112,14 @@ export class GoogleAuthService {
         }
         return;
       }
-      reject(new Error('Script Google Identity Services non chargé.'));
+
+      const script = document.createElement('script');
+      script.src = 'https://accounts.google.com/gsi/client';
+      script.async = true;
+      script.defer = true;
+      script.onload = done;
+      script.onerror = () => reject(new Error('Impossible de charger Google Identity Services.'));
+      document.head.appendChild(script);
     });
     return this.loadPromise;
   }

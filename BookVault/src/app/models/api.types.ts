@@ -303,6 +303,36 @@ export interface OrderResponseDto {
   lines: OrderLineDto[];
 }
 
+export type MobileMoneyOperatorDto = 'MTN' | 'ORANGE';
+
+export interface G2tpayConfigDto {
+  enabled: boolean;
+  currency: string;
+  instruction: string;
+}
+
+export interface G2tpayInitiateRequestDto {
+  phoneNumber: string;
+  operator: MobileMoneyOperatorDto;
+}
+
+export interface G2tpayRedirectResponseDto {
+  orderId: number;
+  redirectUrl: string;
+  amountXaf: number;
+  currency: string;
+  orderStatus: string;
+  instruction: string;
+}
+
+export interface PaymentStatusResponseDto {
+  orderId: number;
+  orderStatus: string;
+  messageId: string | null;
+  providerStatus: string;
+  paid: boolean;
+}
+
 export interface PurchasedBookDto {
   bookId: string;
   title: string;

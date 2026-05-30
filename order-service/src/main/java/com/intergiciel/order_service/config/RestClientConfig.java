@@ -7,7 +7,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.web.client.RestClient;
 
 @Configuration
-@EnableConfigurationProperties(OrderProperties.class)
+@EnableConfigurationProperties({ OrderProperties.class, G2tpayProperties.class })
 public class RestClientConfig {
 
 	@Bean

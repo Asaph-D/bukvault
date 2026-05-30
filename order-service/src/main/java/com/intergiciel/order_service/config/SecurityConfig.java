@@ -30,7 +30,9 @@ public class SecurityConfig {
 			"/swagger-ui.html",
 			"/error",
 			"/api/v1/internal/**",
-			"/api/v1/orders/webhook"
+			"/api/v1/orders/webhook",
+			"/api/v1/orders/webhook/g2tpay",
+			"/api/v1/orders/payments/g2tpay/return"
 	};
 
 	@Bean

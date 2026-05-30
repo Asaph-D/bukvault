@@ -4,6 +4,7 @@ import com.intergiciel.order_service.client.CatalogBookClient;
 import com.intergiciel.order_service.client.CatalogBookDetail;
 import com.intergiciel.order_service.client.OrderNotificationClient;
 import com.intergiciel.order_service.client.OrderNotificationClient.OrderLineNotification;
+import com.intergiciel.order_service.config.G2tpayProperties;
 import com.intergiciel.order_service.config.OrderProperties;
 import com.intergiciel.order_service.domain.CartLineEntity;
 import com.intergiciel.order_service.domain.OrderEntity;
@@ -33,6 +34,7 @@ public class OrderService {
 	private final CartLineRepository cartLineRepository;
 	private final CatalogBookClient catalogBookClient;
 	private final OrderNotificationClient orderNotificationClient;
+	private final G2tpayProperties g2tpayProperties;
 	private final String frontendBaseUrl;
 
 	public OrderService(
@@ -40,11 +42,13 @@ public class OrderService {
 			CartLineRepository cartLineRepository,
 			CatalogBookClient catalogBookClient,
 			OrderNotificationClient orderNotificationClient,
-			OrderProperties orderProperties) {
+			OrderProperties orderProperties,
+			G2tpayProperties g2tpayProperties) {
 		this.orderRepository = orderRepository;
 		this.cartLineRepository = cartLineRepository;
 		this.catalogBookClient = catalogBookClient;
 		this.orderNotificationClient = orderNotificationClient;
+		this.g2tpayProperties = g2tpayProperties;
 		this.frontendBaseUrl = trimTrailingSlash(orderProperties.getFrontend().getBaseUrl());
 	}
 
@@ -88,8 +92,15 @@ public class OrderService {
 		if (order.getStatus() != OrderStatus.PENDING) {
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Paiement impossible pour ce statut.");
 		}
+		if (g2tpayProperties.isEnabled()) {
+			throw new ResponseStatusException(
+					HttpStatus.BAD_REQUEST,
+					"Utilisez le paiement Mobile Money : POST /orders/{id}/payments/g2tpay/initiate");
+		}
 		order.setStatus(OrderStatus.PAID);
 		order.setPaymentReference("MOCK-" + UUID.randomUUID());
+		order.setCustomerEmail(AuthSupport.email(authentication));
+		order.setCustomerFirstName(AuthSupport.firstName(authentication));
 		OrderEntity saved = orderRepository.save(order);
 		OrderResponse response = toResponse(saved);
 		orderNotificationClient.sendOrderConfirmed(

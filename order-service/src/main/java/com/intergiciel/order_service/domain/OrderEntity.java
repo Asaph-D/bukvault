@@ -5,6 +5,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import com.intergiciel.order_service.domain.MobileMoneyOperator;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -40,6 +41,22 @@ public class OrderEntity {
 
 	@Column(length = 255)
 	private String paymentReference;
+
+	@Enumerated(EnumType.STRING)
+	@Column(length = 16)
+	private MobileMoneyOperator paymentOperator;
+
+	@Column(length = 20)
+	private String paymentPhone;
+
+	@Column
+	private Integer paymentAmountXaf;
+
+	@Column(length = 255)
+	private String customerEmail;
+
+	@Column(length = 120)
+	private String customerFirstName;
 
 	@Column(nullable = false)
 	private Instant createdAt = Instant.now();
@@ -97,6 +114,51 @@ public class OrderEntity {
 
 	public void setPaymentReference(String paymentReference) {
 		this.paymentReference = paymentReference;
+		this.updatedAt = Instant.now();
+	}
+
+	public MobileMoneyOperator getPaymentOperator() {
+		return paymentOperator;
+	}
+
+	public void setPaymentOperator(MobileMoneyOperator paymentOperator) {
+		this.paymentOperator = paymentOperator;
+		this.updatedAt = Instant.now();
+	}
+
+	public String getPaymentPhone() {
+		return paymentPhone;
+	}
+
+	public void setPaymentPhone(String paymentPhone) {
+		this.paymentPhone = paymentPhone;
+		this.updatedAt = Instant.now();
+	}
+
+	public Integer getPaymentAmountXaf() {
+		return paymentAmountXaf;
+	}
+
+	public void setPaymentAmountXaf(Integer paymentAmountXaf) {
+		this.paymentAmountXaf = paymentAmountXaf;
+		this.updatedAt = Instant.now();
+	}
+
+	public String getCustomerEmail() {
+		return customerEmail;
+	}
+
+	public void setCustomerEmail(String customerEmail) {
+		this.customerEmail = customerEmail;
+		this.updatedAt = Instant.now();
+	}
+
+	public String getCustomerFirstName() {
+		return customerFirstName;
+	}
+
+	public void setCustomerFirstName(String customerFirstName) {
+		this.customerFirstName = customerFirstName;
 		this.updatedAt = Instant.now();
 	}
 
