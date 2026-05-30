@@ -24,7 +24,7 @@ export class OrderService {
     return this.http.get<OrderResponseDto>(`${this.base}/${id}`);
   }
 
-  /** Paiement stub côté backend : passage en PAID (si G2TPay désactivé). */
+  /** Paiement stub — refusé si G2TPay est activé (utiliser redirect-url). */
   pay(id: number): Observable<OrderResponseDto> {
     return this.http.post<OrderResponseDto>(`${this.base}/${id}/pay`, {});
   }

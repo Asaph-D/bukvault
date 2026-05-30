@@ -86,16 +86,16 @@ public class OrderService {
 
 	@Transactional
 	public OrderResponse pay(Authentication authentication, Long orderId) {
+		if (g2tpayProperties.isEnabled()) {
+			throw new ResponseStatusException(
+					HttpStatus.BAD_REQUEST,
+					"Paiement simulé désactivé. Utilisez Mobile Money via G2TPay.");
+		}
 		UUID userId = AuthSupport.userId(authentication);
 		OrderEntity order = orderRepository.findByIdAndUserId(orderId, userId)
 				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Commande introuvable."));
 		if (order.getStatus() != OrderStatus.PENDING) {
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Paiement impossible pour ce statut.");
-		}
-		if (g2tpayProperties.isEnabled()) {
-			throw new ResponseStatusException(
-					HttpStatus.BAD_REQUEST,
-					"Utilisez le paiement Mobile Money : POST /orders/{id}/payments/g2tpay/initiate");
 		}
 		order.setStatus(OrderStatus.PAID);
 		order.setPaymentReference("MOCK-" + UUID.randomUUID());
