@@ -21,6 +21,7 @@ import {
     AUTH_SESSION_EXPIRED_UI_EVENT,
     AUTH_SESSION_RESTORED_UI_EVENT,
 } from './auth-ui.events';
+import { withNgrokHeaders } from '../interceptors/ngrok-http.util';
 
 /** Ré-export pour les imports existants (`auth.interceptor`, etc.). */
 export { ACCESS_TOKEN_KEY, REFRESH_TOKEN_KEY } from './auth-token.store';
@@ -62,8 +63,9 @@ export class AuthService {
           sessionStorage.getItem(REFRESH_TOKEN_KEY);
 
         if (refresh) {
+          const logoutUrl = `${this.apiBase}/auth/logout`;
           this.httpPlain
-            .post(`${this.apiBase}/auth/logout`, { refreshToken: refresh })
+            .post(logoutUrl, { refreshToken: refresh }, { headers: withNgrokHeaders(logoutUrl) })
             .subscribe({
               complete: () => this.clearLocalSession(),
               error: () => this.clearLocalSession(),
@@ -143,8 +145,13 @@ export class AuthService {
     };
 
     if (refresh && accessExpired) {
+      const refreshUrl = `${this.apiBase}/auth/refresh`;
       this.httpPlain
-        .post<AuthResponseDto>(`${this.apiBase}/auth/refresh`, { refreshToken: refresh })
+        .post<AuthResponseDto>(
+          refreshUrl,
+          { refreshToken: refresh },
+          { headers: withNgrokHeaders(refreshUrl) },
+        )
         .pipe(
           tap(res => storeAuthResponse(res)),
           catchError(() => {
@@ -192,8 +199,9 @@ export class AuthService {
   }
 
   private fetchMePlain(accessToken: string): Observable<UserResponseDto> {
-    return this.httpPlain.get<UserResponseDto>(`${this.apiBase}/auth/me`, {
-      headers: { Authorization: `Bearer ${accessToken}` },
+    const meUrl = `${this.apiBase}/auth/me`;
+    return this.httpPlain.get<UserResponseDto>(meUrl, {
+      headers: withNgrokHeaders(meUrl, { Authorization: `Bearer ${accessToken}` }),
     });
   }
 
@@ -341,13 +349,17 @@ export class AuthService {
       localStorage.getItem(REFRESH_TOKEN_KEY) || sessionStorage.getItem(REFRESH_TOKEN_KEY);
     const access =
       localStorage.getItem(ACCESS_TOKEN_KEY) || sessionStorage.getItem(ACCESS_TOKEN_KEY);
+    const logoutUrl = `${this.apiBase}/auth/logout`;
     this.httpPlain
       .post(
-        `${this.apiBase}/auth/logout`,
+        logoutUrl,
         { refreshToken: refresh },
         {
-          headers: access ? { Authorization: `Bearer ${access}` } : {}
-        }
+          headers: withNgrokHeaders(
+            logoutUrl,
+            access ? { Authorization: `Bearer ${access}` } : {},
+          ),
+        },
       )
       .subscribe({
         complete: () => this.clearLocalSession(),

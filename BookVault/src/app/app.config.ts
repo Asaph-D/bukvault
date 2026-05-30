@@ -5,6 +5,7 @@ import { provideAnimationsAsync } from '@angular/platform-browser/animations/asy
 import { providePrimeNG } from 'primeng/config';
 import Aura from '@primeng/themes/aura';
 import { authInterceptor } from './interceptors/auth.interceptor';
+import { ngrokInterceptor } from './interceptors/ngrok.interceptor';
 import { routes } from './app.routes';
 import { provideClientHydration } from '@angular/platform-browser';
 import { ThemeService } from './services/theme.service';
@@ -28,7 +29,7 @@ export const appConfig: ApplicationConfig = {
       },
     }),
     provideRouter(routes, withComponentInputBinding()),
-    provideHttpClient(withInterceptors([authInterceptor])),
+    provideHttpClient(withInterceptors([ngrokInterceptor, authInterceptor])),
     provideClientHydration(),
     MessageService,
     {

@@ -3,6 +3,7 @@ import { Injectable } from '@angular/core';
 import { Observable, throwError } from 'rxjs';
 import { catchError, finalize, map, shareReplay, tap } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
+import { withNgrokHeaders } from '../interceptors/ngrok-http.util';
 import { AuthResponseDto } from '../models/api.types';
 import {
   readRefreshToken,
@@ -27,8 +28,13 @@ export class AuthRefreshCoordinator {
       return throwError(() => new Error('Pas de refresh token'));
     }
 
+    const refreshUrl = `${environment.apiUrl}/auth/refresh`;
     this.inflight = httpPlain
-      .post<AuthResponseDto>(`${environment.apiUrl}/auth/refresh`, { refreshToken: refresh })
+      .post<AuthResponseDto>(
+        refreshUrl,
+        { refreshToken: refresh },
+        { headers: withNgrokHeaders(refreshUrl) },
+      )
       .pipe(
         tap(res => {
           storeAuthResponse(res);
