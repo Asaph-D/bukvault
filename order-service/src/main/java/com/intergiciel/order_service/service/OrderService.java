@@ -20,6 +20,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import com.intergiciel.order_service.support.AuthSupport;
+import com.intergiciel.order_service.support.OrderPricing;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -78,7 +79,8 @@ public class OrderService {
 			total = total.add(lineTotal);
 			order.addLine(new OrderLineEntity(cl.getBookId(), cl.getQuantity(), cl.getUnitPrice(), cl.getFormat()));
 		}
-		order.setTotalAmount(total);
+		order.setTotalAmount(OrderPricing.checkoutTotal(total));
+		order.setCurrency(OrderPricing.CURRENCY);
 		OrderEntity saved = orderRepository.save(order);
 		cartLineRepository.deleteByUserId(userId);
 		return toResponse(saved);

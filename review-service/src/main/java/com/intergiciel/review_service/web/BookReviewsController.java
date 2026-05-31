@@ -1,5 +1,6 @@
 package com.intergiciel.review_service.web;
 
+import com.intergiciel.review_service.config.ReviewProperties;
 import com.intergiciel.review_service.service.ReviewService;
 import com.intergiciel.review_service.support.AuthSupport;
 import com.intergiciel.review_service.web.dto.CreateReviewRequest;
@@ -28,9 +29,11 @@ import java.util.UUID;
 public class BookReviewsController {
 
 	private final ReviewService reviewService;
+	private final ReviewProperties reviewProperties;
 
-	public BookReviewsController(ReviewService reviewService) {
+	public BookReviewsController(ReviewService reviewService, ReviewProperties reviewProperties) {
 		this.reviewService = reviewService;
+		this.reviewProperties = reviewProperties;
 	}
 
 	@GetMapping
@@ -48,6 +51,9 @@ public class BookReviewsController {
 			@PathVariable UUID bookId,
 			Authentication authentication,
 			@Valid @RequestBody CreateReviewRequest request) {
-		return reviewService.create(bookId, AuthSupport.userId(authentication), request);
+		return reviewService.create(
+				bookId,
+				AuthSupport.reviewerProfile(authentication, reviewProperties.getApiPublicBaseUrl()),
+				request);
 	}
 }

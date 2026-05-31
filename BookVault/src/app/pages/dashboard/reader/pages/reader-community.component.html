@@ -116,7 +116,39 @@
       <i class="fas fa-bolt text-amber-500 text-sm"></i>
       <h3 class="text-lg font-bold text-slate-900 dark:text-white font-[family-name:var(--font-display)]">Message flash</h3>
     </div>
-    <p class="text-xs text-slate-500 dark:text-zinc-500 mb-4">Vers un auteur suivi ou un club (mock UI).</p>
+    <p class="text-xs text-slate-500 dark:text-zinc-500 mb-4">
+      Salon « message flash » — temps réel via WebSocket STOMP.
+      <span *ngIf="flashThreadId" class="block mt-1 text-sky-600 dark:text-sky-400">Salon actif · {{ flashMessages.length }} message(s)</span>
+    </p>
+
+    <ul *ngIf="flashMessages.length" class="space-y-2 mb-3 max-h-40 overflow-y-auto pr-1">
+      <li
+        *ngFor="let m of flashMessages"
+        class="flex items-start gap-2 p-2 rounded-lg bg-slate-50/80 dark:bg-white/5 border border-slate-200/60 dark:border-white/10"
+      >
+        <div class="relative h-7 w-7 shrink-0">
+          <img
+            *ngIf="m.senderAvatarUrl"
+            [src]="m.senderAvatarUrl"
+            alt=""
+            class="h-7 w-7 rounded-lg object-cover"
+            (error)="onAvatarErr($event)"
+          />
+          <div
+            class="h-7 w-7 rounded-lg bg-gradient-to-br from-sky-500 to-indigo-600 flex items-center justify-center text-white text-[9px] font-bold"
+            [class.hidden]="m.senderAvatarUrl"
+          >
+            {{ flashInitials(m) }}
+          </div>
+        </div>
+        <div class="min-w-0 flex-1">
+          <p class="text-[10px] font-semibold text-sky-700 dark:text-sky-300 truncate">{{ flashLabel(m) }}</p>
+          <p class="text-xs text-slate-700 dark:text-zinc-300 leading-snug">{{ m.content }}</p>
+        </div>
+      </li>
+    </ul>
+
+    <p *ngIf="flashError" class="text-xs text-red-600 dark:text-red-400 mb-2">{{ flashError }}</p>
 
     <div
       class="flex flex-col gap-0 rounded-xl border border-slate-200 dark:border-white/15 bg-white/90 dark:bg-slate-950/50 focus-within:border-sky-400/60 focus-within:ring-2 focus-within:ring-sky-500/20 transition mb-3 overflow-hidden"
@@ -144,10 +176,11 @@
 
     <button
       type="button"
-      class="mt-auto w-full py-2.5 rounded-xl text-sm font-semibold bg-gradient-to-r from-sky-600 to-indigo-600 text-white shadow-lg shadow-sky-900/30 opacity-70 cursor-not-allowed transition"
-      disabled
+      (click)="sendFlash()"
+      [disabled]="flashSending || !composerDraft.trim() || !flashThreadId"
+      class="mt-auto w-full py-2.5 rounded-xl text-sm font-semibold bg-gradient-to-r from-sky-600 to-indigo-600 text-white shadow-lg shadow-sky-900/30 disabled:opacity-50 transition"
     >
-      <i class="fas fa-paper-plane mr-2 text-xs"></i>Envoyer (désactivé)
+      <i class="fas fa-paper-plane mr-2 text-xs"></i>{{ flashSending ? 'Envoi…' : 'Publier en direct' }}
     </button>
   </aside>
 </div>

@@ -22,6 +22,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.util.UriComponentsBuilder;
+import com.intergiciel.order_service.support.OrderPricing;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -76,7 +77,7 @@ public class G2tpayPaymentService {
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Paiement impossible pour ce statut.");
 		}
 
-		int amountXaf = toPaymentAmountXaf(order.getTotalAmount());
+		int amountXaf = OrderPricing.toXafInt(order.getTotalAmount());
 		if (amountXaf < 100) {
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Montant minimum G2TPay : 100 XAF.");
 		}
@@ -218,14 +219,6 @@ public class G2tpayPaymentService {
 		if (g2tpayProperties.getApiKey() == null || g2tpayProperties.getApiKey().isBlank()) {
 			throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Clé API G2TPay absente.");
 		}
-	}
-
-	private int toPaymentAmountXaf(BigDecimal amount) {
-		if (amount == null) {
-			return 0;
-		}
-		// Montants déjà en XAF (devise plateforme).
-		return amount.setScale(0, RoundingMode.HALF_UP).intValueExact();
 	}
 
 	static String normalizeCameroonPhone(String raw) {

@@ -27,6 +27,7 @@ import { NotificationService } from '../../../services/notification.service';
 import { AuthIntentService } from '../../../services/auth-intent.service';
 import { WishlistService } from '../../../services/wishlist.service';
 import { ReviewService } from '../../../services/review.service';
+import { ReviewRealtimeService } from '../../../services/review-realtime.service';
 import { ReviewResponseDto } from '../../../models/api.types';
 import { ReadingService } from '../../../services/reading.service';
 
@@ -148,6 +149,7 @@ export class BookDetailComponent implements OnInit, OnDestroy, OnChanges {
   private routeSub?: Subscription;
   private userSub?: Subscription;
   private userSnapshot: User | null = null;
+  private reviewRealtimeSub?: Subscription;
   private progressSub?: Subscription;
   private progressQueue = new Subject<{ bookId: string; positionJson: string }>();
 
@@ -164,6 +166,7 @@ export class BookDetailComponent implements OnInit, OnDestroy, OnChanges {
     private authIntent: AuthIntentService,
     private wishlist: WishlistService,
     private reviewService: ReviewService,
+    private reviewRealtime: ReviewRealtimeService,
     private reading: ReadingService
   ) {}
 
@@ -245,7 +248,9 @@ export class BookDetailComponent implements OnInit, OnDestroy, OnChanges {
   ngOnDestroy(): void {
     this.routeSub?.unsubscribe();
     this.userSub?.unsubscribe();
+    this.reviewRealtimeSub?.unsubscribe();
     this.progressSub?.unsubscribe();
+    this.reviewRealtime.disconnect();
     this.stopTick();
     this.stopSpeech();
     this.revokeManuscriptUrl();
@@ -306,14 +311,24 @@ export class BookDetailComponent implements OnInit, OnDestroy, OnChanges {
     return r.id;
   }
 
-  reviewerLabel(userId: string): string {
-    return `Lecteur ${userId.slice(0, 8)}`;
+  reviewerLabel(r: ReviewResponseDto): string {
+    return r.reviewerEmail || r.reviewerDisplayName || `Lecteur ${r.userId.slice(0, 8)}`;
+  }
+
+  reviewerInitials(r: ReviewResponseDto): string {
+    const label = r.reviewerDisplayName || r.reviewerEmail || r.userId;
+    const parts = label.split(/[\s@._-]+/).filter(Boolean);
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[1][0]).toUpperCase();
+    }
+    return label.slice(0, 2).toUpperCase();
   }
 
   private loadReviews(): void {
     if (!this.book) return;
     this.reviewsLoading = true;
     this.reviewsError = null;
+    this.setupReviewRealtime(this.book.id);
     this.reviewService.listByBook(this.book.id, 0, 30).subscribe({
       next: page => {
         this.reviews = page.content ?? [];
@@ -323,6 +338,20 @@ export class BookDetailComponent implements OnInit, OnDestroy, OnChanges {
         this.reviewsError = 'Impossible de charger les avis (review-service).';
         this.reviewsLoading = false;
       },
+    });
+  }
+
+  private setupReviewRealtime(bookId: string): void {
+    this.reviewRealtimeSub?.unsubscribe();
+    const token = this.authService.getToken();
+    if (token) {
+      this.reviewRealtime.connect(token);
+    }
+    this.reviewRealtime.watchBook(bookId);
+    this.reviewRealtimeSub = this.reviewRealtime.onReview().subscribe(review => {
+      if (review.bookId === bookId) {
+        this.reviews = [review, ...this.reviews.filter(r => r.id !== review.id)];
+      }
     });
   }
 

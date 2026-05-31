@@ -59,7 +59,7 @@ export class AuthorHomeComponent implements OnInit {
     { icon: 'fas fa-database', label: 'Sauvegardes', link: '/dashboard/author/resources' },
     { icon: 'fas fa-file-export', label: 'Export', link: '/dashboard/author/works' },
     { icon: 'fas fa-users', label: 'Co-auteurs', link: '/dashboard/author/challenges' },
-    { icon: 'fas fa-file-contract', label: 'Contrats', link: '/dashboard/author/messages' },
+    { icon: 'fas fa-envelope', label: 'Messages', link: '/dashboard/author/messages' },
   ];
 
   activities: { icon: string; title: string; time: string }[] = [

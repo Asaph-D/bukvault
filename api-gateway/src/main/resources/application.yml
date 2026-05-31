@@ -30,6 +30,18 @@ spring:
               uri: ${COMMUNITY_SERVICE_URI:http://localhost:8092}
               predicates:
                 - Path=/api/v1/messaging/**
+            - id: community-ws
+              uri: ${COMMUNITY_SERVICE_URI:http://localhost:8092}
+              predicates:
+                - Path=/ws/community/**
+              filters:
+                - RewritePath=/ws/community(?<segment>/?.*), /ws$\{segment}
+            - id: review-ws
+              uri: ${REVIEW_SERVICE_URI:http://localhost:8086}
+              predicates:
+                - Path=/ws/review/**
+              filters:
+                - RewritePath=/ws/review(?<segment>/?.*), /ws$\{segment}
             - id: notification-service
               uri: ${NOTIFICATION_SERVICE_URI:http://localhost:8088}
               predicates:

@@ -3,6 +3,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 import {
+  AuthorReviewsFeedDto,
   CreateReviewRequestDto,
   PageDto,
   ReviewResponseDto,
@@ -23,5 +24,17 @@ export class ReviewService {
 
   create(bookId: string, body: CreateReviewRequestDto): Observable<ReviewResponseDto> {
     return this.http.post<ReviewResponseDto>(`${this.base}/books/${bookId}/reviews`, body);
+  }
+
+  listAuthorMine(
+    page = 0,
+    size = 20,
+    bookId?: string,
+    minRating?: number,
+  ): Observable<AuthorReviewsFeedDto> {
+    let params = new HttpParams().set('page', String(page)).set('size', String(size));
+    if (bookId) params = params.set('bookId', bookId);
+    if (minRating != null) params = params.set('minRating', String(minRating));
+    return this.http.get<AuthorReviewsFeedDto>(`${this.base}/reviews/author/mine`, { params });
   }
 }

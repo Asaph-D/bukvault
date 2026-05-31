@@ -29,6 +29,15 @@ public class ReviewEntity {
 	@Column(nullable = false)
 	private UUID userId;
 
+	@Column(length = 180)
+	private String reviewerEmail;
+
+	@Column(length = 160)
+	private String reviewerDisplayName;
+
+	@Column(length = 300)
+	private String reviewerAvatarUrl;
+
 	@Column(nullable = false)
 	private int rating;
 
@@ -75,6 +84,30 @@ public class ReviewEntity {
 
 	public UUID getUserId() {
 		return userId;
+	}
+
+	public String getReviewerEmail() {
+		return reviewerEmail;
+	}
+
+	public void setReviewerEmail(String reviewerEmail) {
+		this.reviewerEmail = reviewerEmail;
+	}
+
+	public String getReviewerDisplayName() {
+		return reviewerDisplayName;
+	}
+
+	public void setReviewerDisplayName(String reviewerDisplayName) {
+		this.reviewerDisplayName = reviewerDisplayName;
+	}
+
+	public String getReviewerAvatarUrl() {
+		return reviewerAvatarUrl;
+	}
+
+	public void setReviewerAvatarUrl(String reviewerAvatarUrl) {
+		this.reviewerAvatarUrl = reviewerAvatarUrl;
 	}
 
 	public int getRating() {

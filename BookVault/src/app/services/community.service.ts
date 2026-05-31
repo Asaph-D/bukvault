@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 import {
@@ -7,7 +7,9 @@ import {
   CommunityEventDto,
   CommunityHubDto,
   CommunityMemberDto,
-  CommunityThreadDto
+  CommunityThreadDto,
+  PageDto,
+  SalonMessageDto,
 } from '../models/api.types';
 
 @Injectable({ providedIn: 'root' })
@@ -54,5 +56,14 @@ export class CommunityService {
     return this.http.get<CommunityMemberDto[]>(`${this.base}/recommendations/buddies`, {
       params: { limit },
     });
+  }
+
+  getSalonMessages(threadId: string, page = 0, size = 40): Observable<PageDto<SalonMessageDto>> {
+    const params = new HttpParams().set('page', String(page)).set('size', String(size));
+    return this.http.get<PageDto<SalonMessageDto>>(`${this.base}/salons/${threadId}/messages`, { params });
+  }
+
+  sendSalonMessage(threadId: string, content: string): Observable<SalonMessageDto> {
+    return this.http.post<SalonMessageDto>(`${this.base}/salons/${threadId}/messages`, { content });
   }
 }

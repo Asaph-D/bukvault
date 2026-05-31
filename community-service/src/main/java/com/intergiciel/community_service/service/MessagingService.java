@@ -10,6 +10,7 @@ import com.intergiciel.community_service.repository.ConversationMemberRepository
 import com.intergiciel.community_service.repository.ConversationRepository;
 import com.intergiciel.community_service.web.dto.ChatMessageResponse;
 import com.intergiciel.community_service.web.dto.ConversationSummaryResponse;
+import com.intergiciel.community_service.web.dto.MemberSnapshot;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -30,13 +31,20 @@ public class MessagingService {
 	private final ConversationRepository conversationRepository;
 	private final ConversationMemberRepository memberRepository;
 	private final ChatMessageRepository chatMessageRepository;
+	private final MemberProfileService memberProfileService;
+	private final CommunityRealtimePublisher realtimePublisher;
 
-	public MessagingService(ConversationRepository conversationRepository,
+	public MessagingService(
+			ConversationRepository conversationRepository,
 			ConversationMemberRepository memberRepository,
-			ChatMessageRepository chatMessageRepository) {
+			ChatMessageRepository chatMessageRepository,
+			MemberProfileService memberProfileService,
+			CommunityRealtimePublisher realtimePublisher) {
 		this.conversationRepository = conversationRepository;
 		this.memberRepository = memberRepository;
 		this.chatMessageRepository = chatMessageRepository;
+		this.memberProfileService = memberProfileService;
+		this.realtimePublisher = realtimePublisher;
 	}
 
 	@Transactional(readOnly = true)
@@ -49,9 +57,7 @@ public class MessagingService {
 			if (c == null) {
 				continue;
 			}
-			List<ConversationMemberEntity> others = memberRepository.findOthersInConversation(cid, currentUserId);
-			UUID peer = others.stream().findFirst().map(x -> x.getId().getUserId()).orElse(null);
-			out.add(new ConversationSummaryResponse(cid, peer, c.getLastMessagePreview(), c.getUpdatedAt()));
+			out.add(toSummary(currentUserId, c));
 		}
 		out.sort(Comparator.comparing(ConversationSummaryResponse::updatedAt, Comparator.nullsLast(Comparator.naturalOrder()))
 				.reversed());
@@ -67,7 +73,7 @@ public class MessagingService {
 		if (!existing.isEmpty()) {
 			UUID cid = existing.get(0);
 			ConversationEntity c = conversationRepository.findById(cid).orElseThrow();
-			return new ConversationSummaryResponse(cid, participantId, c.getLastMessagePreview(), c.getUpdatedAt());
+			return toSummary(currentUserId, c);
 		}
 		Instant now = Instant.now();
 		UUID cid = UUID.randomUUID();
@@ -80,7 +86,7 @@ public class MessagingService {
 		conversationRepository.save(conv);
 		memberRepository.save(new ConversationMemberEntity(cid, currentUserId));
 		memberRepository.save(new ConversationMemberEntity(cid, participantId));
-		return new ConversationSummaryResponse(cid, participantId, null, now);
+		return toSummary(currentUserId, conv);
 	}
 
 	@Transactional(readOnly = true)
@@ -90,7 +96,7 @@ public class MessagingService {
 				pageable);
 		List<ChatMessageResponse> asc = page.getContent().stream()
 				.sorted(Comparator.comparing(ChatMessageEntity::getCreatedAt))
-				.map(m -> new ChatMessageResponse(m.getId(), m.getSenderId(), m.getContent(), m.getCreatedAt()))
+				.map(this::toMessageResponse)
 				.toList();
 		return new PageImpl<>(asc, pageable, page.getTotalElements());
 	}
@@ -113,7 +119,40 @@ public class MessagingService {
 		c.setLastMessagePreview(preview);
 		conversationRepository.save(c);
 
-		return new ChatMessageResponse(msg.getId(), msg.getSenderId(), msg.getContent(), msg.getCreatedAt());
+		ChatMessageResponse response = toMessageResponse(msg);
+		realtimePublisher.publishDirectMessage(conversationId, response);
+
+		for (ConversationMemberEntity member : memberRepository.findById_ConversationId(conversationId)) {
+			UUID memberId = member.getId().getUserId();
+			realtimePublisher.publishInboxUpdate(memberId, toSummary(memberId, c));
+		}
+		return response;
+	}
+
+	private ConversationSummaryResponse toSummary(UUID viewerId, ConversationEntity c) {
+		List<ConversationMemberEntity> others = memberRepository.findOthersInConversation(c.getId(), viewerId);
+		UUID peer = others.stream().findFirst().map(x -> x.getId().getUserId()).orElse(null);
+		MemberSnapshot peerProfile = peer != null ? memberProfileService.snapshot(peer) : null;
+		return new ConversationSummaryResponse(
+				c.getId(),
+				peer,
+				peerProfile != null ? peerProfile.email() : null,
+				peerProfile != null ? peerProfile.displayName() : null,
+				peerProfile != null ? peerProfile.avatarUrl() : null,
+				c.getLastMessagePreview(),
+				c.getUpdatedAt());
+	}
+
+	private ChatMessageResponse toMessageResponse(ChatMessageEntity msg) {
+		MemberSnapshot sender = memberProfileService.snapshot(msg.getSenderId());
+		return new ChatMessageResponse(
+				msg.getId(),
+				msg.getSenderId(),
+				sender.email(),
+				sender.displayName(),
+				sender.avatarUrl(),
+				msg.getContent(),
+				msg.getCreatedAt());
 	}
 
 	private void assertMember(UUID conversationId, UUID userId) {

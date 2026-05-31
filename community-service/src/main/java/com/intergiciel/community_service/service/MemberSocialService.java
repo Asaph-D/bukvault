@@ -20,10 +20,15 @@ public class MemberSocialService {
 
 	private final MemberProfileRepository memberProfileRepository;
 	private final BookLikeRepository bookLikeRepository;
+	private final MemberProfileService memberProfileService;
 
-	public MemberSocialService(MemberProfileRepository memberProfileRepository, BookLikeRepository bookLikeRepository) {
+	public MemberSocialService(
+			MemberProfileRepository memberProfileRepository,
+			BookLikeRepository bookLikeRepository,
+			MemberProfileService memberProfileService) {
 		this.memberProfileRepository = memberProfileRepository;
 		this.bookLikeRepository = bookLikeRepository;
+		this.memberProfileService = memberProfileService;
 	}
 
 	@Transactional(readOnly = true)
@@ -33,7 +38,7 @@ public class MemberSocialService {
 		}
 		String query = q.trim();
 		return memberProfileRepository.search(query, PageRequest.of(0, Math.max(1, Math.min(50, limit)))).stream()
-				.map(MemberSocialService::toMember)
+				.map(this::toMember)
 				.toList();
 	}
 
@@ -68,17 +73,19 @@ public class MemberSocialService {
 		return userIds.stream()
 				.map(map::get)
 				.filter(java.util.Objects::nonNull)
-				.map(MemberSocialService::toMember)
+				.map(this::toMember)
 				.toList();
 	}
 
-	private static MemberResponse toMember(MemberProfileEntity m) {
+	private MemberResponse toMember(MemberProfileEntity m) {
+		var snap = memberProfileService.snapshot(m.getUserId());
 		return new MemberResponse(
 				m.getUserId(),
-				m.getEmail(),
-				(m.getFirstName() + " " + m.getLastName()).trim(),
+				snap.email(),
+				snap.displayName(),
 				m.getRole(),
-				m.getBio());
+				m.getBio(),
+				snap.avatarUrl());
 	}
 }
 

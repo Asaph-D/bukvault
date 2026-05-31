@@ -2,6 +2,8 @@ package com.intergiciel.community_service.web;
 
 import com.intergiciel.community_service.service.CommunityFeedService;
 import com.intergiciel.community_service.service.MemberSocialService;
+import com.intergiciel.community_service.service.MemberProfileService;
+import com.intergiciel.community_service.service.SalonMessageService;
 import com.intergiciel.community_service.support.AuthSupport;
 import com.intergiciel.community_service.web.dto.BookLikeRequest;
 import com.intergiciel.community_service.web.dto.BuddyResponse;
@@ -9,11 +11,17 @@ import com.intergiciel.community_service.web.dto.EventResponse;
 import com.intergiciel.community_service.web.dto.HubResponse;
 import com.intergiciel.community_service.web.dto.LikeStatusResponse;
 import com.intergiciel.community_service.web.dto.MemberResponse;
+import com.intergiciel.community_service.web.dto.SalonMessageResponse;
+import com.intergiciel.community_service.web.dto.SendSalonMessageRequest;
 import com.intergiciel.community_service.web.dto.ThreadResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -33,10 +41,18 @@ public class CommunityController {
 
 	private final CommunityFeedService communityFeedService;
 	private final MemberSocialService memberSocialService;
+	private final SalonMessageService salonMessageService;
+	private final MemberProfileService memberProfileService;
 
-	public CommunityController(CommunityFeedService communityFeedService, MemberSocialService memberSocialService) {
+	public CommunityController(
+			CommunityFeedService communityFeedService,
+			MemberSocialService memberSocialService,
+			SalonMessageService salonMessageService,
+			MemberProfileService memberProfileService) {
 		this.communityFeedService = communityFeedService;
 		this.memberSocialService = memberSocialService;
+		this.salonMessageService = salonMessageService;
+		this.memberProfileService = memberProfileService;
 	}
 
 	@GetMapping("/hub")
@@ -93,5 +109,29 @@ public class CommunityController {
 	public List<MemberResponse> recommendBuddies(Authentication authentication,
 			@RequestParam(name = "limit", defaultValue = "6") int limit) {
 		return memberSocialService.recommendBuddies(AuthSupport.userId(authentication), limit);
+	}
+
+	@GetMapping("/salons/{threadId}/messages")
+	@Operation(summary = "Messages d'un salon (hub)")
+	public Page<SalonMessageResponse> salonMessages(
+			@PathVariable UUID threadId,
+			@PageableDefault(size = 40) Pageable pageable) {
+		return salonMessageService.list(threadId, pageable);
+	}
+
+	@PostMapping("/salons/{threadId}/messages")
+	@Operation(summary = "Publier un message flash dans un salon")
+	public SalonMessageResponse sendSalonMessage(
+			Authentication authentication,
+			@PathVariable UUID threadId,
+			@Valid @RequestBody SendSalonMessageRequest request) {
+		syncProfile(authentication);
+		return salonMessageService.send(threadId, AuthSupport.userId(authentication), request.content());
+	}
+
+	private void syncProfile(Authentication authentication) {
+		if (authentication instanceof JwtAuthenticationToken jwt) {
+			memberProfileService.ensureFromJwt(jwt);
+		}
 	}
 }

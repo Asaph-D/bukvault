@@ -93,7 +93,8 @@ export const dashboardRoutes: Routes = [
           {
             path: 'messages',
             loadComponent: () =>
-              import('./reader/pages/reader-messages.component').then(m => m.ReaderMessagesComponent),
+              import('./shared/dashboard-messages.component').then(m => m.DashboardMessagesComponent),
+            data: { messagesVariant: 'reader' },
           },
           {
             path: 'notifications',
@@ -156,8 +157,17 @@ export const dashboardRoutes: Routes = [
           },
           stub('stats', 'Statistiques', 'Ventes, lectures et audience détaillées.'),
           stub('readers', 'Lecteurs', 'Abonnés et interactions.'),
-          stub('comments', 'Commentaires', 'Modération des avis sur vos œuvres.'),
-          stub('messages', 'Messages', 'Boîte de réception auteur.'),
+          {
+            path: 'comments',
+            loadComponent: () =>
+              import('./author/pages/author-comments.component').then(m => m.AuthorCommentsComponent),
+          },
+          {
+            path: 'messages',
+            loadComponent: () =>
+              import('./shared/dashboard-messages.component').then(m => m.DashboardMessagesComponent),
+            data: { messagesVariant: 'author' },
+          },
           stub('challenges', 'Défis & événements', 'Participations et classements.'),
           {
             path: 'notifications',

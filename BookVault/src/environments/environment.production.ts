@@ -6,6 +6,8 @@ export const environment = {
    * Mettre à jour cette URL quand le tunnel ngrok change (plan free).
    */
   apiUrl: 'https://dayana-unfended-will.ngrok-free.dev/api/v1',
+  communityWsUrl: 'https://dayana-unfended-will.ngrok-free.dev/ws/community',
+  reviewWsUrl: 'https://dayana-unfended-will.ngrok-free.dev/ws/review',
   googleClientId:
     '1043170589994-au53pnh9770hbqrbp2n53ngcov5jm7ao.apps.googleusercontent.com',
 };

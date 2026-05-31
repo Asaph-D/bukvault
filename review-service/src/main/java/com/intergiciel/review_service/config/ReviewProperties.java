@@ -7,6 +7,8 @@ public class ReviewProperties {
 
 	private Order order = new Order();
 	private Entitlement entitlement = new Entitlement();
+	private Catalog catalog = new Catalog();
+	private String apiPublicBaseUrl = "http://localhost:8080";
 
 	public Order getOrder() {
 		return order;
@@ -22,6 +24,43 @@ public class ReviewProperties {
 
 	public void setEntitlement(Entitlement entitlement) {
 		this.entitlement = entitlement;
+	}
+
+	public String getApiPublicBaseUrl() {
+		return apiPublicBaseUrl;
+	}
+
+	public void setApiPublicBaseUrl(String apiPublicBaseUrl) {
+		this.apiPublicBaseUrl = apiPublicBaseUrl;
+	}
+
+	public Catalog getCatalog() {
+		return catalog;
+	}
+
+	public void setCatalog(Catalog catalog) {
+		this.catalog = catalog;
+	}
+
+	public static class Catalog {
+		private String baseUrl = "http://localhost:8083";
+		private boolean stub = false;
+
+		public String getBaseUrl() {
+			return baseUrl;
+		}
+
+		public void setBaseUrl(String baseUrl) {
+			this.baseUrl = baseUrl;
+		}
+
+		public boolean isStub() {
+			return stub;
+		}
+
+		public void setStub(boolean stub) {
+			this.stub = stub;
+		}
 	}
 
 	public static class Order {

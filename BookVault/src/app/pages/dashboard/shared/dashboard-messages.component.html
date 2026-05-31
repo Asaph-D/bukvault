@@ -1,0 +1,310 @@
+<app-dashboard-internal-header
+  [title]="pageTitle"
+  [eyebrow]="pageEyebrow"
+  [subtitle]="pageSubtitle"
+  [badges]="[
+    { label: 'Direct & privé',      icon: 'fas fa-lock'        },
+    { label: 'Temps réel',          icon: 'fas fa-bolt'        },
+    { label: 'JWT sécurisé',        icon: 'fas fa-shield-alt'  },
+    { label: isAuthor ? 'Espace auteur' : 'Community-service', icon: isAuthor ? 'fas fa-feather-alt' : 'fas fa-server' },
+  ]"
+>
+  <div actions class="flex flex-wrap gap-2">
+    <a
+      [routerLink]="secondaryLink"
+      class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium border border-slate-200 dark:border-white/15 bg-white/90 dark:bg-white/5 text-slate-800 dark:text-zinc-100 hover:bg-slate-50 dark:hover:bg-white/10 transition"
+    >
+      <i class="fas text-xs" [ngClass]="isAuthor ? 'fa-home' : 'fa-users'"></i>
+      {{ secondaryLabel }}
+    </a>
+    <button
+      type="button"
+      (click)="refreshConversations()"
+      class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-white shadow-lg transition"
+      [ngClass]="isAuthor ? 'bg-violet-600 hover:bg-violet-500 shadow-violet-900/25' : 'bg-sky-600 hover:bg-sky-500 shadow-sky-900/25'"
+    >
+      <i class="fas fa-sync-alt text-xs"></i>
+      Rafraîchir
+    </button>
+  </div>
+</app-dashboard-internal-header>
+
+<div
+  *ngIf="error"
+  class="flex items-center gap-3 mb-5 px-4 py-3 rounded-xl border border-amber-400/40 bg-amber-50/80 dark:bg-amber-950/30 text-amber-800 dark:text-amber-300 text-sm"
+>
+  <i class="fas fa-exclamation-triangle shrink-0"></i>
+  <span>{{ error }}</span>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-5 gap-5 min-h-[520px]">
+  <aside class="lg:col-span-2 dash-glass rounded-2xl border border-slate-200/80 dark:border-white/10 flex flex-col overflow-hidden">
+    <div
+      class="flex items-center justify-between px-4 py-3.5 border-b border-slate-200/60 dark:border-white/10 bg-gradient-to-r to-transparent"
+      [ngClass]="isAuthor ? 'from-violet-500/5 via-purple-500/5' : 'from-sky-500/5 via-indigo-500/5'"
+    >
+      <div class="flex items-center gap-2">
+        <i class="fas fa-comments text-sm" [ngClass]="isAuthor ? 'text-violet-500' : 'text-sky-500'"></i>
+        <span class="text-sm font-semibold text-slate-800 dark:text-zinc-100">Conversations</span>
+        <span
+          *ngIf="conversations.length"
+          class="ml-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full"
+          [ngClass]="isAuthor ? 'bg-violet-500/15 text-violet-700 dark:text-violet-300' : 'bg-sky-500/15 text-sky-700 dark:text-sky-300'"
+        >{{ conversations.length }}</span>
+      </div>
+    </div>
+
+    <div *ngIf="isAuthor" class="p-3 border-b border-slate-200/60 dark:border-white/10 bg-white/40 dark:bg-white/5">
+      <p class="text-[10px] uppercase tracking-wider text-zinc-500 mb-2">Contacter un lecteur</p>
+      <div class="flex gap-2">
+        <input
+          [(ngModel)]="memberQuery"
+          (ngModelChange)="searchMembers()"
+          type="text"
+          placeholder="Email ou nom…"
+          class="flex-1 min-w-0 px-3 py-2 text-xs rounded-lg border border-slate-200 dark:border-white/15 bg-white dark:bg-slate-950 text-slate-900 dark:text-white outline-none focus:ring-2"
+          [ngClass]="isAuthor ? 'focus:ring-violet-500/30' : 'focus:ring-sky-500/30'"
+        />
+        <button
+          type="button"
+          (click)="searchMembers()"
+          class="px-3 py-2 text-xs font-semibold rounded-lg text-white shrink-0"
+          [ngClass]="isAuthor ? 'bg-violet-600 hover:bg-violet-500' : 'bg-sky-600 hover:bg-sky-500'"
+        >
+          <i class="fas fa-search"></i>
+        </button>
+      </div>
+      <p *ngIf="memberSearchLoading" class="text-[11px] text-zinc-500 mt-2">Recherche…</p>
+      <ul *ngIf="memberResults.length" class="mt-2 space-y-1 max-h-32 overflow-y-auto">
+        <li *ngFor="let m of memberResults">
+          <button
+            type="button"
+            (click)="startConversation(m.id)"
+            class="w-full text-left px-2 py-1.5 rounded-lg hover:bg-violet-50 dark:hover:bg-violet-950/30 transition flex items-center justify-between gap-2"
+          >
+            <span class="min-w-0">
+              <span class="block text-xs font-medium text-slate-900 dark:text-white truncate">{{ m.displayName }}</span>
+              <span class="block text-[10px] text-zinc-500 truncate">{{ m.email }}</span>
+            </span>
+            <i class="fas fa-paper-plane text-[10px] text-violet-500 shrink-0"></i>
+          </button>
+        </li>
+      </ul>
+    </div>
+
+    <div *ngIf="loadingList" class="flex-1 flex flex-col gap-2 p-3">
+      <div *ngFor="let _ of [1,2,3]" class="flex items-center gap-3 p-3 rounded-xl animate-pulse">
+        <div class="h-10 w-10 rounded-xl bg-slate-200 dark:bg-white/10 shrink-0"></div>
+        <div class="flex-1 space-y-2">
+          <div class="h-3 w-3/4 rounded bg-slate-200 dark:bg-white/10"></div>
+          <div class="h-2.5 w-1/2 rounded bg-slate-100 dark:bg-white/5"></div>
+        </div>
+      </div>
+    </div>
+
+    <ul *ngIf="!loadingList" class="flex-1 overflow-y-auto space-y-1 p-2">
+      <li *ngFor="let c of conversations">
+        <button
+          type="button"
+          (click)="select(c)"
+          class="w-full text-left px-3 py-3 rounded-xl transition-all border border-transparent hover:bg-slate-100 dark:hover:bg-white/8 group"
+          [ngClass]="{
+            'bg-gradient-to-r border shadow-sm': selected?.id === c.id,
+            'from-sky-500/12 to-indigo-500/8 border-sky-400/30': !isAuthor && selected?.id === c.id,
+            'from-violet-500/12 to-purple-500/8 border-violet-400/30': isAuthor && selected?.id === c.id,
+          }"
+        >
+          <div class="flex items-center gap-3">
+            <div class="relative h-10 w-10 shrink-0">
+              <img
+                *ngIf="c.peerAvatarUrl"
+                [src]="c.peerAvatarUrl"
+                alt=""
+                class="h-10 w-10 rounded-xl object-cover ring-2 ring-white/20 shadow-sm"
+                (error)="onAvatarError($event)"
+              />
+              <div
+                class="h-10 w-10 rounded-xl bg-gradient-to-br flex items-center justify-center text-white text-xs font-bold shadow-sm"
+                [ngClass]="peerColor(c)"
+                [class.hidden]="c.peerAvatarUrl"
+              >
+                {{ peerInitials(c) }}
+              </div>
+            </div>
+            <div class="flex-1 min-w-0">
+              <p
+                class="text-sm font-semibold text-slate-900 dark:text-white truncate transition"
+                [ngClass]="{
+                  'group-hover:text-sky-700 dark:group-hover:text-sky-300': !isAuthor,
+                  'group-hover:text-violet-700 dark:group-hover:text-violet-300': isAuthor,
+                  'text-sky-700 dark:text-sky-300': !isAuthor && selected?.id === c.id,
+                  'text-violet-700 dark:text-violet-300': isAuthor && selected?.id === c.id,
+                }"
+              >
+                {{ peerLabel(c) }}
+              </p>
+              <p class="text-xs text-slate-500 dark:text-zinc-500 truncate mt-0.5">
+                {{ c.lastMessagePreview || 'Aucun message' }}
+              </p>
+            </div>
+          </div>
+        </button>
+      </li>
+
+      <li *ngIf="!conversations.length" class="flex flex-col items-center justify-center py-12 gap-3 text-center px-4">
+        <div class="h-14 w-14 rounded-2xl bg-slate-100 dark:bg-white/8 flex items-center justify-center">
+          <i class="fas fa-inbox text-slate-400 dark:text-zinc-500 text-xl"></i>
+        </div>
+        <p class="text-sm font-medium text-slate-700 dark:text-zinc-300">Aucune conversation</p>
+        <p class="text-xs text-slate-500 dark:text-zinc-500" *ngIf="isAuthor">
+          Recherchez un lecteur ci-dessus pour démarrer un échange.
+        </p>
+        <p class="text-xs text-slate-500 dark:text-zinc-500" *ngIf="!isAuthor">
+          Rendez-vous sur le
+          <a routerLink="/dashboard/reader/community" class="text-sky-600 dark:text-sky-400 hover:underline">Hub communauté</a>
+          pour démarrer un échange.
+        </p>
+      </li>
+    </ul>
+  </aside>
+
+  <section class="lg:col-span-3 dash-glass rounded-2xl border border-slate-200/80 dark:border-white/10 flex flex-col min-h-[520px] overflow-hidden">
+    <div
+      class="flex items-center gap-3 px-5 py-3.5 border-b border-slate-200/60 dark:border-white/10 bg-gradient-to-r to-transparent"
+      [ngClass]="isAuthor ? 'from-violet-500/5 via-purple-500/5' : 'from-sky-500/5 via-indigo-500/5'"
+    >
+      <div *ngIf="selected" class="relative h-9 w-9 shrink-0">
+        <img
+          *ngIf="selected.peerAvatarUrl"
+          [src]="selected.peerAvatarUrl"
+          alt=""
+          class="h-9 w-9 rounded-xl object-cover ring-2 ring-white/20 shadow-sm"
+          (error)="onAvatarError($event)"
+        />
+        <div
+          class="h-9 w-9 rounded-xl bg-gradient-to-br flex items-center justify-center text-white text-xs font-bold shadow-sm"
+          [ngClass]="peerColor(selected)"
+          [class.hidden]="selected.peerAvatarUrl"
+        >
+          {{ peerInitials(selected) }}
+        </div>
+      </div>
+      <div class="flex-1 min-w-0">
+        <p class="text-sm font-semibold text-slate-900 dark:text-white truncate">
+          {{ selected ? peerLabel(selected) : 'Sélectionnez une conversation' }}
+        </p>
+        <p *ngIf="selected" class="text-[11px] text-emerald-500 dark:text-emerald-400 font-medium">
+          <span class="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500 mr-1 align-middle"></span>Temps réel
+        </p>
+      </div>
+      <button
+        *ngIf="selected"
+        type="button"
+        (click)="loadMessages()"
+        title="Actualiser"
+        class="h-8 w-8 rounded-lg border border-slate-200 dark:border-white/15 bg-white/70 dark:bg-white/5 flex items-center justify-center transition text-slate-500 dark:text-zinc-400"
+        [ngClass]="isAuthor ? 'hover:bg-violet-50 dark:hover:bg-violet-950/30 hover:text-violet-600' : 'hover:bg-sky-50 dark:hover:bg-sky-950/30 hover:text-sky-600'"
+      >
+        <i class="fas fa-sync-alt text-xs"></i>
+      </button>
+    </div>
+
+    <div class="flex-1 overflow-y-auto p-4 space-y-3" style="max-height: min(55vh, 28rem)">
+      <div *ngIf="loadingMessages" class="space-y-3">
+        <div *ngFor="let _ of [1,2,3]" class="flex gap-2 animate-pulse">
+          <div class="h-7 w-7 rounded-full bg-slate-200 dark:bg-white/10 shrink-0 mt-1"></div>
+          <div class="flex-1 space-y-1.5 max-w-[70%]">
+            <div class="h-9 rounded-2xl bg-slate-200 dark:bg-white/10"></div>
+          </div>
+        </div>
+      </div>
+
+      <div *ngIf="!loadingMessages && !selected" class="flex flex-col items-center justify-center py-20 gap-3 text-center">
+        <div
+          class="h-16 w-16 rounded-2xl flex items-center justify-center"
+          [ngClass]="isAuthor ? 'bg-gradient-to-br from-violet-500/20 to-purple-500/20' : 'bg-gradient-to-br from-sky-500/20 to-indigo-500/20'"
+        >
+          <i class="fas fa-paper-plane text-2xl" [ngClass]="isAuthor ? 'text-violet-500' : 'text-sky-500'"></i>
+        </div>
+        <p class="text-sm font-medium text-slate-700 dark:text-zinc-300">Choisissez une conversation</p>
+      </div>
+
+      <div *ngIf="!loadingMessages && selected && !messages.length" class="flex flex-col items-center justify-center py-16 gap-3 text-center">
+        <p class="text-sm font-medium text-slate-700 dark:text-zinc-300">Démarrez la conversation</p>
+        <p class="text-xs text-slate-500 dark:text-zinc-500">Soyez le premier à écrire un message.</p>
+      </div>
+
+      <div *ngFor="let m of messages" class="flex items-end gap-2" [class.flex-row-reverse]="isMine(m)">
+        <div *ngIf="!isMine(m) && selected" class="relative h-7 w-7 shrink-0">
+          <img
+            *ngIf="messageAvatar(m, selected)"
+            [src]="messageAvatar(m, selected)"
+            alt=""
+            class="h-7 w-7 rounded-lg object-cover shadow-sm"
+            (error)="onAvatarError($event)"
+          />
+          <div
+            class="h-7 w-7 rounded-lg bg-gradient-to-br flex items-center justify-center text-white text-[10px] font-bold shadow-sm"
+            [ngClass]="peerColor(selected)"
+            [class.hidden]="messageAvatar(m, selected)"
+          >
+            {{ peerInitials(selected) }}
+          </div>
+        </div>
+
+        <div
+          class="max-w-[78%] rounded-2xl px-3.5 py-2.5 text-sm shadow-sm"
+          [ngClass]="
+            isMine(m)
+              ? (isAuthor
+                  ? 'bg-gradient-to-br from-violet-600 to-purple-600 text-white rounded-br-sm'
+                  : 'bg-gradient-to-br from-sky-600 to-indigo-600 text-white rounded-br-sm')
+              : 'bg-white/80 dark:bg-white/10 text-slate-900 dark:text-zinc-100 border border-slate-200/80 dark:border-white/10 rounded-bl-sm'
+          "
+        >
+          <p *ngIf="!isMine(m)" class="text-[10px] font-semibold opacity-70 mb-1">{{ messageLabel(m, selected) }}</p>
+          <p class="whitespace-pre-wrap leading-relaxed">{{ m.content }}</p>
+          <p class="text-[10px] opacity-60 mt-1.5" [class.text-right]="isMine(m)">
+            {{ m.createdAt | date : 'HH:mm · d MMM' }}
+          </p>
+        </div>
+      </div>
+
+      <div #messagesEnd></div>
+    </div>
+
+    <div class="p-4 border-t border-slate-200/60 dark:border-white/10 bg-slate-50/50 dark:bg-slate-950/20">
+      <div
+        class="flex flex-col gap-2 rounded-xl border transition-all"
+        [ngClass]="
+          selected
+            ? (isAuthor
+                ? 'border-slate-200 dark:border-white/15 bg-white/90 dark:bg-slate-950/50 focus-within:border-violet-400/60 focus-within:ring-2 focus-within:ring-violet-500/20'
+                : 'border-slate-200 dark:border-white/15 bg-white/90 dark:bg-slate-950/50 focus-within:border-sky-400/60 focus-within:ring-2 focus-within:ring-sky-500/20')
+            : 'border-slate-200/50 dark:border-white/8 bg-slate-100/50 dark:bg-white/3 opacity-60'
+        "
+      >
+        <textarea
+          [(ngModel)]="draft"
+          (keydown)="onKeydown($event)"
+          rows="3"
+          [disabled]="!selected || sending"
+          [placeholder]="selected ? 'Écrire un message… (Ctrl+Entrée pour envoyer)' : 'Sélectionnez une conversation'"
+          class="w-full rounded-t-xl bg-transparent text-sm px-4 pt-3 pb-1 outline-none resize-none text-slate-900 dark:text-zinc-100 placeholder-slate-400 dark:placeholder-zinc-600"
+        ></textarea>
+        <div class="flex items-center justify-end px-3 pb-2.5">
+          <button
+            type="button"
+            (click)="send()"
+            [disabled]="!selected || sending || !draft.trim()"
+            class="inline-flex items-center gap-2 px-4 py-1.5 rounded-lg text-xs font-semibold text-white shadow-md disabled:opacity-40 hover:opacity-90 transition"
+            [ngClass]="isAuthor ? 'bg-gradient-to-r from-violet-600 to-purple-600 shadow-violet-900/20' : 'bg-gradient-to-r from-sky-600 to-indigo-600 shadow-sky-900/20'"
+          >
+            <i class="fas fa-paper-plane text-[10px]"></i>
+            {{ sending ? 'Envoi…' : 'Envoyer' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>

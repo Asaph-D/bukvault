@@ -1,5 +1,6 @@
 package com.intergiciel.community_service.web;
 
+import com.intergiciel.community_service.service.MemberProfileService;
 import com.intergiciel.community_service.service.MessagingService;
 import com.intergiciel.community_service.support.AuthSupport;
 import com.intergiciel.community_service.web.dto.ChatMessageResponse;
@@ -13,6 +14,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -29,14 +31,17 @@ import java.util.UUID;
 public class MessagingController {
 
 	private final MessagingService messagingService;
+	private final MemberProfileService memberProfileService;
 
-	public MessagingController(MessagingService messagingService) {
+	public MessagingController(MessagingService messagingService, MemberProfileService memberProfileService) {
 		this.messagingService = messagingService;
+		this.memberProfileService = memberProfileService;
 	}
 
 	@GetMapping("/conversations")
 	@Operation(summary = "Liste des conversations")
 	public List<ConversationSummaryResponse> list(Authentication authentication) {
+		syncProfile(authentication);
 		return messagingService.listConversations(AuthSupport.userId(authentication));
 	}
 
@@ -44,6 +49,7 @@ public class MessagingController {
 	@Operation(summary = "Ouvrir ou retrouver une conversation directe")
 	public ConversationSummaryResponse start(Authentication authentication,
 			@Valid @RequestBody StartDirectRequest request) {
+		syncProfile(authentication);
 		return messagingService.startDirect(AuthSupport.userId(authentication), request.participantId());
 	}
 
@@ -58,6 +64,13 @@ public class MessagingController {
 	@Operation(summary = "Envoyer un message")
 	public ChatMessageResponse send(Authentication authentication, @PathVariable UUID conversationId,
 			@Valid @RequestBody SendMessageRequest request) {
+		syncProfile(authentication);
 		return messagingService.send(AuthSupport.userId(authentication), conversationId, request.content());
+	}
+
+	private void syncProfile(Authentication authentication) {
+		if (authentication instanceof JwtAuthenticationToken jwt) {
+			memberProfileService.ensureFromJwt(jwt);
+		}
 	}
 }

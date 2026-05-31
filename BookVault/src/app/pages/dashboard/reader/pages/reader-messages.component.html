@@ -79,12 +79,22 @@
           }"
         >
           <div class="flex items-center gap-3">
-            <!-- Avatar initials -->
-            <div
-              class="h-10 w-10 rounded-xl bg-gradient-to-br shrink-0 flex items-center justify-center text-white text-xs font-bold shadow-sm"
-              [ngClass]="peerColor(c)"
-            >
-              {{ peerInitials(c) }}
+            <!-- Avatar -->
+            <div class="relative h-10 w-10 shrink-0">
+              <img
+                *ngIf="c.peerAvatarUrl"
+                [src]="c.peerAvatarUrl"
+                alt=""
+                class="h-10 w-10 rounded-xl object-cover ring-2 ring-white/20 shadow-sm"
+                (error)="onAvatarError($event, c)"
+              />
+              <div
+                class="h-10 w-10 rounded-xl bg-gradient-to-br flex items-center justify-center text-white text-xs font-bold shadow-sm"
+                [ngClass]="peerColor(c)"
+                [class.hidden]="c.peerAvatarUrl"
+              >
+                {{ peerInitials(c) }}
+              </div>
             </div>
             <div class="flex-1 min-w-0">
               <p class="text-sm font-semibold text-slate-900 dark:text-white truncate group-hover:text-sky-700 dark:group-hover:text-sky-300 transition"
@@ -123,10 +133,22 @@
     <div class="flex items-center gap-3 px-5 py-3.5 border-b border-slate-200/60 dark:border-white/10 bg-gradient-to-r from-sky-500/5 via-indigo-500/5 to-transparent">
       <div
         *ngIf="selected"
-        class="h-9 w-9 rounded-xl bg-gradient-to-br shrink-0 flex items-center justify-center text-white text-xs font-bold shadow-sm"
-        [ngClass]="peerColor(selected)"
+        class="relative h-9 w-9 shrink-0"
       >
-        {{ peerInitials(selected) }}
+        <img
+          *ngIf="selected.peerAvatarUrl"
+          [src]="selected.peerAvatarUrl"
+          alt=""
+          class="h-9 w-9 rounded-xl object-cover ring-2 ring-white/20 shadow-sm"
+          (error)="onAvatarError($event, selected)"
+        />
+        <div
+          class="h-9 w-9 rounded-xl bg-gradient-to-br flex items-center justify-center text-white text-xs font-bold shadow-sm"
+          [ngClass]="peerColor(selected)"
+          [class.hidden]="selected.peerAvatarUrl"
+        >
+          {{ peerInitials(selected) }}
+        </div>
       </div>
       <div class="flex-1 min-w-0">
         <p class="text-sm font-semibold text-slate-900 dark:text-white truncate">
@@ -186,12 +208,21 @@
         [class.flex-row-reverse]="isMine(m)"
       >
         <!-- Peer avatar (only on their messages) -->
-        <div
-          *ngIf="!isMine(m) && selected"
-          class="h-7 w-7 rounded-lg bg-gradient-to-br shrink-0 flex items-center justify-center text-white text-[10px] font-bold shadow-sm"
-          [ngClass]="peerColor(selected)"
-        >
-          {{ peerInitials(selected) }}
+        <div *ngIf="!isMine(m) && selected" class="relative h-7 w-7 shrink-0">
+          <img
+            *ngIf="messageAvatar(m, selected)"
+            [src]="messageAvatar(m, selected)"
+            alt=""
+            class="h-7 w-7 rounded-lg object-cover shadow-sm"
+            (error)="onAvatarError($event, selected)"
+          />
+          <div
+            class="h-7 w-7 rounded-lg bg-gradient-to-br flex items-center justify-center text-white text-[10px] font-bold shadow-sm"
+            [ngClass]="peerColor(selected)"
+            [class.hidden]="messageAvatar(m, selected)"
+          >
+            {{ peerInitials(selected) }}
+          </div>
         </div>
 
         <div
@@ -202,6 +233,7 @@
               : 'bg-white/80 dark:bg-white/10 text-slate-900 dark:text-zinc-100 border border-slate-200/80 dark:border-white/10 rounded-bl-sm'
           "
         >
+          <p *ngIf="!isMine(m)" class="text-[10px] font-semibold opacity-70 mb-1">{{ messageLabel(m, selected) }}</p>
           <p class="whitespace-pre-wrap leading-relaxed">{{ m.content }}</p>
           <p class="text-[10px] opacity-60 mt-1.5" [class.text-right]="isMine(m)">
             {{ m.createdAt | date : 'HH:mm · d MMM' }}

@@ -10,5 +10,19 @@
     "secure": false,
     "changeOrigin": true,
     "logLevel": "debug"
+  },
+  "/ws/community": {
+    "target": "http://127.0.0.1:8080",
+    "ws": true,
+    "secure": false,
+    "changeOrigin": true,
+    "logLevel": "debug"
+  },
+  "/ws/review": {
+    "target": "http://127.0.0.1:8080",
+    "ws": true,
+    "secure": false,
+    "changeOrigin": true,
+    "logLevel": "debug"
   }
 }

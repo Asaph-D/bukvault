@@ -1,6 +1,9 @@
 C:\Users\Asaph\Documents\RSD\Semestre-2\Intergiciel\bukvault\community-service\src\main\java\com\intergiciel\community_service\bootstrap\CommunitySeedRunner.java
 C:\Users\Asaph\Documents\RSD\Semestre-2\Intergiciel\bukvault\community-service\src\main\java\com\intergiciel\community_service\CommunityServiceApplication.java
+C:\Users\Asaph\Documents\RSD\Semestre-2\Intergiciel\bukvault\community-service\src\main\java\com\intergiciel\community_service\config\CommunityProperties.java
 C:\Users\Asaph\Documents\RSD\Semestre-2\Intergiciel\bukvault\community-service\src\main\java\com\intergiciel\community_service\config\SecurityConfig.java
+C:\Users\Asaph\Documents\RSD\Semestre-2\Intergiciel\bukvault\community-service\src\main\java\com\intergiciel\community_service\config\StompJwtChannelInterceptor.java
+C:\Users\Asaph\Documents\RSD\Semestre-2\Intergiciel\bukvault\community-service\src\main\java\com\intergiciel\community_service\config\WebSocketConfig.java
 C:\Users\Asaph\Documents\RSD\Semestre-2\Intergiciel\bukvault\community-service\src\main\java\com\intergiciel\community_service\domain\BookLikeEntity.java
 C:\Users\Asaph\Documents\RSD\Semestre-2\Intergiciel\bukvault\community-service\src\main\java\com\intergiciel\community_service\domain\BookLikeId.java
 C:\Users\Asaph\Documents\RSD\Semestre-2\Intergiciel\bukvault\community-service\src\main\java\com\intergiciel\community_service\domain\BuddySuggestionEntity.java
@@ -13,6 +16,7 @@ C:\Users\Asaph\Documents\RSD\Semestre-2\Intergiciel\bukvault\community-service\s
 C:\Users\Asaph\Documents\RSD\Semestre-2\Intergiciel\bukvault\community-service\src\main\java\com\intergiciel\community_service\domain\ConversationType.java
 C:\Users\Asaph\Documents\RSD\Semestre-2\Intergiciel\bukvault\community-service\src\main\java\com\intergiciel\community_service\domain\HubStatEntity.java
 C:\Users\Asaph\Documents\RSD\Semestre-2\Intergiciel\bukvault\community-service\src\main\java\com\intergiciel\community_service\domain\MemberProfileEntity.java
+C:\Users\Asaph\Documents\RSD\Semestre-2\Intergiciel\bukvault\community-service\src\main\java\com\intergiciel\community_service\domain\SalonMessageEntity.java
 C:\Users\Asaph\Documents\RSD\Semestre-2\Intergiciel\bukvault\community-service\src\main\java\com\intergiciel\community_service\repository\BookLikeRepository.java
 C:\Users\Asaph\Documents\RSD\Semestre-2\Intergiciel\bukvault\community-service\src\main\java\com\intergiciel\community_service\repository\BuddySuggestionRepository.java
 C:\Users\Asaph\Documents\RSD\Semestre-2\Intergiciel\bukvault\community-service\src\main\java\com\intergiciel\community_service\repository\ChatMessageRepository.java
@@ -22,9 +26,13 @@ C:\Users\Asaph\Documents\RSD\Semestre-2\Intergiciel\bukvault\community-service\s
 C:\Users\Asaph\Documents\RSD\Semestre-2\Intergiciel\bukvault\community-service\src\main\java\com\intergiciel\community_service\repository\ConversationRepository.java
 C:\Users\Asaph\Documents\RSD\Semestre-2\Intergiciel\bukvault\community-service\src\main\java\com\intergiciel\community_service\repository\HubStatRepository.java
 C:\Users\Asaph\Documents\RSD\Semestre-2\Intergiciel\bukvault\community-service\src\main\java\com\intergiciel\community_service\repository\MemberProfileRepository.java
+C:\Users\Asaph\Documents\RSD\Semestre-2\Intergiciel\bukvault\community-service\src\main\java\com\intergiciel\community_service\repository\SalonMessageRepository.java
 C:\Users\Asaph\Documents\RSD\Semestre-2\Intergiciel\bukvault\community-service\src\main\java\com\intergiciel\community_service\service\CommunityFeedService.java
+C:\Users\Asaph\Documents\RSD\Semestre-2\Intergiciel\bukvault\community-service\src\main\java\com\intergiciel\community_service\service\CommunityRealtimePublisher.java
+C:\Users\Asaph\Documents\RSD\Semestre-2\Intergiciel\bukvault\community-service\src\main\java\com\intergiciel\community_service\service\MemberProfileService.java
 C:\Users\Asaph\Documents\RSD\Semestre-2\Intergiciel\bukvault\community-service\src\main\java\com\intergiciel\community_service\service\MemberSocialService.java
 C:\Users\Asaph\Documents\RSD\Semestre-2\Intergiciel\bukvault\community-service\src\main\java\com\intergiciel\community_service\service\MessagingService.java
+C:\Users\Asaph\Documents\RSD\Semestre-2\Intergiciel\bukvault\community-service\src\main\java\com\intergiciel\community_service\service\SalonMessageService.java
 C:\Users\Asaph\Documents\RSD\Semestre-2\Intergiciel\bukvault\community-service\src\main\java\com\intergiciel\community_service\support\AuthSupport.java
 C:\Users\Asaph\Documents\RSD\Semestre-2\Intergiciel\bukvault\community-service\src\main\java\com\intergiciel\community_service\web\CommunityController.java
 C:\Users\Asaph\Documents\RSD\Semestre-2\Intergiciel\bukvault\community-service\src\main\java\com\intergiciel\community_service\web\dto\BookLikeRequest.java
@@ -35,7 +43,10 @@ C:\Users\Asaph\Documents\RSD\Semestre-2\Intergiciel\bukvault\community-service\s
 C:\Users\Asaph\Documents\RSD\Semestre-2\Intergiciel\bukvault\community-service\src\main\java\com\intergiciel\community_service\web\dto\HubResponse.java
 C:\Users\Asaph\Documents\RSD\Semestre-2\Intergiciel\bukvault\community-service\src\main\java\com\intergiciel\community_service\web\dto\LikeStatusResponse.java
 C:\Users\Asaph\Documents\RSD\Semestre-2\Intergiciel\bukvault\community-service\src\main\java\com\intergiciel\community_service\web\dto\MemberResponse.java
+C:\Users\Asaph\Documents\RSD\Semestre-2\Intergiciel\bukvault\community-service\src\main\java\com\intergiciel\community_service\web\dto\MemberSnapshot.java
+C:\Users\Asaph\Documents\RSD\Semestre-2\Intergiciel\bukvault\community-service\src\main\java\com\intergiciel\community_service\web\dto\SalonMessageResponse.java
 C:\Users\Asaph\Documents\RSD\Semestre-2\Intergiciel\bukvault\community-service\src\main\java\com\intergiciel\community_service\web\dto\SendMessageRequest.java
+C:\Users\Asaph\Documents\RSD\Semestre-2\Intergiciel\bukvault\community-service\src\main\java\com\intergiciel\community_service\web\dto\SendSalonMessageRequest.java
 C:\Users\Asaph\Documents\RSD\Semestre-2\Intergiciel\bukvault\community-service\src\main\java\com\intergiciel\community_service\web\dto\StartDirectRequest.java
 C:\Users\Asaph\Documents\RSD\Semestre-2\Intergiciel\bukvault\community-service\src\main\java\com\intergiciel\community_service\web\dto\ThreadResponse.java
 C:\Users\Asaph\Documents\RSD\Semestre-2\Intergiciel\bukvault\community-service\src\main\java\com\intergiciel\community_service\web\MessagingController.java

@@ -344,11 +344,44 @@ export interface PurchasedBookDto {
   orderId: number;
 }
 
+/** review-service — avis auteur */
+export interface AuthorReviewItemDto {
+  id: number;
+  bookId: string;
+  bookTitle: string;
+  bookCoverUrl: string | null;
+  userId: string;
+  reviewerEmail?: string | null;
+  reviewerDisplayName?: string | null;
+  reviewerAvatarUrl?: string | null;
+  rating: number;
+  title: string | null;
+  body: string;
+  verifiedPurchase: boolean;
+  helpfulCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AuthorReviewsSummaryDto {
+  totalReviews: number;
+  averageRating: number;
+  booksWithReviews: number;
+}
+
+export interface AuthorReviewsFeedDto {
+  reviews: PageDto<AuthorReviewItemDto>;
+  summary: AuthorReviewsSummaryDto;
+}
+
 /** review-service */
 export interface ReviewResponseDto {
   id: number;
   bookId: string;
   userId: string;
+  reviewerEmail?: string | null;
+  reviewerDisplayName?: string | null;
+  reviewerAvatarUrl?: string | null;
   rating: number;
   title: string | null;
   body: string;
@@ -401,11 +434,15 @@ export interface CommunityMemberDto {
   displayName: string;
   role: string;
   bio: string | null;
+  avatarUrl?: string | null;
 }
 
 export interface MessagingConversationDto {
   id: string;
   peerUserId: string;
+  peerEmail?: string | null;
+  peerDisplayName?: string | null;
+  peerAvatarUrl?: string | null;
   lastMessagePreview: string | null;
   updatedAt: string;
 }
@@ -413,6 +450,20 @@ export interface MessagingConversationDto {
 export interface ChatMessageDto {
   id: string;
   senderId: string;
+  senderEmail?: string | null;
+  senderDisplayName?: string | null;
+  senderAvatarUrl?: string | null;
+  content: string;
+  createdAt: string;
+}
+
+export interface SalonMessageDto {
+  id: string;
+  threadId: string;
+  senderId: string;
+  senderEmail?: string | null;
+  senderDisplayName?: string | null;
+  senderAvatarUrl?: string | null;
   content: string;
   createdAt: string;
 }
