@@ -1,4 +1,7 @@
 import { Component, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { Router, RouterModule } from '@angular/router';
 import { BookService, PLACEHOLDER_COVER } from '../../../../services/book.service';
 import { ReviewService } from '../../../../services/review.service';
 import { AuthService } from '../../../../services/auth.service';
@@ -27,8 +30,6 @@ export class AuthorCommentsComponent implements OnInit {
   myBooks: Book[] = [];
   bookFilter = '';
   minRatingFilter: '' | '3' | '4' | '5' = '';
-
-  replyDrafts: Record<number, string> = {};
   startingDm: string | null = null;
 
   constructor(
